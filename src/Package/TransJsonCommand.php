@@ -6,6 +6,7 @@ namespace Dux\Package;
 use Dux\Handlers\Exception;
 use GuzzleHttp\Client;
 use Nette\Utils\FileSystem;
+use Noodlehaus\Parser\Json;
 use Noodlehaus\Parser\Yaml;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -16,11 +17,11 @@ use Symfony\Component\Console\Question\Question;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\Translation\Loader\YamlFileLoader;
 
-class TransYamlCommand extends Command
+class TransJsonCommand extends Command
 {
 
-    protected static $defaultName = 'trans:yaml';
-    protected static $defaultDescription = 'Automatic translation language pack';
+    protected static $defaultName = 'trans:json';
+    protected static $defaultDescription = 'Automatic translation of back-end language packs';
 
     protected function configure(): void
     {
@@ -33,6 +34,7 @@ class TransYamlCommand extends Command
             ->addOption('lang', null, InputOption::VALUE_REQUIRED, 'Source language.');
     }
 
+
     public function execute(InputInterface $input, OutputInterface $output): int
     {
         $name = $input->getArgument('name');
@@ -40,14 +42,14 @@ class TransYamlCommand extends Command
         $pack = $input->getOption('pack');
         $io = new SymfonyStyle($input, $output);
 
-        $langFile = app_path(ucfirst($name). '/Langs/' . $pack . '.' . $lang . '.yaml') ;
+        $langFile = base_path('web/src/pages/' . lcfirst($name) . '/locales/' . $lang . '/' .  $pack . '.json');
         if (!is_file($langFile)) {
             $io->error('File does not exist');
             return Command::FAILURE;
         }
 
-        $yaml = new Yaml();
-        $data = $yaml->parseFile($langFile);
+        $json = new Json();
+        $data = $json->parseFile($langFile);
 
         $helper = $this->getHelper('question');
         $question = new Question('Please enter username: ');
@@ -67,7 +69,7 @@ class TransYamlCommand extends Command
         }
 
         Trans::main($username, $password, $lang, $name, $data, file_get_contents($langFile), function ($lang) use ($name, $pack) {
-            return app_path(ucfirst($name)) . '/Langs/' . $pack . '.' . $lang . '.yaml';
+            return base_path('web/src/pages/' . lcfirst($name) . '/locales/' . $lang . '/' . $pack . '.json');
         });
 
         $io->success('Trans Success');
