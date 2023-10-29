@@ -19,6 +19,7 @@ use Dux\Database\Db;
 use Dux\Database\Migrate;
 use Dux\Event\Event;
 use Dux\Handlers\Exception;
+use Dux\Lock\Lock;
 use Dux\Logs\LogHandler;
 use Dux\Notify\Notify;
 use Dux\Queue\Queue;
@@ -297,6 +298,8 @@ class App
      * storage
      * @param string $type
      * @return Filesystem
+     * @throws DependencyException
+     * @throws NotFoundException
      */
     public static function storage(string $type = ""): Filesystem
     {
@@ -313,6 +316,23 @@ class App
             );
         }
         return self::$di->get("storage." . $type);
+    }
+
+    /**
+     * @param string $type
+     * @return Filesystem
+     * @throws DependencyException
+     * @throws NotFoundException
+     */
+    public static function lock(string $type = "semaphore"): Filesystem
+    {
+        if (!self::$di->has("lock." . $type)) {
+            self::$di->set(
+                "lock." . $type,
+                Lock::init($type)
+            );
+        }
+        return self::$di->get("lock." . $type);
     }
 
     /**
@@ -389,42 +409,6 @@ class App
     public static function scheduler(): Scheduler
     {
         return self::$bootstrap->scheduler;
-    }
-
-    /**
-     * notify
-     * @param string $type
-     * @return Notify
-     * @throws DependencyException
-     * @throws NotFoundException
-     */
-    public static function notify(string $type): Notify
-    {
-        if (!self::$di->has("notify." . $type)) {
-            self::$di->set(
-                "notify." . $type,
-                new Notify()
-            );
-        }
-        return self::$di->get("notify." . $type);
-    }
-
-    /**
-     * Auth
-     * @param string $app
-     * @return Notify
-     * @throws DependencyException
-     * @throws NotFoundException
-     */
-    public static function auth(string $app = ""): Notify
-    {
-        if (!self::$di->has("auth.$app")) {
-            self::$di->set(
-                "auth.$app",
-                new AuthService($app)
-            );
-        }
-        return self::$di->get("auth.$app");
     }
 
     /**
