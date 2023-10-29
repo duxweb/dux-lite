@@ -1,5 +1,5 @@
 {
-  "name": "duxphp/lite",
+  "name": "duxweb/dux-lite",
   "type": "library",
   "description": "The lightweight framework based on slim php",
   "keywords": [
