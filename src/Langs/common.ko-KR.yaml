@@ -1,0 +1,22 @@
+encryption:
+  failure: 암호화 실패
+message:
+  emptyData: 빈 데이터
+  create: %name% 생성 성공
+  edit: %name% 편집 성공
+  delete: %name% 삭제 성공
+  store: %name% 데이터 저장 성공
+  trash: %name% 완전 삭제 성공
+  restore: %name% 복원 성공
+resources:
+  list: 목록
+  show: 상세 정보
+  create: 생성
+  edit: 편집
+  delete: 삭제
+  store: 업데이트
+  trash: 완전 삭제
+  restore: 복원
+validate:
+  placeholder: 입력하십시오
+  select: 선택하십시오

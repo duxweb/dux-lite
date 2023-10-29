@@ -1,0 +1,22 @@
+encryption:
+  failure: 暗号化失敗
+message:
+  emptyData: データがありません
+  create: %name%の作成に成功しました
+  edit: %name%の編集に成功しました
+  delete: %name%の削除に成功しました
+  store: %name%のデータ保存に成功しました
+  trash: %name%を完全に削除しました
+  restore: %name%の復元に成功しました
+resources:
+  list: 一覧
+  show: 詳細
+  create: 作成
+  edit: 編集
+  delete: 削除
+  store: 更新
+  trash: 完全に削除
+  restore: 復元
+validate:
+  placeholder: 入力してください
+  select: 選択してください

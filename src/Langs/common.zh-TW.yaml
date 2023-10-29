@@ -1,0 +1,22 @@
+encryption:
+  failure: 加密失敗
+message:
+  emptyData: 空資料
+  create: 建立%name%成功
+  edit: 編輯%name%成功
+  delete: 刪除%name%成功
+  store: 儲存%name%資料成功
+  trash: 徹底刪除%name%成功
+  restore: 恢復%name%成功
+resources:
+  list: 列表
+  show: 詳情
+  create: 建立
+  edit: 編輯
+  delete: 刪除
+  store: 更新
+  trash: 徹底刪除
+  restore: 恢復
+validate:
+  placeholder: 請輸入
+  select: 請選擇

@@ -1,0 +1,21 @@
+encryption:
+  failure: Encryption failure
+message:
+  emptyData: Empty data
+  create: Create %name% success
+  edit: Edit %name% success
+  delete: Delete %name% success
+  store: Store %name% data success
+  trash: Trash %name% success
+  restore: Restore %name% success
+resources:
+  list: List
+  show: Show
+  create: Create
+  edit: Edit
+  delete: Delete
+  store: Store
+  trash: Trash
+  restore: Restore
+validate:
+  placeholder: Please enter

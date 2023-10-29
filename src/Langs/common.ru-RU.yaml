@@ -1,0 +1,22 @@
+encryption:
+  failure: Ошибка шифрования
+message:
+  emptyData: Пустые данные
+  create: Успешное создание %name%
+  edit: Успешное редактирование %name%
+  delete: Успешное удаление %name%
+  store: Успешное сохранение данных %name%
+  trash: Успешное полное удаление %name%
+  restore: Успешное восстановление %name%
+resources:
+  list: Список
+  show: Показать
+  create: Создать
+  edit: Редактировать
+  delete: Удалить
+  store: Обновить
+  trash: Полное удаление
+  restore: Восстановить
+validate:
+  placeholder: Пожалуйста, введите
+  select: Пожалуйста, выберите
