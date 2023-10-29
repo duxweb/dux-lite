@@ -137,10 +137,8 @@ class PushCommand extends Command
         $progressBar->setFormat('Upload: %current%/%max% [%bar%] %percent:3s%%');
         $progressBar->start();
 
-        $client = new Client();
-
         try {
-            $response = $client->post(Package::$url . '/v/package/version/push', [
+            Package::request('post', '/v/package/version/push', [
                 'headers' => [
                     'Accept' => 'application/json'
                 ],
@@ -172,10 +170,6 @@ class PushCommand extends Command
                     $progressBar->setProgress($uploadedBytes);
                 }
             ]);
-            $content = $response->getBody()?->getContents();
-        } catch (RequestException $e) {
-            $response = $e->getResponse();
-            $content = $response->getBody()?->getContents();
         } finally {
             $progressBar->finish();
             if (is_dir($tmpDir)) {
@@ -184,15 +178,6 @@ class PushCommand extends Command
             if (is_file($tmpZip)) {
                 FileSystem::delete($tmpZip);
             }
-        }
-        if ($response->getStatusCode() == 401) {
-            $io->error('[CLOUD] Wrong username and password');
-            return Command::FAILURE;
-        }
-        $responseData = json_decode($content ?: '', true);
-        if ($response->getStatusCode() !== 200) {
-            $io->warning('[CLOUD] ' . $response->getStatusCode() . ' ' . ($responseData['message'] ?: 'Server connection failed'));
-            return Command::FAILURE;
         }
 
         $io->success('Publish Application Success');

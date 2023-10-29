@@ -133,74 +133,36 @@ class Package
         ];
     }
 
-    public static function app(string $username, string $password, string $app)
+    public static function app(string $username, string $password, string $app): array
     {
-        $client = new Client();
-        try {
-            $response = $client->get(self::$url . '/v/package/version/app', [
-                'query' => [
-                    'type' => 'duxLite',
-                    'app' => $app,
-                    'download' => true
-                ],
-                'headers' => [
-                    'Content-Type' => 'application/json',
-                    'Accept' => 'application/json',
-                ],
-                'auth' => [$username, $password],
-            ]);
-            $content = $response->getBody()?->getContents();
-        } catch (RequestException $e) {
-            $response = $e->getResponse();
-            $content = $response->getBody()?->getContents();
-        }
-        if ($response->getStatusCode() == 401) {
-            throw new Exception('[CLOUD] Wrong username and password');
-        }
-        $responseData = json_decode($content ?: '', true);
-        if ($response->getStatusCode() !== 200) {
-            throw new Exception('[CLOUD] ' . $response->getStatusCode() . ' ' . ($responseData['message'] ?: 'Server connection failed'));
-        }
-        $appData = $responseData['data'];
-        if (!$appData) {
-            throw new Exception('[CLOUD] Application data does not exist');
-        }
-        return $appData;
+        return self::request('get', '/v/package/version/app', [
+            'query' => [
+                'type' => 'duxLite',
+                'app' => $app,
+                'download' => true
+            ],
+            'headers' => [
+                'Content-Type' => 'application/json',
+                'Accept' => 'application/json',
+            ],
+            'auth' => [$username, $password],
+        ]);
     }
 
-    public static function query(string $username, string $password, array $queryData, SymfonyStyle $io)
+    public static function query(string $username, string $password, array $queryData, SymfonyStyle $io): array
     {
-        $client = new Client();
-        try {
-            $response = $client->post(self::$url . '/v/package/version/query', [
-                'query' => [
-                    'type' => 'duxLite',
-                    'download' => true
-                ],
-                'json' => $queryData,
-                'headers' => [
-                    'Content-Type' => 'application/json',
-                    'Accept' => 'application/json',
-                ],
-                'auth' => [$username, $password],
-            ]);
-            $content = $response->getBody()?->getContents();
-        } catch (RequestException $e) {
-            $response = $e->getResponse();
-            $content = $response->getBody()?->getContents();
-        }
-        if ($response->getStatusCode() == 401) {
-            throw new Exception('[CLOUD] Wrong username and password');
-        }
-        $responseData = json_decode($content ?: '', true);
-        if ($response->getStatusCode() !== 200) {
-            throw new Exception('[CLOUD] ' . $response->getStatusCode() . ' ' . ($responseData['message'] ?: 'Server connection failed'));
-        }
-        $appData = $responseData['data'];
-        if (!$appData) {
-            throw new Exception('[CLOUD] Application data does not exist');
-        }
-        return $appData;
+        return self::request('get', '/v/package/version/query', [
+            'query' => [
+                'type' => 'duxLite',
+                'download' => true
+            ],
+            'json' => $queryData,
+            'headers' => [
+                'Content-Type' => 'application/json',
+                'Accept' => 'application/json',
+            ],
+            'auth' => [$username, $password],
+        ]);
     }
 
     public static function composer(OutputInterface $output, array $maps, $remove = false): void
@@ -370,6 +332,25 @@ class Package
         } catch (\Exception $e) {
             $output->writeln('<fg=yellow>' . $e->getMessage() . '</>');
         }
+    }
+
+    public static function request(string $method, string $path, array $params): array {
+        $client = new Client();
+        try {
+            $response = $client->request($method, self::$url . $path, $params);
+            $content = $response->getBody()?->getContents();
+        } catch (RequestException $e) {
+            $response = $e->getResponse();
+            $content = $response->getBody()?->getContents();
+        }
+        if ($response->getStatusCode() == 401) {
+            throw new Exception('[CLOUD] Wrong username and password');
+        }
+        $responseData = json_decode($content ?: '', true);
+        if ($response->getStatusCode() !== 200) {
+            throw new Exception('[CLOUD] ' . $response->getStatusCode() . ' ' . ($responseData['message'] ?: 'Server connection failed'));
+        }
+        return $responseData['data'] ?: [];
     }
 
 

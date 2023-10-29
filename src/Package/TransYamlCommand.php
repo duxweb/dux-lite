@@ -70,42 +70,21 @@ class TransYamlCommand extends Command
         $this->extractLeafNodes($data, $result);
         $resultStr = implode("\n", $result);
 
-        $client = new Client();
-        try {
-            $response = $client->post(Package::$url . '/v/services/trans', [
-                'headers' => [
-                    'Accept' => 'application/json'
-                ],
-                'auth' => [$username, $password],
-                'json' => [
-                    'content' => $resultStr,
-                    'lang' => $lang,
-                ]
-            ]);
-            $content = $response->getBody()?->getContents();
-        }catch (\Exception $e) {
-            $response = $e->getResponse();
-            $content = $response->getBody()?->getContents();
-        }
-        if ($response->getStatusCode() == 401) {
-            $io->error('[CLOUD] Wrong username and password');
-            return Command::FAILURE;
-        }
-        $responseData = json_decode($content ?: '', true);
-        if (!$responseData || $response->getStatusCode() !== 200) {
-            $io->warning('[CLOUD] ' . $response->getStatusCode() . ' ' . ($responseData['message'] ?: 'Server connection failed'));
-            return Command::FAILURE;
-        }
 
-        $result = json_decode($content, true);
-        if ($result['data']) {
-            throw new Exception('Translation request failed');
-        }
+        $data = Package::request('post', '/v/services/trans', [
+            'headers' => [
+                'Accept' => 'application/json'
+            ],
+            'auth' => [$username, $password],
+            'json' => [
+                'content' => $resultStr,
+                'lang' => $lang,
+            ]
+        ]);
 
         $langContent = file_get_contents($langFile);
 
-
-        foreach ($result['data'] as $key => $vo) {
+        foreach ($data as $key => $vo) {
             $content = $langContent;
             foreach ($vo as $item) {
                 $content = str_replace($item['src'], $item['dst'], $content);
