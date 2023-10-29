@@ -17,7 +17,7 @@ class QueueCommand extends Command
 
     public function execute(InputInterface $input, OutputInterface $output): int
     {
-        $version = \Composer\InstalledVersions::getVersion('duxphp/lite');
+        $version = \Composer\InstalledVersions::getVersion('duxweb/dux-lite');
         $table = new Table($output);
         $table->setHeaders(array('DuxCMS Queue Service'))
             ->setRows(array(

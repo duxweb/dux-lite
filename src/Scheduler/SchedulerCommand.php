@@ -17,7 +17,7 @@ class SchedulerCommand extends Command
 
     public function execute(InputInterface $input, OutputInterface $output): int
     {
-        $version = \Composer\InstalledVersions::getVersion('duxphp/lite');
+        $version = \Composer\InstalledVersions::getVersion('duxweb/dux-lite');
         $data = App::scheduler()->data ?: [['Not Scheduler Jobs']];
         $table = new Table($output);
         $table->setHeaders(['DuxCMS Scheduler Service', date('Y-m-d H:i:s')])
