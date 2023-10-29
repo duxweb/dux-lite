@@ -32,6 +32,7 @@ use Dux\Package\ComposerCommand;
 use Dux\Package\DelCommand;
 use Dux\Package\InstallCommand;
 use Dux\Package\PushCommand;
+use Dux\Package\TransYamlCommand;
 use Dux\Package\UninstallCommand;
 use Dux\Package\UpdateCommand;
 use Dux\Package\YarnCommand;
@@ -185,6 +186,7 @@ class Bootstrap
         $commands[] = DelCommand::class;
         $commands[] = YarnCommand::class;
         $commands[] = ComposerCommand::class;
+        $commands[] = TransYamlCommand::class;
         $this->command = Command::init($commands);
 
 

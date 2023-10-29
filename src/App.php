@@ -21,7 +21,6 @@ use Dux\Event\Event;
 use Dux\Handlers\Exception;
 use Dux\Lock\Lock;
 use Dux\Logs\LogHandler;
-use Dux\Notify\Notify;
 use Dux\Queue\Queue;
 use Dux\Scheduler\Scheduler;
 use Dux\Storage\Storage;
@@ -41,6 +40,7 @@ use Redis;
 use ReflectionClass;
 use Slim\App as SlimApp;
 use Symfony\Component\Console\Application;
+use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Translation\Loader\YamlFileLoader;
 use Symfony\Component\Translation\Translator;
 
@@ -320,11 +320,11 @@ class App
 
     /**
      * @param string $type
-     * @return Filesystem
+     * @return LockFactory
      * @throws DependencyException
      * @throws NotFoundException
      */
-    public static function lock(string $type = "semaphore"): Filesystem
+    public static function lock(string $type = "semaphore"): LockFactory
     {
         if (!self::$di->has("lock." . $type)) {
             self::$di->set(

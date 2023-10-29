@@ -120,7 +120,11 @@ class Register
                     middleware: $middleware
                 );
                 if ($permissionMaps[$className] && (!isset($params['auth']) || $params['auth'])) {
-                    $permissionMaps[$className]->add($name, false);
+                    if ($params["name"]) {
+                        $permissionMaps[$className]->add($name, false);
+                    }else {
+                        $permissionMaps[$className]->add(lcfirst($methodName));
+                    }
                 }
 
             }
