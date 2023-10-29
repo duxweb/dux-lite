@@ -3,7 +3,7 @@
   <img src="https://cdn.jsdelivr.net/gh/duxweb/duxweb/logo.svg" width="150">
 <p>
 
-<h1 align="center">Dux Refine</h1>
+<h1 align="center">Dux Lite</h1>
 
 <p align="center">
 <a href="https://lite2.dux.plus/zh/" target="_blank">中文文档</a>
