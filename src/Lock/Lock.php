@@ -5,11 +5,6 @@ namespace Dux\Lock;
 
 use Dux\App;
 use Dux\Handlers\Exception;
-use League\Flysystem\Filesystem;
-use League\Flysystem\Local\LocalFilesystemAdapter;
-use Overtrue\Flysystem\Cos\CosAdapter;
-use Overtrue\Flysystem\Qiniu\QiniuAdapter;
-use Iidestiny\Flysystem\Oss\OssAdapter;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Lock\Store\FlockStore;
 use Symfony\Component\Lock\Store\RedisStore;
