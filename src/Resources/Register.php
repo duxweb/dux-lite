@@ -72,6 +72,7 @@ class Register
                 $class = $vo["class"];
                 [$className, $methodName, $name] = $this->formatFile($class);
                 $params['auth'] = (bool)($params['auth'] ?? true);
+                $params['can'] = (bool)($params['can'] ?? true);
 
                 $middleware = $this->getMiddleware($params['app'], $params['auth'], $params['middleware']);
 
@@ -85,7 +86,7 @@ class Register
                 );
                 $appMaps[$className] = $params['app'];
                 $routeMaps[$className] = $group;
-                if ($params['name'] && $params['auth']) {
+                if ($params['name'] && $params['auth'] && $params['can']) {
                     $permissionMaps[$className] = $permission->get($params['app'])->resources($params['name'], 0, $params['actions'] ?? [], (bool)$params['softDelete']);
                 }
             }
@@ -119,7 +120,7 @@ class Register
                     name: $name,
                     middleware: $middleware
                 );
-                if ($permissionMaps[$className] && (!isset($params['auth']) || $params['auth'])) {
+                if ($permissionMaps[$className] && (!isset($params['auth']) || $params['auth']) && (!isset($params['can']) || $params['can'])) {
                     if ($params["name"]) {
                         $permissionMaps[$className]->add($name, false);
                     }else {

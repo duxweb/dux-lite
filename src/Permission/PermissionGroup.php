@@ -7,42 +7,43 @@ class PermissionGroup
 {
     private array $data = [];
 
-    public function __construct(public string $app, public string $name, public int $order, public string $pattern = "")
+    public function __construct(public string $app, public string $name, public int $order, public string $label, public string $pattern = "")
     {
     }
 
-    public function add(string $name, bool $complete = true): self
+    public function add(string $name, bool $complete = true): PermissionItem
     {
-        $this->data[] = $complete ? $this->pattern . $this->name . "." . $name : $name;
+        $item = new PermissionItem($complete ? $this->pattern . $this->name . "." . $name : $name);
+        $this->data[] = $item;
+        return $item;
+    }
+
+    public function label(string $label): self
+    {
+        $this->label = $label;
         return $this;
     }
 
     public function get(): array
     {
+        $children = [];
+        foreach ($this->data as $vo) {
+            $children[] = $vo->get();
+        }
         return [
-            "label" => __($this->pattern . $this->name . ".name", 'manage'),
+            "label" => $this->label ?: __($this->pattern . $this->name . ".name", 'manage'),
             "name" => "group:" . $this->pattern . $this->name,
             "order" => $this->order,
-            "children" => array_map(function ($item) {
-                $labelData = explode(".", $item);
-                $label = last($labelData);
-
-                if (in_array($label, Permission::$actions)) {
-                    $label = __(  "resources.$label", "common");
-                }else {
-                    $label = __( $item . ".name", 'manage');
-                }
-
-                return [
-                    "label" => $label,
-                    "name" => $item,
-                ];
-            }, $this->data),
+            "children" => $children,
         ];
     }
 
     public function getData(): array
     {
-        return $this->data;
+        $data = [];
+        foreach ($this->data as $vo) {
+            $data = [...$data, $vo->getData()];
+        }
+        return $data;
     }
 }

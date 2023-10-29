@@ -19,18 +19,9 @@ class PermissionMiddleware {
     }
 
     public function __invoke(Request $request, RequestHandler $handler): Response {
-        $auth = $request->getAttribute("auth");
         $route = RouteContext::fromRequest($request)->getRoute();
         $routeName = $route->getName();
-        $allPermission = App::permission($this->name)->getData();
-        if (!$allPermission || !in_array($routeName, $allPermission)) {
-            return $handler->handle($request);
-        }
-        $userInfo = $this->model::query()->find($auth["id"]);
-        $permission = (array)$userInfo->permission;
-        if ($permission && !in_array($routeName, $permission)) {
-            throw new ExceptionBusiness("Forbidden", 403);
-        }
+        Can::check($request, $this->model, $routeName);
         return $handler->handle($request);
     }
 }

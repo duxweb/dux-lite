@@ -25,7 +25,8 @@ class Resource
         bool        $auth = true,
         array|false $actions = [],
         array       $middleware = [],
-        bool        $softDelete = false
+        bool        $softDelete = false,
+        bool        $can = true,
     )
     {
     }
