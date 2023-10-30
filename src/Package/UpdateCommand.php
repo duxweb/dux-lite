@@ -32,28 +32,12 @@ class UpdateCommand extends Command
         $io = new SymfonyStyle($input, $output);
         $app = $input->getArgument('name');
 
-        $auth = Package::getKey();
-
-        if (!$auth) {
-            $helper = $this->getHelper('question');
-            $question = new Question('Please enter username: ');
-            $username = $helper->ask($input, $output, $question);
-            if (!$username) {
-                $io->error('Username not entered');
-                return Command::FAILURE;
-            }
-
-            $question = new Question('Please enter password: ');
-            $question->setHidden(true);
-            $question->setHiddenFallback(false);
-            $password = $helper->ask($input, $output, $question);
-            if (!$password) {
-                $io->error('password not entered');
-                return Command::FAILURE;
-            }
-        } else {
-            [$username, $password] = $auth;
+        $helper = $this->getHelper('question');
+        $auth = Package::auth($helper, $input, $output);
+        if (!is_array($auth)) {
+            return $auth;
         }
+        [$username, $password] = $auth;
 
         try {
             Update::main($output, $username, $password, $app);

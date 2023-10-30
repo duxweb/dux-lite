@@ -11,6 +11,7 @@ use Nette\Utils\FileSystem;
 use Noodlehaus\Config;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Helper\HelperInterface;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputInterface;
@@ -367,6 +368,32 @@ class Package
         FileSystem::write($keyFile, $keyContent);
 
         return $responseData['data'] ?: [];
+    }
+
+    public static function auth(HelperInterface $helper, InputInterface $input, OutputInterface $output): array|int
+    {
+        $auth = Package::getKey();
+        if (!$auth) {
+
+            $question = new Question('<question>Please enter username: </question>');
+            $username = $helper->ask($input, $output, $question);
+            if (!$username) {
+                $output->writeln('<error>Username not entered<error>');
+                return Command::FAILURE;
+            }
+
+            $question = new Question('<question>Please enter password: </question>');
+            $question->setHidden(true);
+            $question->setHiddenFallback(false);
+            $password = $helper->ask($input, $output, $question);
+            if (!$password) {
+                $output->writeln('<error>Password not entered<error>');
+                return Command::FAILURE;
+            }
+        } else {
+            [$username, $password] = $auth;
+        }
+        return [$username, $password];
     }
 
 
