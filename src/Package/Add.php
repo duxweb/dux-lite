@@ -72,7 +72,8 @@ class Add
             if (!$package) {
                 return true;
             }
-            if (version_compare($item['ver'], $package['version'], '>')) {
+            [$ver, $verType] = explode(':', $package['version'], 2);
+            if (version_compare($item['ver'], $ver, '>') && $item['ver_type'] = $verType ?: 'release') {
                 return true;
             }
             return false;
