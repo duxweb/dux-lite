@@ -10,10 +10,12 @@ use Illuminate\Support\Collection;
 use Nette\Utils\FileSystem;
 use Noodlehaus\Config;
 use Symfony\Component\Console\Application;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Question\Question;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use ZipArchive;
 
@@ -331,7 +333,18 @@ class Package
         }
     }
 
+    public static function getKey(): array {
+        $keyFile = data_path('cloud.key');
+        if (!is_file($keyFile)) {
+            return [];
+        }
+        $content = FileSystem::read($keyFile);
+        $keyContent = decryption($content);
+        return json_decode($keyContent, true);
+    }
+
     public static function request(string $method, string $path, array $params): array {
+        $keyFile = data_path('cloud.key');
         $client = new Client();
         try {
             $response = $client->request($method, self::$url . $path, $params);
@@ -341,14 +354,19 @@ class Package
             $content = $response->getBody()?->getContents();
         }
         if ($response->getStatusCode() == 401) {
+            FileSystem::delete($keyFile);
             throw new Exception('[CLOUD] Wrong username and password');
         }
         $responseData = json_decode($content ?: '', true);
         if ($response->getStatusCode() !== 200) {
             throw new Exception('[CLOUD] ' . $response->getStatusCode() . ' ' . ($responseData['message'] ?: 'Server connection failed'));
         }
+        $keyContent = encryption(json_encode($params['auth']));
+        FileSystem::write($keyFile, $keyContent);
+
         return $responseData['data'] ?: [];
     }
+
 
 
 }
