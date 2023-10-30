@@ -9,7 +9,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 class Update
 {
-    public static function main(InputInterface $input, OutputInterface $output, SymfonyStyle $io, string $username, string $password, ?string $app): void
+    public static function main(OutputInterface $output, string $username, string $password, ?string $app): void
     {
         $configFile = base_path('app.json');
         if (!is_file($configFile)) {
@@ -23,7 +23,7 @@ class Update
             $output->writeln('<info>No updated applications</info>');
             return;
         }
-        Add::main($input, $output, $io, $username, $password, $packages, true);
+        Add::main($output, $username, $password, $packages, true);
     }
 
 }

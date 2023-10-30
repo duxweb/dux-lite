@@ -9,7 +9,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 class Add
 {
-    public static function main(InputInterface $input, OutputInterface $output, SymfonyStyle $io, string $username, string $password, array $data = [], $update = false): void
+    public static function main(OutputInterface $output, string $username, string $password, array $data = [], $update = false): void
     {
         $configFile = base_path('app.json');
         $configLockFile = base_path('app.lock');
@@ -64,7 +64,7 @@ class Add
         }
 
         // 获取云端包
-        $cloudPackages = collect(Package::query($username, $password, $queryData->toArray(), $io));
+        $cloudPackages = collect(Package::query($username, $password, $queryData->toArray()));
 
         // 过滤未安装或更新包
         $cloudPackages = $cloudPackages->filter(function ($item) use ($packages, $update) {
@@ -89,7 +89,7 @@ class Add
         });
 
         // download
-        Package::downloadPackages($input, $output, $packages, $dependencies, $apps, $composers, $node, $files, $cloudPackages->toArray());
+        Package::downloadPackages($output, $packages, $dependencies, $apps, $composers, $node, $files, $cloudPackages->toArray());
 
         // composer install
         Package::composer($output, $composers->toArray());
@@ -116,7 +116,7 @@ class Add
             $output->writeln('Run <info>yarn</info> in web path manually');
         }
 
-        $io->success('Add Application Success');
+        $output->writeln('<info>Uninstall Package Success</info>');
     }
 
 }

@@ -8,11 +8,11 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 class Uninstall
 {
-    public static function main(InputInterface $input, OutputInterface $output, SymfonyStyle $io, string $username, string $password, string $app): void
+    public static function main(OutputInterface $output,string $username, string $password, string $app): void
     {
         $info = Package::app($username, $password, $app);
         $packages = $info['packages'];
-        Del::main($input, $output, $io, $packages);
+        Del::main($output, $packages);
 
         $configFile = base_path('app.json');
         $appJson = [];

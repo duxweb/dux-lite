@@ -56,7 +56,7 @@ class InstallCommand extends Command
         }
 
         try {
-            Install::main($input, $output, $io, $username, $password, $name);
+            Install::main($output, $username, $password, $name);
         } finally {
             FileSystem::delete(data_path('package'));
         }

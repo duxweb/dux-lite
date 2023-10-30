@@ -23,10 +23,10 @@ class Package
 {
     public static string $url = 'https://dux.plus';
 
-    public static function downloadPackages(InputInterface $input, OutputInterface $output, Collection $packages, Collection $dependencies, Collection $apps, Collection $composers, Collection $node, Collection $files, array $data): void
+    public static function downloadPackages(OutputInterface $output, Collection $packages, Collection $dependencies, Collection $apps, Collection $composers, Collection $node, Collection $files, array $data): void
     {
         foreach ($data as $item) {
-            [$config, $appFiles] = self::download($input, $output, $item);
+            [$config, $appFiles] = self::download($output, $item);
             $key = $packages->search(function ($vo) use ($item) {
                 return $item['name'] == $vo['name'];
             });
@@ -57,7 +57,7 @@ class Package
         }
     }
 
-    public static function download(InputInterface $input, OutputInterface $output, array $data): array
+    public static function download(OutputInterface $output, array $data): array
     {
         $client = new Client();
         $packageDir = data_path('package');
@@ -148,7 +148,7 @@ class Package
         ]);
     }
 
-    public static function query(string $username, string $password, array $queryData, SymfonyStyle $io): array
+    public static function query(string $username, string $password, array $queryData): array
     {
         return self::request('post', '/v/package/version/query', [
             'query' => [
@@ -317,7 +317,7 @@ class Package
         ]);
         try {
             $application->find('package:composer')->run($childInput, $output);
-        }catch (\Exception $e) {
+        } catch (\Exception $e) {
             $output->writeln('<fg=yellow>' . $e->getMessage() . '</>');
         }
 
@@ -333,7 +333,8 @@ class Package
         }
     }
 
-    public static function getKey(): array {
+    public static function getKey(): array
+    {
         $keyFile = data_path('cloud.key');
         if (!is_file($keyFile)) {
             return [];
@@ -343,7 +344,8 @@ class Package
         return json_decode($keyContent, true);
     }
 
-    public static function request(string $method, string $path, array $params): array {
+    public static function request(string $method, string $path, array $params): array
+    {
         $keyFile = data_path('cloud.key');
         $client = new Client();
         try {
@@ -366,7 +368,6 @@ class Package
 
         return $responseData['data'] ?: [];
     }
-
 
 
 }

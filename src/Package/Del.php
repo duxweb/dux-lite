@@ -9,7 +9,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 class Del
 {
-    public static function main(InputInterface $input, OutputInterface $output, SymfonyStyle $io, array $appPackages): void
+    public static function main(OutputInterface $output, array $appPackages): void
     {
         $configFile = base_path('app.json');
         $configLockFile = base_path('app.lock');
@@ -96,7 +96,7 @@ class Del
         Package::composer($output, $filteredPhpDeps, true);
         Package::node($output, $filteredJsDeps, true);
 
-        $io->success('Add Application Success');
+        $output->writeln('<info>Add Application Success</info>');
     }
 
     private static function filterDependencies(string $name, array $currentDeps, Collection $allPackages): array

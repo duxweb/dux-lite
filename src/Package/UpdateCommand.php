@@ -56,7 +56,7 @@ class UpdateCommand extends Command
         }
 
         try {
-            Update::main($input, $output, $io, $username, $password, $app);
+            Update::main($output, $username, $password, $app);
         } finally {
             FileSystem::delete(data_path('package'));
         }

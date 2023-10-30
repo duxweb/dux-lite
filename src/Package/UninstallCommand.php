@@ -54,7 +54,7 @@ class UninstallCommand extends Command
         }
 
         try {
-            Uninstall::main($input, $output, $io, $username, $password, $name);
+            Uninstall::main($output, $username, $password, $name);
         } finally {
             FileSystem::delete(data_path('package'));
         }
