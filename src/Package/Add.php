@@ -20,7 +20,7 @@ class Add
         $appLockJson = [
             "_readme" => [
                 "This file relies on the Dux application to be in a locked state",
-                "Read more about it at https://dux.plus"
+                "Read more about it at https://www.dux.plus"
             ]
         ];
         if (is_file($configFile)) {
@@ -39,10 +39,8 @@ class Add
 
         // 增加依赖
         if (!$update) {
-            foreach ($data as $name => $verType) {
-                if (!$dependencies->has($name)) {
-                    $dependencies->put($name, $verType);
-                }
+            foreach ($data as $name => $ver) {
+                $dependencies->put($name, $ver);
             }
         } else {
             if ($dependencies->isEmpty()) {
@@ -60,13 +58,8 @@ class Add
 
         // 增加更新依赖
         if ($update) {
-            foreach ($data as $name) {
-                if (!$dependencies->has($name)) {
-                    throw new Exception('Application ' . $name . ' not installed');
-                }
-                if (!$queryData->has($name)) {
-                    $queryData->put($name, $dependencies->get($name, 'release'));
-                }
+            foreach ($data as $name => $ver) {
+                $queryData->put($name, $ver);
             }
         }
 

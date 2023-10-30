@@ -32,10 +32,7 @@ class Package
                 $packages->forget($key);
             }
             $packages->add($config);
-
-            if (!$dependencies->has($item['name'])) {
-                $dependencies->put($item['name'], $item['ver_type']);
-            }
+            $dependencies->put($item['name'], $item['ver']);
             $apps->add($item['app']);
 
             foreach ($appFiles as $source => $target) {
@@ -151,7 +148,7 @@ class Package
 
     public static function query(string $username, string $password, array $queryData, SymfonyStyle $io): array
     {
-        return self::request('get', '/v/package/version/query', [
+        return self::request('post', '/v/package/version/query', [
             'query' => [
                 'type' => 'duxLite',
                 'download' => true

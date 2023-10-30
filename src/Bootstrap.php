@@ -180,11 +180,8 @@ class Bootstrap
         $commands[] = ListCommand::class;
         $commands[] = InstallCommand::class;
         $commands[] = UninstallCommand::class;
-        $commands[] = AddCommand::class;
         $commands[] = PushCommand::class;
-        $commands[] = AddCommand::class;
         $commands[] = UpdateCommand::class;
-        $commands[] = DelCommand::class;
         $commands[] = YarnCommand::class;
         $commands[] = ComposerCommand::class;
         $commands[] = TransYamlCommand::class;

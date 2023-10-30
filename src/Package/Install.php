@@ -10,7 +10,8 @@ class Install
 {
     public static function main(InputInterface $input, OutputInterface $output, SymfonyStyle $io, string $username, string $password, string $app): void
     {
-        $packages = Package::app($username, $password, $app);
+        $info = Package::app($username, $password, $app);
+        $packages = $info['packages'];
         Add::main($input, $output, $io, $username, $password, $packages);
 
         $configFile = base_path('app.json');
@@ -19,9 +20,7 @@ class Install
             $appJson = Package::getJson($configFile);
         }
         $apps = $appJson['apps'] ?: [];
-        if (!in_array($app, $apps)) {
-            $apps[] = $app;
-        }
+        $apps[$app] = $info['apps'][0]['time'];
         $appJson['apps'] = $apps;
 
         Package::saveJson($configFile, $appJson);

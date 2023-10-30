@@ -16,12 +16,14 @@ class Update
             throw new Exception('The app.json file does not exist');
         }
         $appJson = Package::getJson($configFile);
-        $packages = Package::app($username, $password, $app ?: implode(',', $appJson['apps']));
+        $apps = array_keys($appJson['apps']);
+        $info = Package::app($username, $password, $app ?: implode(',', $apps));
+        $packages = $info['packages'];
         if (!$packages) {
             $output->writeln('<info>No updated applications</info>');
             return;
         }
-        Add::main($input, $output, $io, $username, $password, array_keys($packages), true);
+        Add::main($input, $output, $io, $username, $password, $packages, true);
     }
 
 }
