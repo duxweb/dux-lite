@@ -204,7 +204,7 @@ abstract class Resources
      */
     public function transformData(Collection|LengthAwarePaginator|Model|null $data, callable $callback): array
     {
-        return formatData($data, $callback);
+        return format_data($data, $callback);
     }
 
     public function translation(ServerRequestInterface $request, string $action): string
