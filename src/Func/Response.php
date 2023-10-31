@@ -61,7 +61,7 @@ function url(string $name, array $params): string
  * @param callable $callback
  * @return array
  */
-function formatData(Collection|LengthAwarePaginator|Model|null $data, callable $callback): array
+function format_data(Collection|LengthAwarePaginator|Model|null $data, callable $callback): array
 {
     $pageStatus = false;
     $page = 1;
