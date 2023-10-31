@@ -204,40 +204,7 @@ abstract class Resources
      */
     public function transformData(Collection|LengthAwarePaginator|Model|null $data, callable $callback): array
     {
-        $pageStatus = false;
-        $page = 1;
-        $total = 0;
-        if ($data instanceof LengthAwarePaginator) {
-            $pageStatus = true;
-            $page = $data->currentPage();
-            $total = $data->total();
-            $data = $data->getCollection();
-        }
-
-        if ($data instanceof Model) {
-            return [
-                'data' => $callback($data),
-                'meta' => []
-            ];
-        }
-        if (!$data) {
-            $data = collect();
-        }
-
-        $list = $data->map($callback)->filter()->values();
-        $result = [
-            'data' => $list->toArray(),
-            'meta' => []
-        ];
-
-        if ($pageStatus) {
-            $result['meta'] = [
-                'total' => $total,
-                'page' => $page
-            ];
-        }
-
-        return $result;
+        return formatData($data, $callback);
     }
 
     public function translation(ServerRequestInterface $request, string $action): string

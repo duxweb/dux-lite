@@ -55,12 +55,13 @@ function url(string $name, array $params): string
     return App::app()->getRouteCollector()->getRouteParser()->urlFor($name, $params);
 }
 
+
 /**
  * @param Collection|LengthAwarePaginator|Model|null $data
  * @param callable $callback
  * @return array
  */
-function format_data(Collection|LengthAwarePaginator|Model|null $data, callable $callback): array
+function formatData(Collection|LengthAwarePaginator|Model|null $data, callable $callback): array
 {
     $pageStatus = false;
     $page = 1;
@@ -73,7 +74,10 @@ function format_data(Collection|LengthAwarePaginator|Model|null $data, callable 
     }
 
     if ($data instanceof Model) {
-        return $callback($data);
+        return [
+            'data' => $callback($data),
+            'meta' => []
+        ];
     }
     if (!$data) {
         $data = collect();
@@ -81,12 +85,15 @@ function format_data(Collection|LengthAwarePaginator|Model|null $data, callable 
 
     $list = $data->map($callback)->filter()->values();
     $result = [
-        'list' => $list->toArray(),
+        'data' => $list->toArray(),
+        'meta' => []
     ];
 
     if ($pageStatus) {
-        $result['total'] = $total;
-        $result['page'] = $page;
+        $result['meta'] = [
+            'total' => $total,
+            'page' => $page
+        ];
     }
 
     return $result;
