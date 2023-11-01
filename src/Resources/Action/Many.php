@@ -3,6 +3,7 @@
 namespace Dux\Resources\Action;
 
 use Illuminate\Database\Eloquent\Builder;
+use Kalnoy\Nestedset\Collection;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
@@ -45,6 +46,7 @@ trait Many
         $this->queryMany($query, $request, $args);
         $this->query($query);
 
+
         if ($this->pagination['status']) {
             $result = $query->paginate($limit);
         }else {
@@ -58,6 +60,8 @@ trait Many
         $assign = $this->transformData($result, function ($item): array {
             return $this->transform($item);
         });
+
+        $assign['data'] = $this->filterData($this->includesMany, $this->excludesMany, $assign['data']);
 
         $meta = $this->metaMany($result, (array)$result['data'], $request, $args);
 

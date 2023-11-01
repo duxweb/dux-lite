@@ -35,6 +35,8 @@ trait One
             ...$meta,
         ];
 
+        $assign['data'] = $this->filterData($this->includesOne, $this->excludesOne, [$assign['data']])[0];
+
         return send($response, "ok", $assign['data'], $assign['meta']);
     }
 

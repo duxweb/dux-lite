@@ -237,4 +237,17 @@ abstract class Resources
         return $data;
     }
 
+    public function filterData(array $includes, array $excludes, array $data): array
+    {
+        $array = [];
+        foreach ($data as $k => $v) {
+            $item = collect($v)->only($includes ?: null)->except($excludes ?: null)->all();
+            if ($item['children'] && is_array($item['children'])) {
+                $item['children'] = $this->filterData($includes, $excludes, $item['children']);
+            }
+            $array[] = $item;
+        }
+        return $array;
+    }
+
 }
