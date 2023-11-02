@@ -375,14 +375,14 @@ class Package
         $auth = Package::getKey();
         if (!$auth) {
 
-            $question = new Question('<question>Please enter username: </question>');
+            $question = new Question('Please enter username: ');
             $username = $helper->ask($input, $output, $question);
             if (!$username) {
                 $output->writeln('<error>Username not entered<error>');
                 return Command::FAILURE;
             }
 
-            $question = new Question('<question>Please enter password: </question>');
+            $question = new Question('Please enter password: ');
             $question->setHidden(true);
             $question->setHiddenFallback(false);
             $password = $helper->ask($input, $output, $question);

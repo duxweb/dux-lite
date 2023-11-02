@@ -27,10 +27,11 @@ use Dux\Helpers\AppCommand;
 use Dux\Helpers\CtrCommand;
 use Dux\Helpers\ManageCommand;
 use Dux\Helpers\ModelCommand;
-use Dux\Package\AddCommand;
 use Dux\Package\ComposerCommand;
-use Dux\Package\DelCommand;
 use Dux\Package\InstallCommand;
+use Dux\Package\PackageInstallCommand;
+use Dux\Package\PackageUninstallCommand;
+use Dux\Package\PackageUpdateCommand;
 use Dux\Package\PushCommand;
 use Dux\Package\TransJsonCommand;
 use Dux\Package\TransYamlCommand;
@@ -186,6 +187,9 @@ class Bootstrap
         $commands[] = ComposerCommand::class;
         $commands[] = TransYamlCommand::class;
         $commands[] = TransJsonCommand::class;
+        $commands[] = PackageInstallCommand::class;
+        $commands[] = PackageUpdateCommand::class;
+        $commands[] = PackageUninstallCommand::class;
         $this->command = Command::init($commands);
 
 

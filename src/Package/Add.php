@@ -40,7 +40,7 @@ class Add
         // 增加依赖
         if (!$update) {
             foreach ($data as $name => $ver) {
-                $dependencies->put($name, $ver);
+                $dependencies->put($name, $ver ?: 'last');
             }
         } else {
             if ($dependencies->isEmpty()) {
