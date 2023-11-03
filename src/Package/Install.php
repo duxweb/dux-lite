@@ -20,6 +20,7 @@ class Install
             $appJson = Package::getJson($configFile);
         }
         $apps = $appJson['apps'] ?: [];
+        unset($apps[$app]);
         $apps[$app] = $info['apps'][0]['time'];
         $appJson['apps'] = $apps;
 
