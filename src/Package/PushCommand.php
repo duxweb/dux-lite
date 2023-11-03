@@ -130,7 +130,6 @@ class PushCommand extends Command
         try {
             Package::request('post', '/v/package/version/push', [
                 'headers' => [
-                    'Content-Type' => 'application/json',
                     'Accept' => 'application/json',
                     'Authorization' => $auth
                 ],
