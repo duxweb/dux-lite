@@ -8,8 +8,11 @@ class Trans
     {
         $result = [];
         self::extractLeafNodes($data, $result);
-        $resultStr = implode("\n", $result);
-        $result = [];
+        usort($result, function ($a, $b) {
+            return strlen($b) - strlen($a);
+        });
+        $resultStr = implode("\n", array_values($result));
+
 
         $data = Package::request('post', '/v/services/trans', [
             'headers' => [
