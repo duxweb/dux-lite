@@ -144,7 +144,7 @@ class Package
             'headers' => [
                 'Content-Type' => 'application/json',
                 'Accept' => 'application/json',
-                'Authorization' => "Bearer $token"
+                'Authorization' => $token
             ],
         ]);
     }
@@ -160,7 +160,7 @@ class Package
             'headers' => [
                 'Content-Type' => 'application/json',
                 'Accept' => 'application/json',
-                'Authorization' => "Bearer $token"
+                'Authorization' => $token
             ],
         ]);
     }
