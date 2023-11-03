@@ -4,7 +4,7 @@ namespace Dux\Package;
 
 class Trans
 {
-    public static function main(string $username, string $password, string $lang, $name, array $data, string $content, callable $callback): void
+    public static function main(string $token, string $lang, array $data, string $content, callable $callback): void
     {
         $result = [];
         self::extractLeafNodes($data, $result);
@@ -13,9 +13,10 @@ class Trans
 
         $data = Package::request('post', '/v/services/trans', [
             'headers' => [
-                'Accept' => 'application/json'
+                'Content-Type' => 'application/json',
+                'Accept' => 'application/json',
+                'Authorization' => "Bearer $token"
             ],
-            'auth' => [$username, $password],
             'json' => [
                 'content' => $resultStr,
                 'lang' => $lang,

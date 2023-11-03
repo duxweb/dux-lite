@@ -36,13 +36,12 @@ class InstallCommand extends Command
         $helper = $this->getHelper('question');
 
         $auth = Package::auth($helper, $input, $output);
-        if (!is_array($auth)) {
+        if (is_int($auth)) {
             return $auth;
         }
-        [$username, $password] = $auth;
 
         try {
-            Install::main($output, $username, $password, $name);
+            Install::main($output, $auth, $name);
         } finally {
             FileSystem::delete(data_path('package'));
         }

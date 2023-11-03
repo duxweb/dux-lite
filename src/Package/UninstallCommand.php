@@ -34,13 +34,12 @@ class UninstallCommand extends Command
 
         $helper = $this->getHelper('question');
         $auth = Package::auth($helper, $input, $output);
-        if (!is_array($auth)) {
+        if (is_int($auth)) {
             return $auth;
         }
-        [$username, $password] = $auth;
 
         try {
-            Uninstall::main($output, $username, $password, $name);
+            Uninstall::main($output, $auth, $name);
         } finally {
             FileSystem::delete(data_path('package'));
         }

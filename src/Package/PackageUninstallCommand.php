@@ -30,13 +30,6 @@ class PackageUninstallCommand extends Command
     {
         $name = $input->getArgument('name');
 
-        $helper = $this->getHelper('question');
-        $auth = Package::auth($helper, $input, $output);
-        if (!is_array($auth)) {
-            return $auth;
-        }
-        [$username, $password] = $auth;
-
         try {
             Del::main($output, [$name]);
         } finally {

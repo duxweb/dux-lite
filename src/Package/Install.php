@@ -8,11 +8,11 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 class Install
 {
-    public static function main(OutputInterface $output, string $username, string $password, string $app): void
+    public static function main(OutputInterface $output, string $token, string $app): void
     {
-        $info = Package::app($username, $password, $app);
+        $info = Package::app($token, $app);
         $packages = $info['packages'];
-        Add::main($output, $username, $password, $packages);
+        Add::main($output, $token, $packages);
 
         $configFile = base_path('app.json');
         $appJson = [];

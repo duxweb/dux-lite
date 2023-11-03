@@ -133,7 +133,7 @@ class Package
         ];
     }
 
-    public static function app(string $username, string $password, string $app): array
+    public static function app(string $token, string $app): array
     {
         return self::request('get', '/v/package/version/app', [
             'query' => [
@@ -144,12 +144,12 @@ class Package
             'headers' => [
                 'Content-Type' => 'application/json',
                 'Accept' => 'application/json',
+                'Authorization' => "Bearer $token"
             ],
-            'auth' => [$username, $password],
         ]);
     }
 
-    public static function query(string $username, string $password, array $queryData): array
+    public static function query(string $token, array $queryData): array
     {
         return self::request('post', '/v/package/version/query', [
             'query' => [
@@ -160,8 +160,8 @@ class Package
             'headers' => [
                 'Content-Type' => 'application/json',
                 'Accept' => 'application/json',
+                'Authorization' => "Bearer $token"
             ],
-            'auth' => [$username, $password],
         ]);
     }
 
@@ -334,15 +334,14 @@ class Package
         }
     }
 
-    public static function getKey(): array
+    public static function getKey(): string
     {
         $keyFile = data_path('cloud.key');
         if (!is_file($keyFile)) {
-            return [];
+            return '';
         }
         $content = FileSystem::read($keyFile);
-        $keyContent = decryption($content);
-        return json_decode($keyContent, true);
+        return decryption($content);
     }
 
     public static function request(string $method, string $path, array $params): array
@@ -358,23 +357,21 @@ class Package
         }
         if ($response->getStatusCode() == 401) {
             FileSystem::delete($keyFile);
-            throw new Exception('[CLOUD] Wrong username and password');
+            throw new Exception('[CLOUD] Wrong user token');
         }
         $responseData = json_decode($content ?: '', true);
         if ($response->getStatusCode() !== 200) {
             throw new Exception('[CLOUD] ' . $response->getStatusCode() . ' ' . ($responseData['message'] ?: 'Server connection failed'));
         }
-        $keyContent = encryption(json_encode($params['auth']));
-        FileSystem::write($keyFile, $keyContent);
 
         return $responseData['data'] ?: [];
     }
 
-    public static function auth(HelperInterface $helper, InputInterface $input, OutputInterface $output): array|int
+    public static function auth(HelperInterface $helper, InputInterface $input, OutputInterface $output): string|int
     {
+        $keyFile = data_path('cloud.key');
         $auth = Package::getKey();
         if (!$auth) {
-
             $question = new Question('Please enter username: ');
             $username = $helper->ask($input, $output, $question);
             if (!$username) {
@@ -390,10 +387,18 @@ class Package
                 $output->writeln('<error>Password not entered<error>');
                 return Command::FAILURE;
             }
-        } else {
-            [$username, $password] = $auth;
+
+            $data = self::request('POST', '/v/package/auth/token', [
+               'json' => [
+                   'username' => $username,
+                   'password' => $password
+               ]
+            ]);
+            $auth = $data['token'];
+            $keyContent = encryption($data['token']);
+            FileSystem::write($keyFile, $keyContent);
         }
-        return [$username, $password];
+        return $auth;
     }
 
 

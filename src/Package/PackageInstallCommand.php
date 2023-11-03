@@ -34,14 +34,13 @@ class PackageInstallCommand extends Command
         $helper = $this->getHelper('question');
 
         $auth = Package::auth($helper, $input, $output);
-        if (!is_array($auth)) {
+        if (is_int($auth)) {
             return $auth;
         }
-        [$username, $password] = $auth;
 
         try {
             [$name, $ver] = explode(':', $name);
-            Add::main($output, $username, $password, [$name => $ver ?: 'last']);
+            Add::main($output, $auth, [$name => $ver ?: 'last']);
         } finally {
             FileSystem::delete(data_path('package'));
         }

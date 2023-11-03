@@ -52,23 +52,13 @@ class TransJsonCommand extends Command
         $data = $json->parseFile($langFile);
 
         $helper = $this->getHelper('question');
-        $question = new Question('Please enter username: ');
-        $username = $helper->ask($input, $output, $question);
-        if (!$username) {
-            $io->error('Username not entered');
-            return Command::FAILURE;
+
+        $auth = Package::auth($helper, $input, $output);
+        if (is_int($auth)) {
+            return $auth;
         }
 
-        $question = new Question('Please enter password: ');
-        $question->setHidden(true);
-        $question->setHiddenFallback(false);
-        $password = $helper->ask($input, $output, $question);
-        if (!$password) {
-            $io->error('password not entered');
-            return Command::FAILURE;
-        }
-
-        Trans::main($username, $password, $lang, $name, $data, file_get_contents($langFile), function ($lang) use ($name, $pack) {
+        Trans::main($auth, $lang, $data, file_get_contents($langFile), function ($lang) use ($name, $pack) {
             return base_path('web/src/pages/' . lcfirst($name) . '/locales/' . $lang . '/' . $pack . '.json');
         });
 

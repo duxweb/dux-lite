@@ -9,7 +9,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 class Add
 {
-    public static function main(OutputInterface $output, string $username, string $password, array $data = [], $update = false): void
+    public static function main(OutputInterface $output, string $token, array $data = [], $update = false): void
     {
         $configFile = base_path('app.json');
         $configLockFile = base_path('app.lock');
@@ -64,7 +64,7 @@ class Add
         }
 
         // 获取云端包
-        $cloudPackages = collect(Package::query($username, $password, $queryData->toArray()));
+        $cloudPackages = collect(Package::query($token, $queryData->toArray()));
 
         // 过滤未安装或更新包
         $cloudPackages = $cloudPackages->filter(function ($item) use ($packages, $update) {
