@@ -290,7 +290,6 @@ class Package
 
     public static function getJson(string $file): array
     {
-
         $name = str_replace(base_path(), '', $file);
         $content = file_get_contents($file);
         if ($content === false) {
