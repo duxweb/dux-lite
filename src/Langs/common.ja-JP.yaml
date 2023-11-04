@@ -18,5 +18,5 @@ resources:
   trash: 完全に削除
   restore: 復元
 validate:
-  placeholder: 入力してください
-  select: 選択してください
+  placeholder: 入力してください%name%
+  select: 選択してください%name%

@@ -18,4 +18,5 @@ resources:
   trash: Trash
   restore: Restore
 validate:
-  placeholder: Please enter
+  placeholder: Please enter %name%
+  select: Please select %name%

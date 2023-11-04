@@ -18,5 +18,5 @@ resources:
   trash: 완전 삭제
   restore: 복원
 validate:
-  placeholder: 입력하십시오
-  select: 선택하십시오
+  placeholder: 입력하십시오%name%
+  select: 선택하십시오%name%

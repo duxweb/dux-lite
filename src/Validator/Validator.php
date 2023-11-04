@@ -59,7 +59,9 @@ class Validator
         foreach ($fields as $field) {
             $rules = json_decode($field['setting']['rules'] ?: '', true);
             if ($field['required']) {
-                $rules[] = ['required' => true, 'message' => __('validate.placeholder')];
+                $rules[] = ['required' => true, 'message' => __('validate.placeholder', 'common', [
+                    '%name%' => $field['label']
+                ])];
             }
             $ruleList = [];
             foreach ($rules as $rule) {

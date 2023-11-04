@@ -18,5 +18,5 @@ resources:
   trash: 徹底刪除
   restore: 恢復
 validate:
-  placeholder: 請輸入
-  select: 請選擇
+  placeholder: 請輸入%name%
+  select: 請選擇%name%

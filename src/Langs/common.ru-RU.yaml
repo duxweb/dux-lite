@@ -18,5 +18,5 @@ resources:
   trash: Полное удаление
   restore: Восстановить
 validate:
-  placeholder: Пожалуйста, введите
-  select: Пожалуйста, выберите
+  placeholder: Пожалуйста, введите %name%
+  select: Пожалуйста, выберите %name%
