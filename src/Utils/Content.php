@@ -57,14 +57,13 @@ class Content
 
         $data = [];
         $mimes = new MimeTypes;
-        foreach ($images as $item) {
-            $parseUrl = parse_url($item);
+        foreach ($images as $url) {
+            $parseUrl = parse_url($url);
             if (in_array($parseUrl, $domain)) {
-                $data[$item] = $item;
+                $data[$url] = $url;
                 continue;
             }
 
-            $url = html_entity_decode($item);
             try {
                 $response = $client->get($url, [
                     'stream' => true,
@@ -74,12 +73,12 @@ class Content
                 ]);
             } catch (\Exception $e) {
                 App::log('image')->error($e->getMessage());
-                $data[$item] = $item;
+                $data[$url] = $url;
                 continue;
             }
             if ($response->getStatusCode() != 200) {
                 App::log('image')->error($response->getBody()->getContents());
-                $data[$item] = $item;
+                $data[$url] = $url;
                 continue;
             }
             $contentType = $response->getHeaderLine('Content-Type');
@@ -91,10 +90,10 @@ class Content
             App::storage()->write($path, $stream);
             $resultUrl = App::storage()->publicUrl($path);
             if (!$resultUrl) {
-                $data[$item] = $item;
+                $data[$url] = $url;
                 continue;
             }
-            $data[$item] = $resultUrl;
+            $data[$url] = $resultUrl;
         }
         return $data;
     }
