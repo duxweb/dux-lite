@@ -60,6 +60,7 @@ class Content
         foreach ($images as $item) {
             $parseUrl = parse_url($item['public_url']);
             if (in_array($parseUrl, $domain)) {
+                $data[$item] = $item;
                 continue;
             }
 
@@ -73,9 +74,11 @@ class Content
                 ]);
             } catch (\Exception $e) {
                 App::log('image')->error($e->getMessage());
+                $data[$item] = $item;
                 continue;
             }
             if ($response->getStatusCode() != 200) {
+                $data[$item] = $item;
                 continue;
             }
             $contentType = $response->getHeaderLine('Content-Type');
