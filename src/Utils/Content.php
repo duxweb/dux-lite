@@ -90,6 +90,7 @@ class Content
             App::storage()->write($path, $stream);
             $resultUrl = App::storage()->publicUrl($path);
             if (!$resultUrl) {
+                $data[$item] = $item;
                 continue;
             }
             $data[$item] = $resultUrl;
