@@ -78,6 +78,7 @@ class Content
                 continue;
             }
             if ($response->getStatusCode() != 200) {
+                App::log('image')->error($response->getBody()->getContents());
                 $data[$item] = $item;
                 continue;
             }
