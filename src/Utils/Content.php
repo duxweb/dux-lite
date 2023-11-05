@@ -59,7 +59,7 @@ class Content
         $mimes = new MimeTypes;
         foreach ($images as $url) {
             $parseUrl = parse_url($url);
-            if (in_array($parseUrl, $domain)) {
+            if (in_array($parseUrl['host'], $domain)) {
                 $data[$url] = $url;
                 continue;
             }
