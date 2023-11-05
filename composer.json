@@ -74,7 +74,9 @@
     "jaybizzle/crawler-detect": "^1.2",
     "xantios/mimey": "^2.2",
     "maennchen/zipstream-php": "^3.1",
-    "peppeocchi/php-cron-scheduler": "^4.0"
+    "peppeocchi/php-cron-scheduler": "^4.0",
+    "voku/simple_html_dom": "^4.8",
+    "stevebauman/hypertext": "^1.0"
   },
   "require-dev": {
     "composer/composer": "^2.0",
