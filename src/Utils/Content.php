@@ -46,11 +46,22 @@ class Content
             return [];
         }
 
+        $list = App::config('storage')->get('drivers');
+        $domain = [];
+        foreach ($list as $vo) {
+            $parseUrl = parse_url($vo['public_url']);
+            $domain[] = $parseUrl['host'];
+        }
+
         $client = new Client();
 
         $data = [];
         $mimes = new MimeTypes;
         foreach ($images as $item) {
+            $parseUrl = parse_url($item['public_url']);
+            if (in_array($parseUrl, $domain)) {
+                continue;
+            }
 
             $url = html_entity_decode($item);
             try {
