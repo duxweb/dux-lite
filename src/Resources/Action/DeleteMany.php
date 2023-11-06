@@ -22,7 +22,7 @@ trait DeleteMany
         App::db()->getConnection()->beginTransaction();
 
         foreach ($ids as $id) {
-            $query = $this->model::query()->whereIn($this->key, $id);
+            $query = $this->model::query()->where($this->key, $id);
             $this->queryOne($query, $request, $args);
             $this->query($query);
             $model = $query->first();
