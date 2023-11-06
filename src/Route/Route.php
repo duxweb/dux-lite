@@ -166,6 +166,7 @@ class Route
         }
         if (!$actions || in_array("delete", $actions)) {
             $group->delete("/{id:[0-9]+}", "$class:delete", "$name.delete", 100);
+            $group->delete("", "$class:deleteMany", "$name.deleteMany", 100);
         }
         if ($softDelete && in_array("trash", $actions)) {
             $group->delete("/{id:[0-9]+}/trash", "$class:trash", "$name.trash", 100);

@@ -80,7 +80,7 @@ abstract class Resources
     public array $restoreHook = [];
 
 
-    use Many, One, Create, Edit, Store, Delete, Trash, Restore;
+    use Many, One, Create, Edit, Store, Delete, DeleteMany, Trash, Restore;
 
     /**
      * 初始化

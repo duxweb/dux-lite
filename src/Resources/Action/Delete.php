@@ -27,7 +27,7 @@ trait Delete
         }
 
         if (isset($this->delHook[0]) && $this->delHook[0] instanceof Closure) {
-            $this->delHook[0]($model,);
+            $this->delHook[0]($model);
         }
 
         $this->delBefore($model);

@@ -14,6 +14,7 @@ resources:
   create: 作成
   edit: 編集
   delete: 削除
+  deleteMany: バッチ削除
   store: 更新
   trash: 完全に削除
   restore: 復元

@@ -14,6 +14,7 @@ resources:
   create: 생성
   edit: 편집
   delete: 삭제
+  deleteMany: 대량 삭제
   store: 업데이트
   trash: 완전 삭제
   restore: 복원
