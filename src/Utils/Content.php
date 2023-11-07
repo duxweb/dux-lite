@@ -66,7 +66,7 @@ class Content
 
             try {
                 $response = $client->get($url, [
-                    'timeout' => 2,
+                    'timeout' => 10,
                     'stream' => true,
                     'headers' => [
                         'Referer' => $url
