@@ -163,15 +163,15 @@ class App
      */
     public static function event(): Event
     {
-        if (!self::$di->has("event")) {
-            $event = new Event();
-            self::di()->set(
-                "event",
-                $event
-            );
-            return $event;
+        if (!self::$di->has("events")) {
+            return self::$di->get("events");
         }
-        return self::$di->get("event");
+        $event = new Event();
+        self::di()->set(
+            "events",
+            $event
+        );
+        return $event;
     }
 
     /**
