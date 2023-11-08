@@ -12,6 +12,7 @@ use DI\Container;
 use DI\DependencyException;
 use DI\NotFoundException;
 use Dotenv\Dotenv;
+use Dux\Api\ApiEvent;
 use Dux\App\AppExtend;
 use Dux\Auth\AuthService;
 use Dux\Config\Yaml;
@@ -80,7 +81,6 @@ class App
         $app->loadWeb(self::$di);
         $app->loadCache();
         $app->loadView();
-        $app->loadEvent();
         $app->loadScheduler();
         $app->loadDb();
         $app->loadApp();
@@ -158,10 +158,18 @@ class App
     /**
      * event
      * @return Event
+     * @throws DependencyException
+     * @throws NotFoundException
      */
     public static function event(): Event
     {
-        return self::$bootstrap->event;
+        if (!self::$di->has("event")) {
+            self::di()->set(
+                "event",
+                new Event()
+            );
+        }
+        return self::$di->get("event");
     }
 
     /**
@@ -475,5 +483,23 @@ class App
             );
         }
         return self::$di->get("geo");
+    }
+
+    /**
+     * api事件触发
+     * @param $className
+     * @return ApiEvent
+     * @throws DependencyException
+     * @throws NotFoundException
+     */
+    public static function apiEvent($className): ApiEvent {
+        $name = "api.event.$className";
+        if (!self::di()->has($name)) {
+            $event = new ApiEvent();
+            self::event()->dispatch($event,"api.$className");
+            self::di()->set($name, $event);
+            return $event;
+        }
+        return self::di()->get($name);
     }
 }

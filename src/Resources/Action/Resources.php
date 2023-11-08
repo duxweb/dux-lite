@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Dux\Resources\Action;
 
+use Dux\App;
+use Dux\Resources\ResourcesEvent;
 use Dux\Validator\Data;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -78,9 +80,17 @@ abstract class Resources
      * @var array
      */
     public array $restoreHook = [];
+    private ResourcesEvent $event;
 
 
     use Many, One, Create, Edit, Store, Delete, DeleteMany, Trash, Restore;
+
+
+    public function __construct()
+    {
+        $this->event = new ResourcesEvent();
+        App::event()->dispatch($this->event, 'resources.' . static::class);
+    }
 
     /**
      * 初始化
@@ -89,7 +99,7 @@ abstract class Resources
      * @param array $args
      * @return void
      */
-    public function init(ServerRequestInterface $request, ResponseInterface $response, array $args)
+    public function init(ServerRequestInterface $request, ResponseInterface $response, array $args): void
     {
     }
 
@@ -215,14 +225,11 @@ abstract class Resources
         $name = $route->getName();
         $lastPos = strrpos($name, '.');
         $name = $lastPos !== false ? substr($name, 0, $lastPos) : $name;
-        return __("message.$action", [
-            "%name%" => $this->label ?: __("$name.name", 'manage'),
-        ], "common");
+        return __("message.$action", "common");
     }
 
     public function getSorts(array $params): array
     {
-
         $data = [];
         foreach ($params as $key => $vo) {
             if (!str_ends_with($key, "_sort")) {

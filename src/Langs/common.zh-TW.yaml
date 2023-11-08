@@ -1,13 +1,13 @@
 encryption:
   failure: 加密失敗
 message:
-  emptyData: 空資料
-  create: 建立%name%成功
-  edit: 編輯%name%成功
-  delete: 刪除%name%成功
-  store: 儲存%name%資料成功
-  trash: 徹底刪除%name%成功
-  restore: 恢復%name%成功
+  emptyData: 無資料
+  create: 建立成功
+  edit: 編輯成功
+  delete: 刪除成功
+  store: 儲存成功
+  trash: 徹底刪除成功
+  restore: 恢復成功
 resources:
   list: 列表
   show: 詳情

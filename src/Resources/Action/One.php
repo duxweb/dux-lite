@@ -10,6 +10,7 @@ trait One
     public function show(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
         $this->init($request, $response, $args);
+        $this->event->run('init', $request, $response, $args);
         $id = $args["id"] ?: 0;
 
         $info = collect();
@@ -17,9 +18,11 @@ trait One
             $query = $this->model::query()->where($this->key, $id);
             $this->queryOne($query, $request, $args);
             $this->query($query);
+            $this->event->run('queryOne', $query, $request, $args);
+            $this->event->run('query', $query);
             $info = $query->first();
             $assign = $this->transformData($info, function ($item) {
-                return $this->transform($item);
+                return [...$this->transform($item), ...$this->event->get('transform', $item)];
             });
 
         } else {
@@ -33,6 +36,7 @@ trait One
         $assign['meta'] = [
             ...$assign['meta'],
             ...$meta,
+            ...$this->event->get('metaOne', $info, $request, $args),
         ];
 
         $assign['data'] = $this->filterData($this->includesOne, $this->excludesOne, [$assign['data']])[0];

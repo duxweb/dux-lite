@@ -12,6 +12,7 @@ trait Restore
     public function restore(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
         $this->init($request, $response, $args);
+        $this->event->run('init', $request, $response, $args);
         $id = $args["id"];
 
         App::db()->getConnection()->beginTransaction();
@@ -19,6 +20,8 @@ trait Restore
         $query = $this->model::query()->where($this->key, $id);
         $this->queryOne($query, $request, $args);
         $this->query($query);
+        $this->event->run('queryOne', $query, $request, $args);
+        $this->event->run('query', $query);
 
         $model = $query->withTrashed()->first();
         if (!$model) {
@@ -26,10 +29,12 @@ trait Restore
         }
 
         $this->restoreBefore($model);
+        $this->event->run('restoreBefore', $model);
 
         $model->restore();
 
         $this->restoreAfter($model);
+        $this->event->run('restoreAfter', $model);
 
         App::db()->getConnection()->commit();
 

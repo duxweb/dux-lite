@@ -2,12 +2,12 @@ encryption:
   failure: 加密失败
 message:
   emptyData: 空数据
-  create: 创建%name%成功
-  edit: 编辑%name%成功
-  delete: 删除%name%成功
-  store: 保存%name%数据成功
-  trash: 彻底删除%name%成功
-  restore: 恢复%name%成功
+  create: 创建成功
+  edit: 编辑成功
+  delete: 删除成功
+  store: 保存成功
+  trash: 彻底删除成功
+  restore: 恢复成功
 resources:
   list: 列表
   show: 详情

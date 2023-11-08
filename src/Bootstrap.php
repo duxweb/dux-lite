@@ -9,6 +9,7 @@ use Clockwork\Support\Slim\ClockworkMiddleware;
 use DI\Container;
 use DI\DependencyException;
 use DI\NotFoundException;
+use Dux\Api\ApiEvent;
 use Dux\App\Attribute;
 use Dux\Cache\Cache;
 use Dux\Command\Command;
@@ -16,7 +17,6 @@ use Dux\Config\Config;
 use Dux\Database\ListCommand;
 use Dux\Database\MigrateCommand;
 use Dux\Database\ProxyCommand;
-use Dux\Event\Event;
 use Dux\Event\EventCommand;
 use Dux\Handlers\ErrorHandler;
 use Dux\Handlers\ErrorHtmlRenderer;
@@ -67,7 +67,6 @@ class Bootstrap
     public string $exceptionBack = "go back";
     public Engine $view;
 
-    public Event $event;
     public Route\Register $route;
     public Scheduler $scheduler;
     public Resources\Register $resource;
@@ -266,10 +265,6 @@ class Bootstrap
 
     }
 
-    public function loadEvent(): void
-    {
-        $this->event = new Event();
-    }
 
     public function loadScheduler(): void
     {
@@ -298,7 +293,7 @@ class Bootstrap
         App::di()->set("attributes", Attribute::load(App::$registerApp));
 
         // 事件注解加载
-        $this->event->registerAttribute();
+        App::event()->registerAttribute();
 
         // 注册语言包
         foreach ($appList as $vo) {
@@ -351,9 +346,9 @@ class Bootstrap
         }
     }
 
-    public function getEvent(): Event
+    public function getEvent(): Event\Event
     {
-        return $this->event;
+        return App::event();
     }
 
     public function getRoute(): Route\Register

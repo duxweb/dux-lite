@@ -14,12 +14,15 @@ trait Store
     public function store(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
         $this->init($request, $response, $args);
+        $this->event->run('init', $request, $response, $args);
         $id = $args["id"];
 
         $requestData = $request->getParsedBody() ?: [];
         $keys = array_keys($requestData);
 
-        $validator = array_filter($this->validator($requestData, $request, $args), function ($item, $key) use ($keys) {
+        $validator = $this->validator($requestData, $request, $args);
+        $validatorEvent = $this->event->get('validator', $requestData, $request, $args);
+        $validator = array_filter(array_filter([...$validator, ...$validatorEvent]), function ($item, $key) use ($keys) {
             if (in_array($key, $keys)) {
                 return true;
             }
@@ -27,7 +30,11 @@ trait Store
         }, ARRAY_FILTER_USE_BOTH);
 
         $data = Validator::parser($requestData, $validator);
-        $ruleData = array_filter($this->format($data, $request, $args), function ($item, $key) use ($keys) {
+
+        $format = $this->format($data, $request, $args);
+        $formatEvent = $this->event->get('format', $data, $request, $args);
+
+        $ruleData = array_filter([...$format, ...$formatEvent], function ($item, $key) use ($keys) {
             if (in_array($key, $keys)) {
                 return true;
             }
@@ -41,6 +48,8 @@ trait Store
         $query = $this->model::query()->where($this->key, $id);
         $this->queryOne($query, $request, $args);
         $this->query($query);
+        $this->event->run('queryOne', $query, $request, $args);
+        $this->event->run('query', $query);
 
         $model = $query->first();
         if (!$model) {
@@ -52,11 +61,12 @@ trait Store
         }
 
         $this->storeBefore($data, $model);
+        $this->event->run('storeBefore', $data, $model);
 
         $model->save();
 
-
         $this->storeAfter($data, $model);
+        $this->event->run('storeAfter', $data, $model);
 
         App::db()->getConnection()->commit();
 

@@ -1,22 +1,22 @@
 encryption:
   failure: Ошибка шифрования
 message:
-  emptyData: Пустые данные
-  create: Успешное создание %name%
-  edit: Успешное редактирование %name%
-  delete: Успешное удаление %name%
-  store: Успешное сохранение данных %name%
-  trash: Успешное полное удаление %name%
-  restore: Успешное восстановление %name%
+  emptyData: Нет данных
+  create: Создание выполнено
+  edit: Редактирование выполнено
+  delete: Удаление выполнено
+  store: Сохранение выполнено
+  trash: Удаление выполнено окончательно
+  restore: Восстановление выполнено
 resources:
   list: Список
-  show: Показать
+  show: Детали
   create: Создать
   edit: Редактировать
   delete: Удалить
-  deleteMany: Массовое удаление
+  deleteMany: Пакетное удаление
   store: Обновить
-  trash: Полное удаление
+  trash: Окончательное удаление
   restore: Восстановить
 validate:
   placeholder: Пожалуйста, введите %name%

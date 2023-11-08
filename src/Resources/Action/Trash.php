@@ -12,6 +12,7 @@ trait Trash
     public function trash(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
         $this->init($request, $response, $args);
+        $this->event->run('init', $request, $response, $args);
         $id = $args["id"];
 
         App::db()->getConnection()->beginTransaction();
@@ -19,6 +20,8 @@ trait Trash
         $query = $this->model::query()->where($this->key, $id);
         $this->queryOne($query, $request, $args);
         $this->query($query);
+        $this->event->run('queryOne', $query, $request, $args);
+        $this->event->run('query', $query);
 
         $model = $query->withTrashed()->first();
         if (!$model) {
@@ -26,10 +29,12 @@ trait Trash
         }
 
         $this->trashBefore($model);
+        $this->event->run('trashBefore', $model);
 
         $model->forceDelete();
 
         $this->trashAfter($model);
+        $this->event->run('trashAfter', $model);
 
         App::db()->getConnection()->commit();
 

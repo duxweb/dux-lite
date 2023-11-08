@@ -12,6 +12,7 @@ trait Many
     public function list(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
         $this->init($request, $response, $args);
+        $this->event->run('init', $request, $response, $args);
         $queryParams = $request->getQueryParams();
 
         if (!isset($queryParams["pageSize"])) {
@@ -46,6 +47,8 @@ trait Many
         $this->queryMany($query, $request, $args);
         $this->query($query);
 
+        $this->event->run('queryMany', $query, $request, $args);
+        $this->event->run('query', $query);
 
         if ($this->pagination['status']) {
             $result = $query->paginate($limit);
@@ -58,7 +61,7 @@ trait Many
         }
 
         $assign = $this->transformData($result, function ($item): array {
-            return $this->transform($item);
+            return [...$this->transform($item), ...$this->event->get('transform', $item)];
         });
 
         $assign['data'] = $this->filterData($this->includesMany, $this->excludesMany, $assign['data']);
@@ -68,6 +71,7 @@ trait Many
         $assign['meta'] = [
             ...$assign['meta'],
             ...$meta,
+            ...$this->event->get('metaMany', (array)$result['data'], $request, $args),
         ];
 
         return send($response, "ok", $assign['data'], $assign['meta']);

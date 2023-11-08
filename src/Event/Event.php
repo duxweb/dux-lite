@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Dux\Event;
 
 use Dux\App;
+use Dux\Event\Attribute\AppListener;
 use Dux\Event\Attribute\Listener;
 use RuntimeException;
 use Symfony\Component\EventDispatcher\EventDispatcher;
@@ -45,17 +46,29 @@ class Event extends EventDispatcher
         $attributes = (array)App::di()->get("attributes");
         foreach ($attributes as $attribute => $list) {
             if (
-                $attribute !== Listener::class
+                $attribute !== Listener::class && $attribute !== AppListener::class
             ) {
                 continue;
             }
+            $app = $attribute === AppListener::class;
             foreach ($list as $vo) {
                 [$class, $method] = explode(':', $vo["class"]);
                 $params = $vo["params"];
-                if (!$params["name"]) {
+
+                if ($app) {
+                    $name = $params["name"] . '.' . $params["class"];
+                }else {
+                    $name = $params["name"];
+                }
+
+                if ($app && (!$params["name"] || !$params["class"])) {
+                    throw new RuntimeException("method [$class:$method] The annotation is missing the name or class parameter");
+                }
+                if (!$app && !$params["name"]) {
                     throw new RuntimeException("method [$class:$method] The annotation is missing the name parameter");
                 }
-                $this->addListener($params["name"], [new $class, $method], (int)$params["priority"] ?: 0);
+
+                $this->addListener($name, [new $class, $method], (int)$params["priority"] ?: 0);
             }
         }
     }

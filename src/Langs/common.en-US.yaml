@@ -1,22 +1,22 @@
 encryption:
-  failure: Encryption failure
+  failure: Encryption failed
 message:
-  emptyData: Empty data
-  create: Create %name% success
-  edit: Edit %name% success
-  delete: Delete %name% success
-  store: Store %name% data success
-  trash: Trash %name% success
-  restore: Restore %name% success
+  emptyData: No data
+  create: Creation successful
+  edit: Edit successful
+  delete: Deletion successful
+  store: Save successful
+  trash: Permanent deletion successful
+  restore: Restoration successful
 resources:
   list: List
-  show: Show
+  show: Details
   create: Create
   edit: Edit
   delete: Delete
-  deleteMany: Batch Delete
-  store: Store
-  trash: Trash
+  deleteMany: Batch delete
+  store: Update
+  trash: Permanently delete
   restore: Restore
 validate:
   placeholder: Please enter %name%

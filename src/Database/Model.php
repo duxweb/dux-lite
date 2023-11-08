@@ -32,4 +32,60 @@ class Model extends \Illuminate\Database\Eloquent\Model
     {
     }
 
+    public function migrationGlobal(Blueprint $table)
+    {
+        $event = new DatabaseEvent();
+        App::event()->dispatch($event, 'model.' . static::class);
+        $event->run('migration', $table);
+    }
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        $event = new DatabaseEvent();
+        App::event()->dispatch($event, 'model.' . static::class);
+
+        static::retrieved(function ($model) use ($event) {
+            $event->run('deleting', $model);
+        });
+
+        static::saving(function($model) use ($event) {
+            $event->run( 'saving', $model);
+        });
+
+        static::saved(function($model) use ($event) {
+            $event->run( 'saved', $model);
+        });
+
+        static::updating(function($model) use ($event) {
+            $event->run( 'updating', $model);
+        });
+
+        static::updated(function($model) use ($event) {
+            $event->run( 'updated', $model);
+        });
+
+        static::creating(function ($model) use ($event) {
+            $event->run('creating', $model);
+        });
+
+        static::created(function ($model) use ($event) {
+            $event->run( 'created', $model);
+        });
+
+        static::replicating(function($model) use ($event) {
+            $event->run( 'replicating', $model);
+        });
+
+        static::deleting(function($model) use ($event) {
+            $event->run( 'deleting', $model);
+        });
+
+        static::deleted(function($model) use ($event) {
+            $event->run( 'deleted', $model);
+        });
+
+    }
+
 }

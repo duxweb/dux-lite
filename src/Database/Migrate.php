@@ -63,6 +63,7 @@ class Migrate
         App::db()->getConnection()->getSchemaBuilder()->dropIfExists($tempTable);
         App::db()->getConnection()->getSchemaBuilder()->create($tableExists ? $tempTable : $modelTable, function (Blueprint $table) use ($model) {
             $model->migration($table);
+            $model->migrationGlobal($table);
         });
         if (!$tableExists) {
             if (method_exists($model, 'seed')) {

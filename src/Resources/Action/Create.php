@@ -14,12 +14,19 @@ trait Create
     public function create(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
         $this->init($request, $response, $args);
+        $this->event->run('init', $request, $response, $args);
 
         $requestData = $request->getParsedBody() ?: [];
-        $data = Validator::parser($requestData, $this->validator($requestData, $request, $args));
+
+        $validator = $this->validator($requestData, $request, $args);
+        $validatorEvent = $this->event->get('validator', $requestData, $request, $args);
+        $data = Validator::parser($requestData, [...$validator, ...$validatorEvent]);
+
         App::db()->getConnection()->beginTransaction();
 
-        $modelData = $this->formatData($this->format($data, $request, $args), $data);
+        $format = $this->format($data, $request, $args);
+        $formatEvent = $this->event->get('format', $data, $request, $args);
+        $modelData = $this->formatData([...$format, ...$formatEvent], $data);
 
         $model = new $this->model;
         foreach ($modelData as $key => $vo) {
@@ -27,10 +34,12 @@ trait Create
         }
 
         $this->createBefore($data);
+        $this->event->run('createBefore', $data);
 
         $model->save();
 
         $this->createAfter($data, $model);
+        $this->event->run('createAfter', $data, $model);
 
         App::db()->getConnection()->commit();
 

@@ -13,6 +13,7 @@ trait Delete
     public function delete(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
         $this->init($request, $response, $args);
+        $this->event->run('init', $request, $response, $args);
         $id = $args["id"];
 
         App::db()->getConnection()->beginTransaction();
@@ -21,20 +22,21 @@ trait Delete
         $this->queryOne($query, $request, $args);
         $this->query($query);
 
+        $this->event->run('queryOne', $query, $request, $args);
+        $this->event->run('query', $query);
+
         $model = $query->first();
         if (!$model) {
             throw new ExceptionBusiness(__("message.emptyData", "common"));
         }
 
-        if (isset($this->delHook[0]) && $this->delHook[0] instanceof Closure) {
-            $this->delHook[0]($model);
-        }
-
         $this->delBefore($model);
+        $this->event->run('delBefore', $model);
 
         $model->delete();
 
         $this->delAfter($model);
+        $this->event->run('delAfter', $model);
 
         App::db()->getConnection()->commit();
 
