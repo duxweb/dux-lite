@@ -24,6 +24,7 @@ class Update
             return;
         }
         Add::main($output, $token, $packages, true);
+        Package::updateAppVersion($info);
     }
 
 }

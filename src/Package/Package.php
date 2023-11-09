@@ -406,5 +406,23 @@ class Package
         return $auth;
     }
 
+    public static function updateAppVersion($info): void
+    {
+        $configFile = base_path('app.json');
+        $appJson = [];
+        if (is_file($configFile)) {
+            $appJson = Package::getJson($configFile);
+        }
+        $apps = $appJson['apps'] ?: [];
+
+        foreach ($info['apps'] as $vo) {
+            $app = $vo['name'];
+            unset($apps[$app]);
+            $apps[$app] = $vo['time'];
+        }
+
+        $appJson['apps'] = $apps;
+        Package::saveJson($configFile, $appJson);
+    }
 
 }

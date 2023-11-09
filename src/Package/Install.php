@@ -13,18 +13,7 @@ class Install
         $info = Package::app($token, $app);
         $packages = $info['packages'];
         Add::main($output, $token, $packages);
-
-        $configFile = base_path('app.json');
-        $appJson = [];
-        if (is_file($configFile)) {
-            $appJson = Package::getJson($configFile);
-        }
-        $apps = $appJson['apps'] ?: [];
-        unset($apps[$app]);
-        $apps[$app] = $info['apps'][0]['time'];
-        $appJson['apps'] = $apps;
-
-        Package::saveJson($configFile, $appJson);
+        Package::updateAppVersion($info);
     }
 
 }
