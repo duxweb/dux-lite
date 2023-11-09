@@ -368,7 +368,6 @@ class Package
 
     public static function auth(HelperInterface $helper, InputInterface $input, OutputInterface $output): string|int
     {
-        $keyFile = data_path('cloud.key');
         $auth = Package::getKey();
         if (!$auth) {
             $question = new Question('Please enter username: ');
@@ -387,16 +386,23 @@ class Package
                 return Command::FAILURE;
             }
 
-            $data = self::request('POST', '/v/package/auth/token', [
-               'json' => [
-                   'username' => $username,
-                   'password' => $password
-               ]
-            ]);
-            $auth = $data['token'];
-            $keyContent = encryption($data['token']);
-            FileSystem::write($keyFile, $keyContent);
+            $auth = self::login($username, $password);
         }
+        return $auth;
+    }
+
+    public static function login(string $username, string $password): string
+    {
+        $keyFile = data_path('cloud.key');
+        $data = self::request('POST', '/v/package/auth/token', [
+            'json' => [
+                'username' => $username,
+                'password' => $password
+            ]
+        ]);
+        $auth = $data['token'];
+        $keyContent = encryption($data['token']);
+        FileSystem::write($keyFile, $keyContent);
         return $auth;
     }
 
