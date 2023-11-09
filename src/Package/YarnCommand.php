@@ -39,8 +39,8 @@ class YarnCommand extends Command
         }
         $yarnPath = trim($yarnPathFinder->getOutput());
 
-        $process = new Process(['yarn', 'config', 'set', 'registry', 'https://registry.npm.taobao.org']);
-        $process->run();
+//        $process = new Process(['yarn', 'config', 'set', 'registry', 'https://registry.npm.taobao.org']);
+//        $process->run();
 
         $command = array_merge([$yarnPath], is_array($yarnCommand) ? $yarnCommand : [$yarnCommand]);
         $workingDirectory = base_path('web');
