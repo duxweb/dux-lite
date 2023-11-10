@@ -47,7 +47,7 @@ class Model extends \Illuminate\Database\Eloquent\Model
         App::event()->dispatch($event, 'model.' . static::class);
 
         static::retrieved(function ($model) use ($event) {
-            $event->run('deleting', $model);
+            $event->run('retrieved', $model);
         });
 
         static::saving(function($model) use ($event) {
