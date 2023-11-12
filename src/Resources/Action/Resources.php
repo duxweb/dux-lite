@@ -107,9 +107,13 @@ abstract class Resources
      * 数据转换
      * 转换数据字段内容
      * @param object $item
+     * @param string $action
      * @return array
      */
-    abstract function transform(object $item, $action = 'list'): array;
+    public function transform(object $item, $action = 'list'): array
+    {
+        return [];
+    }
 
 
     /**
