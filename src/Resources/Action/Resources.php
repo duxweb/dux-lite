@@ -110,7 +110,7 @@ abstract class Resources
      * @param string $action
      * @return array
      */
-    public function transform(object $item, $action = 'list'): array
+    public function transform(object $item, string $action = 'list'): array
     {
         return [];
     }
