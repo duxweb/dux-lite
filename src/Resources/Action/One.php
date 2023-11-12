@@ -22,7 +22,7 @@ trait One
             $this->event->run('query', $query);
             $info = $query->first();
             $assign = $this->transformData($info, function ($item) {
-                return [...$this->transform($item, 'one'), ...$this->event->get('transform', $item)];
+                return [...$this->transform($item), ...$this->event->get('transform', $item)];
             });
 
         } else {
