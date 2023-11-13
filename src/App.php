@@ -413,6 +413,24 @@ class App
     }
 
     /**
+     * Auth
+     * @param string $app
+     * @return AuthService
+     * @throws DependencyException
+     * @throws NotFoundException
+     */
+    public static function auth(string $app = ""): AuthService
+    {
+        if (!self::$di->has("auth.$app")) {
+            self::$di->set(
+                "auth.$app",
+                new AuthService($app)
+            );
+        }
+        return self::$di->get("auth.$app");
+    }
+
+    /**
      * scheduler
      * @return Scheduler
      */

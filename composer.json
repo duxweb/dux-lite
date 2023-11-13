@@ -68,7 +68,6 @@
     "intervention/image": "^2.7",
     "vlucas/phpdotenv": "^5.5",
     "symfony/translation": "^6.3",
-    "orisai/scheduler": "^1.0",
     "symfony/messenger": "^6.3",
     "geoip2/geoip2": "^2.13",
     "jaybizzle/crawler-detect": "^1.2",
