@@ -26,7 +26,7 @@ class AppCommand extends Command {
 
         $table = new Table($output);
         $table->setHeaders([
-                ['Name', 'Description', 'Namespace']
+                ['Namespace']
             ])
             ->setRows($data);
         $table->render();
