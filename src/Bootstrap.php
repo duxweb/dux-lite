@@ -250,7 +250,7 @@ class Bootstrap
 
             $origin = $request->getHeaderLine('Origin');
             return $response->withHeader('Access-Control-Allow-Origin', $origin)
-                ->withHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS, PUT, PATH, DELETE')
+                ->withHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS, PUT, PATCH, DELETE')
                 ->withHeader('Access-Control-Allow-Headers', 'Content-Type, Content-MD5, Platform, Content-Date, Authorization, AccessKey')
                 ->withHeader('Access-Control-Expose-Methods', '*')
                 ->withHeader('Access-Control-Expose-Headers', '*')
