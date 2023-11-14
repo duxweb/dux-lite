@@ -4,9 +4,9 @@ declare(strict_types=1);
 namespace Dux\Helpers;
 
 use Dux\App;
-use Dux\Resources\Attribute\ResourceManage;
+use Dux\Resources\Attribute\Resource;
 use Dux\Validator\Data;
-use Noodlehaus\Config;
+use Psr\Http\Message\ServerRequestInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -56,71 +56,49 @@ class ManageCommand extends Command {
         $file = new \Nette\PhpGenerator\PhpFile;
         $file->setStrictTypes();
         $namespace = $file->addNamespace("App\\$appName\\$layerName");
-        $namespace->addUse(\Dux\Manage\Manage::class);
+        $namespace->addUse(\Dux\Resources\Action\Resources::class);
         $namespace->addUse(Data::class);
         $namespace->addUse(\Illuminate\Database\Eloquent\Model::class);
-        $namespace->addUse(ResourceManage::class);
+        $namespace->addUse(\Dux\Resources\Attribute\Resource::class);
+        $namespace->addUse(ServerRequestInterface::class);
         $class = $namespace->addClass($className);
 
         $name = lcfirst($appName) . "." . lcfirst($className);
         $pattern = "/" . str_replace(".", "/", $name);
-        $class->addAttribute(ResourceManage::class, [
-            'app' => lcfirst($layerName) . 'Auth',
-            'title' => '',
-            'pattern' => $pattern,
-            'name' => $name,
-            'permission' => lcfirst($layerName)
+        $class->addAttribute(Resource::class, [
+            'app' => lcfirst($layerName),
+            'route' => $pattern,
+            'name' => $name
         ]);
         $class->addProperty("model", "")->setType("string")->setProtected();
-        $class->addProperty("name", "业务名")->setType("string")->setProtected();
-        $class->setExtends(\Dux\Manage\Manage::class);
+        $class->setExtends(\Dux\Resources\Action\Resources::class);
 
-        $method = $class->addMethod("listFormat")->setReturnType("array")->setBody('return [
+        $method = $class->addMethod("transform")->setReturnType("array")->setBody('return [
     "id" => $item->id,
-];')->setProtected();
+];')->setPublic();
         $method->addParameter("item")->setType("object");
 
-        $method = $class->addMethod("infoFormat")->setReturnType("array")->setBody('return [
-"info" => [
-    "id" => $info->id,
-]];')->setProtected();
-        $method->addParameter("info")->setType(\Illuminate\Database\Eloquent\Model::class);
-
-        $method = $class->addMethod("saveValidator")->setReturnType("array")->setBody('return [
-    "name" => ["required", "请输入名称"],
+        $method = $class->addMethod("validator")->setReturnType("array")->setBody('return [
+    "name" => ["required", "please enter name"],
 ];')->setProtected();
+        $method->addParameter("data")->setType("array");
+        $method->addParameter("request")->setType(ServerRequestInterface::class);
         $method->addParameter("args")->setType("array");
 
-        $method = $class->addMethod("saveFormat")->setReturnType("array")->setBody('return [
+        $method = $class->addMethod("format")->setReturnType("array")->setBody('return [
     "name" => $data->name,
 ];')->setProtected();
         $method->addParameter("data")->setType(Data::class);
-        $method->addParameter("id")->setType("int");
-        FileSystem::write($managePath, (string)$file);
+        $method->addParameter("request")->setType(ServerRequestInterface::class);
+        $method->addParameter("args")->setType("array");
 
-        // jsx
-        $this->createJsx($appName, $appDir, $layerName, $className);
+        FileSystem::write($managePath, (string)$file);
 
         $output->writeln("<info>Generate manage successfully</info>");
         return Command::SUCCESS;
     }
 
-    private function createJsx($appName, $appDir, $layerName, $className) {
-        $fileDir = "$appDir/Client/" . lcfirst($layerName) . "/" . lcfirst($className);
-        $routeUrl = lcfirst($appName) . "/" . lcfirst($className);
-        $name = lcfirst($appName) . "." . lcfirst($className);
-        $pageUrl = $routeUrl . "/page";
-        $listJsx = file_get_contents(__DIR__ . '/Tpl/list.jsx');
-        $listJsx = str_replace("{{routeUrl}}", $routeUrl, $listJsx);
-        $listJsx = str_replace("{{pageUrl}}", $pageUrl, $listJsx);
-        $listJsx = str_replace("{{name}}", $name, $listJsx);
-        FileSystem::write($fileDir . "/list.jsx", (string)$listJsx);
 
-        $formJsx = file_get_contents(__DIR__ . '/Tpl/form.jsx');
-        $formJsx = str_replace("{{routeUrl}}", $routeUrl, $formJsx);
-        $formJsx = str_replace("{{pageUrl}}", $pageUrl, $formJsx);
-        FileSystem::write($fileDir . "/form.jsx", (string)$formJsx);
-    }
 
     public function error(OutputInterface $output, string $message): int {
         $output->writeln("<error>$$message</error>");

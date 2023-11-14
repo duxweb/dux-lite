@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace Dux\Helpers;
 
 use Dux\App;
+use Dux\Route\Attribute\Route;
+use Dux\Route\Attribute\RouteGroup;
 use Dux\Validator\Data;
 use Illuminate\Database\Schema\Blueprint;
 use Noodlehaus\Config;
@@ -16,12 +18,14 @@ use Nette\Utils\FileSystem;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
 use Symfony\Component\Console\Question\Question;
 
-class CtrCommand extends Command {
+class CtrCommand extends Command
+{
 
     protected static $defaultName = 'generate:ctr';
     protected static $defaultDescription = 'Create an application ctr';
 
-    protected function configure(): void {
+    protected function configure(): void
+    {
         $this->addArgument(
             'name',
             InputArgument::REQUIRED,
@@ -29,7 +33,8 @@ class CtrCommand extends Command {
         );
     }
 
-    public function execute(InputInterface $input, OutputInterface $output): int {
+    public function execute(InputInterface $input, OutputInterface $output): int
+    {
         $appName = $input->getArgument('name');
         $appName = ucfirst($appName);
         $appDir = App::$appPath . "/$appName";
@@ -61,12 +66,22 @@ class CtrCommand extends Command {
         $namespace->addUse(\Psr\Http\Message\ServerRequestInterface::class);
         $namespace->addUse(\Dux\Validator\Validator::class);
         $class = $namespace->addClass($className);
+
+        $class->addAttribute(RouteGroup::class, [
+            'app' => 'web',
+            'pattern' => lcfirst($appName) . "/" . lcfirst($className)
+        ]);
+
         $method = $class->addMethod("list")->setReturnType(\Psr\Http\Message\ResponseInterface::class)->setBody("
     \$data = Validator::parser([...\$request->getParsedBody(), ...\$args], [
-        'field' => ['required', '请输入字段'],
+        'field' => ['required', 'Please enter'],
     ]);
     return send(\$response, 'ok');
     ")->setPublic();
+        $method->addAttribute(Route::class, [
+            'methods' => 'GET',
+            'pattern' => ''
+        ]);
         $method->addParameter("request")->setType(\Psr\Http\Message\ServerRequestInterface::class);
         $method->addParameter("response")->setType(\Psr\Http\Message\ResponseInterface::class);
         $method->addParameter("args")->setType('array');
@@ -75,7 +90,8 @@ class CtrCommand extends Command {
         return Command::SUCCESS;
     }
 
-    public function error(OutputInterface $output, string $message): int {
+    public function error(OutputInterface $output, string $message): int
+    {
         $output->writeln("<error>$$message</error>");
         return Command::FAILURE;
     }

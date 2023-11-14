@@ -39,33 +39,7 @@ class AppCommand extends Command {
         $class = $namespace->addClass("App");
         $class->setExtends(App\AppExtend::class);
         $class->addComment("Application Registration");
-        $class->addProperty("name", "App Name")->setType("string");
-        $class->addProperty("description", "App Desc")->setType("string");
         FileSystem::write("$dir/App.php", (string) $file);
-
-        // Route.php
-        $file = new \Nette\PhpGenerator\PhpFile;
-        $file->setStrictTypes();
-        $namespace = $file->addNamespace("App\\$name\\Config");
-        $namespace->addUse(\Dux\Route\Route::class, "DuxRoute");
-        $namespace->addClass("Route");
-        FileSystem::write("$dir/Config/Route.php", (string) $file);
-
-        // Permission.php
-        $file = new \Nette\PhpGenerator\PhpFile;
-        $file->setStrictTypes();
-        $namespace = $file->addNamespace("App\\$name\\Config");
-        $namespace->addUse(\Dux\Permission\Permission::class, "DuxPermission");
-        $namespace->addClass("Permission");
-        FileSystem::write("$dir/Config/Permission.php", (string) $file);
-
-        // Menu.php
-        $file = new \Nette\PhpGenerator\PhpFile;
-        $file->setStrictTypes();
-        $namespace = $file->addNamespace("App\\$name\\Config");
-        $namespace->addUse(\Dux\Menu\Menu::class, "DuxMenu");
-        $namespace->addClass("Menu");
-        FileSystem::write("$dir/Config/Menu.php", (string) $file);
 
         // config
         $configFile = App::$configPath . "/app.yaml";
