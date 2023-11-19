@@ -75,7 +75,8 @@
     "maennchen/zipstream-php": "^3.1",
     "peppeocchi/php-cron-scheduler": "^4.0",
     "voku/simple_html_dom": "^4.8",
-    "stevebauman/hypertext": "^1.0"
+    "stevebauman/hypertext": "^1.0",
+    "symfony/lock": "^6.3"
   },
   "require-dev": {
     "composer/composer": "^2.0",
