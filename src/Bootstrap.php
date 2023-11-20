@@ -14,9 +14,11 @@ use Dux\App\Attribute;
 use Dux\Cache\Cache;
 use Dux\Command\Command;
 use Dux\Config\Config;
+use Dux\Database\BackupCommand;
 use Dux\Database\ListCommand;
 use Dux\Database\MigrateCommand;
 use Dux\Database\ProxyCommand;
+use Dux\Database\RestoreCommand;
 use Dux\Event\EventCommand;
 use Dux\Handlers\ErrorHandler;
 use Dux\Handlers\ErrorHtmlRenderer;
@@ -189,6 +191,8 @@ class Bootstrap
         $commands[] = PackageInstallCommand::class;
         $commands[] = PackageUpdateCommand::class;
         $commands[] = PackageUninstallCommand::class;
+        $commands[] = BackupCommand::class;
+        $commands[] = RestoreCommand::class;
         $this->command = Command::init($commands);
 
 
