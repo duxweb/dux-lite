@@ -39,7 +39,7 @@ class Excel
             fwrite($tmp, $fileTmp);
             fclose($tmp);
         }else {
-            $tmpFile = file_get_contents($path);
+            $tmpFile = $path;
         }
 
         try {
