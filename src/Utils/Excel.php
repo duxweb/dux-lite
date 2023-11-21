@@ -31,7 +31,7 @@ class Excel
 
         $local = !str_contains($path, 'http');
 
-        if ($local) {
+        if (!$local) {
             $client = new \GuzzleHttp\Client();
             $fileTmp = $client->request('GET', $path)->getBody()->getContents();
             $tmpFile = tempnam(sys_get_temp_dir(), 'excel_');
