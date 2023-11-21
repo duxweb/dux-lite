@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Dux\Utils;
 
 use Dux\Handlers\ExceptionBusiness;
+use GuzzleHttp\Exception\GuzzleException;
 use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use PhpOffice\PhpSpreadsheet\Exception;
 use Psr\Http\Message\ResponseInterface;
@@ -13,23 +14,33 @@ class Excel
 
     /**
      * 导入表格
-     * @param string $url
+     * @param string $path
      * @param int $start
      * @return array|null
+     * @throws Exception
+     * @throws GuzzleException
+     * @throws \PhpOffice\PhpSpreadsheet\Reader\Exception
      */
-    public static function import(string $url, int $start = 1): ?array
+    public static function import(string $path, int $start = 1): ?array
     {
-        $ext = strtolower(pathinfo($url, PATHINFO_EXTENSION));
+        $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
         $extArr = ['xlsx', 'xls', 'csv'];
         if (!in_array($ext, $extArr)) {
             throw new ExceptionBusiness("File type error");
         }
-        $client = new \GuzzleHttp\Client();
-        $fileTmp = $client->request('GET', $url)->getBody()->getContents();
-        $tmpFile = tempnam(sys_get_temp_dir(), 'excel_');
-        $tmp = fopen($tmpFile, 'w');
-        fwrite($tmp, $fileTmp);
-        fclose($tmp);
+
+        $local = !str_contains($path, 'http');
+
+        if ($local) {
+            $client = new \GuzzleHttp\Client();
+            $fileTmp = $client->request('GET', $path)->getBody()->getContents();
+            $tmpFile = tempnam(sys_get_temp_dir(), 'excel_');
+            $tmp = fopen($tmpFile, 'w');
+            fwrite($tmp, $fileTmp);
+            fclose($tmp);
+        }else {
+            $tmpFile = file_get_contents($path);
+        }
 
         try {
             $objRead = \PhpOffice\PhpSpreadsheet\IOFactory::createReader(ucfirst($ext));
@@ -58,11 +69,13 @@ class Excel
             foreach ($data as $vo) {
                 $table[] = array_values($vo);
             }
-            unlink($tmpFile);
             return $table;
         } catch (Exception $e) {
-            unlink($tmpFile);
             throw $e;
+        } finally {
+            if (!$local) {
+                unlink($tmpFile);
+            }
         }
     }
 
