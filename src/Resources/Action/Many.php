@@ -35,7 +35,7 @@ trait Many
         }
 
         $keys = array_filter(explode(',', $queryParams['ids']));
-        if ($keys) {
+        if (isset($queryParams['ids'])) {
             $query->whereIn($this->key, $keys);
         }
 
