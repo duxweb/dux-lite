@@ -352,7 +352,7 @@ class Package
             $content = $response->getBody()?->getContents();
         } catch (RequestException $e) {
             $response = $e->getResponse();
-            $content = $response->getBody()?->getContents();
+            $content = $response?->getBody()?->getContents();
         }
         if ($response->getStatusCode() == 401) {
             FileSystem::delete($keyFile);
