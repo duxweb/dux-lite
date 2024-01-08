@@ -61,7 +61,7 @@ trait Many
         }
 
         $assign = $this->transformData($result, function ($item): array {
-            return [...$this->transform($item), ...$this->event->get('transform', $item)];
+            return [...$this->transform($item, 'list'), ...$this->event->get('transform', $item, 'list')];
         });
 
         $assign['data'] = $this->filterData($this->includesMany, $this->excludesMany, $assign['data']);
