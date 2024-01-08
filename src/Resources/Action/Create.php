@@ -13,7 +13,7 @@ trait Create
 
     public function create(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
-        $this->action = 'create';
+        $this->method = 'create';
         $this->init($request, $response, $args);
         $this->event->run('init', $request, $response, $args);
 

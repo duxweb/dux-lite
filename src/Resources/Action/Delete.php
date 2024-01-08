@@ -12,7 +12,7 @@ trait Delete
 {
     public function delete(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
-        $this->action = 'delete';
+        $this->method = 'delete';
         $this->init($request, $response, $args);
         $this->event->run('init', $request, $response, $args);
         $id = $args["id"];

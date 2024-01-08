@@ -26,7 +26,7 @@ abstract class Resources
         'status' => true,
         'pageSize' => 10,
     ];
-    protected string $action = '';
+    protected string $method = '';
 
     /**
      * 多条数据允许字段

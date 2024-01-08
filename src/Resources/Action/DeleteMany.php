@@ -12,7 +12,7 @@ trait DeleteMany
 {
     public function deleteMany(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
-        $this->action = 'deleteMany';
+        $this->method = 'deleteMany';
         $params =  $request->getQueryParams();
         $this->init($request, $response, $args);
         $this->event->run('init', $request, $response, $args);

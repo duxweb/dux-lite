@@ -9,7 +9,7 @@ trait One
 {
     public function show(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
-        $this->action = 'show';
+        $this->method = 'show';
         $this->init($request, $response, $args);
         $this->event->run('init', $request, $response, $args);
         $id = $args["id"] ?: 0;

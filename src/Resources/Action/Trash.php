@@ -11,7 +11,7 @@ trait Trash
 {
     public function trash(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
-        $this->action = 'trash';
+        $this->method = 'trash';
         $this->init($request, $response, $args);
         $this->event->run('init', $request, $response, $args);
         $id = $args["id"];
