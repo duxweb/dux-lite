@@ -9,6 +9,7 @@ trait One
 {
     public function show(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
+        $this->action = 'show';
         $this->init($request, $response, $args);
         $this->event->run('init', $request, $response, $args);
         $id = $args["id"] ?: 0;
@@ -22,7 +23,7 @@ trait One
             $this->event->run('query', $query);
             $info = $query->first();
             $assign = $this->transformData($info, function ($item) {
-                return [...$this->transform($item, 'show'), ...$this->event->get('transform', $item, 'show')];
+                return [...$this->transform($item), ...$this->event->get('transform', $item)];
             });
 
         } else {

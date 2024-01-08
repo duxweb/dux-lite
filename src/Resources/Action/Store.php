@@ -13,6 +13,7 @@ trait Store
 {
     public function store(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
+        $this->action = 'store';
         $this->init($request, $response, $args);
         $this->event->run('init', $request, $response, $args);
         $id = $args["id"];

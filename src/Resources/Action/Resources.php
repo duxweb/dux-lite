@@ -26,6 +26,7 @@ abstract class Resources
         'status' => true,
         'pageSize' => 10,
     ];
+    protected string $action = '';
 
     /**
      * 多条数据允许字段
@@ -107,10 +108,9 @@ abstract class Resources
      * 数据转换
      * 转换数据字段内容
      * @param object $item
-     * @param string $type
      * @return array
      */
-    public function transform(object $item, string $type = ''): array
+    public function transform(object $item): array
     {
         return [];
     }

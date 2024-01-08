@@ -11,6 +11,7 @@ trait Restore
 {
     public function restore(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
+        $this->action = 'restore';
         $this->init($request, $response, $args);
         $this->event->run('init', $request, $response, $args);
         $id = $args["id"];

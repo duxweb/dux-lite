@@ -11,6 +11,8 @@ trait Many
 {
     public function list(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
+        $this->action = 'many';
+
         $this->init($request, $response, $args);
         $this->event->run('init', $request, $response, $args);
         $queryParams = $request->getQueryParams();
@@ -61,7 +63,7 @@ trait Many
         }
 
         $assign = $this->transformData($result, function ($item): array {
-            return [...$this->transform($item, 'list'), ...$this->event->get('transform', $item, 'list')];
+            return [...$this->transform($item), ...$this->event->get('transform', $item)];
         });
 
         $assign['data'] = $this->filterData($this->includesMany, $this->excludesMany, $assign['data']);
