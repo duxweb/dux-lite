@@ -37,17 +37,17 @@ class Permission
             return $group;
         }
 
-        if ($softDelete) {
-            $actions = [...$actions, ...['trash', 'restore']];
-        }
-
         if (!$actions) {
-            $maps = self::$actions;
-        } else {
-            $maps = array_intersect(self::$actions, $actions);
+            $actions = self::$actions;
         }
 
-        foreach ($maps as $vo) {
+        $actions = array_intersect(self::$actions, $actions);
+
+        if ($softDelete) {
+            $actions = [...$actions, 'trash', 'restore'];
+        }
+
+        foreach ($actions as $vo) {
             $group->add($vo);
         }
 

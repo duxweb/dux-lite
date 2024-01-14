@@ -132,6 +132,9 @@ class Route
         $this->map(["ANY"], $pattern, $callable, $name, [], $priority);
     }
 
+
+    public static array $actions = ['list', 'show', 'create', 'edit', 'store', 'delete'];
+
     /**
      * @param string $pattern
      * @param string $class
@@ -149,29 +152,39 @@ class Route
             return $group;
         }
 
-        if (!$actions || in_array("list", $actions)) {
+        if (!$actions) {
+            $actions = self::$actions;
+        }
+
+        $actions = array_intersect(self::$actions, $actions);
+
+        if ($softDelete) {
+            $actions = [...$actions, 'trash', 'restore'];
+        }
+
+        if (in_array("list", $actions)) {
             $group->get('', "$class:list", "$name.list", 100);
         }
-        if (!$actions || in_array("show", $actions)) {
+        if (in_array("show", $actions)) {
             $group->get("/{id:[0-9]+}", "$class:show", "$name.show", 100);
         }
-        if (!$actions || in_array("create", $actions)) {
+        if (in_array("create", $actions)) {
             $group->post("", "$class:create", "$name.create", 100);
         }
-        if (!$actions || in_array("edit", $actions)) {
+        if (in_array("edit", $actions)) {
             $group->put("/{id:[0-9]+}", "$class:edit", "$name.edit", 100);
         }
-        if (!$actions || in_array("store", $actions)) {
+        if (in_array("store", $actions)) {
             $group->patch("/{id:[0-9]+}", "$class:store", "$name.store", 100);
         }
-        if (!$actions || in_array("delete", $actions)) {
+        if (in_array("delete", $actions)) {
             $group->delete("/{id:[0-9]+}", "$class:delete", "$name.delete", 100);
             $group->delete("", "$class:deleteMany", "$name.deleteMany", 100);
         }
-        if ($softDelete && in_array("trash", $actions)) {
+        if (in_array("trash", $actions)) {
             $group->delete("/{id:[0-9]+}/trash", "$class:trash", "$name.trash", 100);
         }
-        if ($softDelete && in_array("restore", $actions)) {
+        if (in_array("restore", $actions)) {
             $group->put("/{id:[0-9]+}/restore", "$class:restore", "$name.restore", 100);
         }
         return $group;
