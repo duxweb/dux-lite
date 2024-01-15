@@ -54,7 +54,7 @@ trait Many
 
         if ($keys) {
             $bindings = implode(',', array_fill(0, count($keys), '?'));
-            $query->orderByRaw("FIELD($this->key, $bindings)", $keys);
+            $query->reorder()->orderByRaw("FIELD($this->key, $bindings)", $keys);
         }
 
         if ($this->pagination['status']) {
