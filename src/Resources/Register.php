@@ -103,7 +103,7 @@ class Register
                 $class = $vo["class"];
                 [$className, $methodName, $name] = $this->formatFile($class);
                 if (!isset($routeMaps[$className])) {
-                    throw new Exception("class [" . $class . "] route attribute parameter missing \"app\" ");
+                    continue;
                 }
                 $route = $routeMaps[$className];
                 $name = $name . "." . ($params["name"] ?: lcfirst($methodName));
