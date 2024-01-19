@@ -30,6 +30,7 @@ use Dux\Validator\Validator;
 use Dux\View\View;
 use GeoIp2\Database\Reader;
 use Illuminate\Database\Capsule\Manager;
+use Ip2Region;
 use Latte\Engine;
 use League\Flysystem\Filesystem;
 use MaxMind\Db\Reader\InvalidDatabaseException;
@@ -44,6 +45,7 @@ use Symfony\Component\Console\Application;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Translation\Loader\YamlFileLoader;
 use Symfony\Component\Translation\Translator;
+use XdbSearcher;
 
 class App
 {
@@ -480,26 +482,14 @@ class App
         }
     }
 
-    public static function geo(): Reader|null
+    public static function geo(): Ip2Region|null
     {
         if (!self::$di->has("geo")) {
             $db = self::config("geo")->get("db");
-            $lang = self::$di->get('language');
-            $maps = [
-                'en-US' => 'en',
-                'zh-CN' => 'zh-CN',
-                'zh-TW' => 'zh-CN',
-                'ja-JP' => 'ja',
-                'ko-KR' => 'en',
-                'ru-RU' => 'ru',
-            ];
-            try {
-                $reader = new Reader($db, [$maps[$lang]]);
-            } catch (InvalidDatabaseException $e) {
-            }
+            $ip2region = XdbSearcher::newWithFileOnly($db);
             self::$di->set(
                 "geo",
-                $reader ?: null
+                is_file($db) ? $ip2region : null
             );
         }
         return self::$di->get("geo");

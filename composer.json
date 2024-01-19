@@ -69,14 +69,14 @@
     "vlucas/phpdotenv": "^5.5",
     "symfony/translation": "^6.3",
     "symfony/messenger": "^6.3",
-    "geoip2/geoip2": "^2.13",
     "jaybizzle/crawler-detect": "^1.2",
     "xantios/mimey": "^2.2",
     "maennchen/zipstream-php": "^3.1",
     "peppeocchi/php-cron-scheduler": "^4.0",
     "voku/simple_html_dom": "^4.8",
     "stevebauman/hypertext": "^1.0",
-    "symfony/lock": "^6.3"
+    "symfony/lock": "^6.3",
+    "zoujingli/ip2region": "^2.0"
   },
   "require-dev": {
     "composer/composer": "^2.0",
