@@ -482,7 +482,7 @@ class App
         }
     }
 
-    public static function geo(): Ip2Region|null
+    public static function geo(): XdbSearcher|null
     {
         if (!self::$di->has("geo")) {
             $db = self::config("geo")->get("db");
