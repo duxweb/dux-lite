@@ -29,10 +29,11 @@ class Attribute {
         foreach ($apps as $vo) {
             $reflection = new \ReflectionClass($vo);
             $appDir = dirname($reflection->getFileName());
+            $appDirLen = strlen($appDir);
             $files = Finder::findFiles("*/*.php")->from($appDir);
             foreach ($files as $file) {
-                $dirName = basename($file->getPath());
-                if (str_contains(ucfirst($dirName), 'Test')) {
+                $dirName = str_replace('/','\\',substr($file->getPath(),$appDirLen + 1));
+                if (str_ends_with($dirName, 'Test')) {
                     continue;
                 }
                 $class = $reflection->getNamespaceName() . "\\" . $dirName . "\\" . $file->getBasename(".php");

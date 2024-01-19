@@ -36,11 +36,6 @@ trait Many
             $query->where($this->key, $key);
         }
 
-        $keys = array_filter(explode(',', $queryParams['ids']));
-        if (isset($queryParams['ids'])) {
-            $query->whereIn($this->key, $keys);
-        }
-
         $sorts = $this->getSorts($queryParams);
         foreach ($sorts as $key => $sort) {
             $query->orderBy($key, $sort);
@@ -51,6 +46,16 @@ trait Many
 
         $this->event->run('queryMany', $query, $request, $args);
         $this->event->run('query', $query);
+
+        $keys = array_filter(explode(',', $queryParams['ids']));
+        if (isset($queryParams['ids'])) {
+            $query->whereIn($this->key, $keys);
+        }
+
+        if ($keys) {
+            $bindings = implode(',', array_fill(0, count($keys), '?'));
+            $query->reorder()->orderByRaw("FIELD($this->key, $bindings)", $keys);
+        }
 
         if ($this->pagination['status']) {
             $result = $query->paginate($limit);
