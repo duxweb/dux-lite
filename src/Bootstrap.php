@@ -142,8 +142,7 @@ class Bootstrap
         $timezone = App::config("use")->get("app.timezone", 'PRC');
         date_default_timezone_set($timezone);
 
-        $local = App::config("use")->get("app.local", 'zh');
-        Carbon::setLocale($local);
+        Carbon::setLocale('auto');
     }
 
     /**
