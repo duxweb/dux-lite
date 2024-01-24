@@ -11,11 +11,14 @@ class Validator
 
     /**
      * 数据验证
-     * @param array $data data array
+     * @param $data data array
      * @param array $rules ["name" => ["rule", "message"]]
      */
-    public static function parser(array $data, array $rules): Data
+    public static function parser($data, array $rules): Data
     {
+        if (!is_array($data) || !$data) {
+            return new Data();
+        }
         //  $role = [
         //      "name" => ["rule", "message"]
         //  ];
