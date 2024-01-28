@@ -86,7 +86,7 @@ class Register
                 if (str_contains($class, ":")) {
                     // method
                     if (!$params["app"] && !isset($groupClass[$className])) {
-                        throw new \Exception("class [" . $class . "] route attribute parameter missing \"app\" ");
+                        continue;
                     }
                     $group = $params["app"] ? $this->get($params["app"]) : $groupClass[$className];
                 } else {
