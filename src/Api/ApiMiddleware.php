@@ -54,11 +54,9 @@ class ApiMiddleware
         if (!$secretKey) {
             throw new ExceptionBusiness('Signature authorization failed', 402);
         }
-        $md5 = md5($request->getBody()->getContents());
         $signData = [];
         $signData[] = $request->getUri()->getPath();
         $signData[] = urldecode($request->getUri()->getQuery());
-        $signData[] = $md5;
         $signData[] = $time;
         $signStr = hash_hmac("SHA256", implode("\n", $signData), $secretKey);
         return $signStr === $sign;
