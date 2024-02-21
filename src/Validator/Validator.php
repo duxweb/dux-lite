@@ -16,13 +16,10 @@ class Validator
      */
     public static function parser($data, array $rules): Data
     {
-        if (!is_array($data) || !$data) {
-            return new Data();
-        }
         //  $role = [
         //      "name" => ["rule", "message"]
         //  ];
-        $v = new \Valitron\Validator($data);
+        $v = new \Valitron\Validator($data ?: []);
         foreach ($rules as $key => $item) {
             if (empty($item)) {
                 continue;
