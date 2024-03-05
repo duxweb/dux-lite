@@ -45,7 +45,7 @@ class TransJsonCommand extends Command
         $lang = $input->getOption('lang');
         $io = new SymfonyStyle($input, $output);
 
-        $langFile = base_path('web/src/pages/' . lcfirst($name) . '/locales/' . $lang .  $pack . '.json');
+        $langFile = base_path('web/src/pages/' . lcfirst($name) . '/locales/' . $pack . $lang . '.json');
         if (!is_file($langFile)) {
             $io->error('File does not exist');
             return Command::FAILURE;
@@ -62,7 +62,7 @@ class TransJsonCommand extends Command
         }
 
         Trans::main($auth, $lang, $data, file_get_contents($langFile), function ($lang) use ($name, $pack) {
-            return base_path('web/src/pages/' . lcfirst($name) . '/locales/' . $lang . $pack . '.json');
+            return base_path('web/src/pages/' . lcfirst($name) . '/locales/' . $pack . $lang . '.json');
         });
 
         $io->success('Trans Success');
