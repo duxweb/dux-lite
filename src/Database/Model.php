@@ -88,4 +88,9 @@ class Model extends \Illuminate\Database\Eloquent\Model
 
     }
 
+    protected function serializeDate($date): string
+    {
+        return $date->format('Y-m-d H:i:s');
+    }
+
 }
