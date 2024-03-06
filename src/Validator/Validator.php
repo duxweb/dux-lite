@@ -11,18 +11,16 @@ class Validator
 
     /**
      * 数据验证
-     * @param $data data array
+     * @param array|object|null $data data array
      * @param array $rules ["name" => ["rule", "message"]]
+     * @return Data
      */
-    public static function parser($data, array $rules): Data
+    public static function parser(null|array|object $data, array $rules): Data
     {
-        if (!is_array($data) || !$data) {
-            return new Data();
-        }
         //  $role = [
         //      "name" => ["rule", "message"]
         //  ];
-        $v = new \Valitron\Validator($data);
+        $v = new \Valitron\Validator($data ?: []);
         foreach ($rules as $key => $item) {
             if (empty($item)) {
                 continue;
