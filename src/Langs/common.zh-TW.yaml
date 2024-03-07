@@ -24,6 +24,7 @@ validate:
 error:
   notFound: 頁面不存在
   notFoundMessage: 您訪問的頁面不存在或已被刪除
+  errorTitle: 操作錯誤
   errorMessage: 操作遇到了錯誤，請稍後再試
   home: 回到首頁
   back: 返回上一頁

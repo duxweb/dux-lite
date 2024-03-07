@@ -24,6 +24,7 @@ validate:
 error:
   notFound: ページが見つかりません
   notFoundMessage: アクセスしたページは存在しないか、削除されています
+  errorTitle: エラーが発生しました
   errorMessage: 操作中にエラーが発生しました。後でもう一度お試しください
   home: ホームに戻る
   back: 前のページに戻る
