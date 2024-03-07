@@ -21,3 +21,9 @@ resources:
 validate:
   placeholder: Please enter %name%
   select: Please select %name%
+error:
+  notFound: Page not found
+  notFoundMessage: The page you are trying to access does not exist or has been deleted
+  errorMessage: An error occurred while processing your request. Please try again later
+  home: Back to home
+  back: Go back to the previous page

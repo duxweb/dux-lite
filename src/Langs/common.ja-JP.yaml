@@ -21,3 +21,9 @@ resources:
 validate:
   placeholder: %name%を入力してください
   select: %name%を選択してください
+error:
+  notFound: ページが見つかりません
+  notFoundMessage: アクセスしたページは存在しないか、削除されています
+  errorMessage: 操作中にエラーが発生しました。後でもう一度お試しください
+  home: ホームに戻る
+  back: 前のページに戻る

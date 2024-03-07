@@ -19,10 +19,24 @@ class ErrorHtmlRenderer extends HtmlErrorRenderer
 
     public function __invoke(Throwable $exception, bool $displayErrorDetails): string
     {
-        if ($displayErrorDetails) {
+        if ($displayErrorDetails && $exception->getCode() != 404) {
             return parent::__invoke($exception, true);
         } else {
-            return App::$bootstrap->view->renderToString(dirname(__DIR__) . "/Tpl/error.html", [
+            $tplNotFound = App::di()->has('tpl.404');
+            if ($tplNotFound) {
+                $tplNotFound = App::di()->get('tpl.404');
+            }else {
+                $tplNotFound = dirname(__DIR__) . "/Tpl/404.latte";
+            }
+
+            $tplError = App::di()->has('tpl.error');
+            if ($tplError) {
+                $tplError = App::di()->get('tpl.error');
+            }else {
+                $tplError = dirname(__DIR__) . "/Tpl/error.latte";
+            }
+
+            return App::$bootstrap->view->renderToString($exception->getCode() == 404 ? $tplNotFound : $tplError, [
                 "code" => $exception->getCode(),
                 "title" => $this->getErrorTitle($exception),
                 "desc" => $this->getErrorDescription($exception),

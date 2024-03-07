@@ -21,3 +21,9 @@ resources:
 validate:
   placeholder: 請輸入%name%
   select: 請選擇%name%
+error:
+  notFound: 頁面不存在
+  notFoundMessage: 您訪問的頁面不存在或已被刪除
+  errorMessage: 操作遇到了錯誤，請稍後再試
+  home: 回到首頁
+  back: 返回上一頁
