@@ -486,10 +486,10 @@ class App
     {
         if (!self::$di->has("geo")) {
             $db = self::config("geo")->get("db");
-            $ip2region = XdbSearcher::newWithFileOnly($db);
+            $ip2region = is_file($db) ? XdbSearcher::newWithFileOnly($db) : null;
             self::$di->set(
                 "geo",
-                is_file($db) ? $ip2region : null
+                $ip2region
             );
         }
         return self::$di->get("geo");
