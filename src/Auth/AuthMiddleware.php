@@ -11,11 +11,19 @@ use Psr\Http\Server\RequestHandlerInterface as RequestHandler;
 class AuthMiddleware {
     public function __construct(
         public string $app,
-        public int $renewal = 43200
+        public int $renewal = 43200,
+        public bool $must = true,
     ) {
     }
 
     public function __invoke(Request $request, RequestHandler $handler): Response {
+        if (!$this->must) {
+            $auth = $request->getHeaderLine('Authorization');
+            if (!$auth) {
+                return $handler->handle($request);
+            }
+        }
+
         $secret = \Dux\App::config("use")->get("app.secret");
         $renewal = $this->renewal;
         $app = $this->app;
