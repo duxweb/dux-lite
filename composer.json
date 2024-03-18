@@ -76,7 +76,8 @@
     "voku/simple_html_dom": "^4.8",
     "stevebauman/hypertext": "^1.0",
     "symfony/lock": "^6.3",
-    "zoujingli/ip2region": "^2.0"
+    "zoujingli/ip2region": "^2.0",
+    "ezyang/htmlpurifier": "^4.17"
   },
   "require-dev": {
     "composer/composer": "^2.0",
