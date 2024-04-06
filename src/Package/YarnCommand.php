@@ -3,13 +3,10 @@ declare(strict_types=1);
 
 namespace Dux\Package;
 
-use Nette\Utils\FileSystem;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Question\Question;
-use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\Process\Exception\ProcessFailedException;
 use Symfony\Component\Process\Process;
 
@@ -39,8 +36,8 @@ class YarnCommand extends Command
         }
         $yarnPath = trim($yarnPathFinder->getOutput());
 
-//        $process = new Process(['yarn', 'config', 'set', 'registry', 'https://registry.npm.taobao.org']);
-//        $process->run();
+        $process = new Process(['yarn', 'config', 'set', 'registry', 'https://registry.npm.taobao.org']);
+        $process->run();
 
         $command = array_merge([$yarnPath], is_array($yarnCommand) ? $yarnCommand : [$yarnCommand]);
         $workingDirectory = base_path('web');
