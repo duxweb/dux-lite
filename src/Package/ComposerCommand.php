@@ -32,8 +32,16 @@ class ComposerCommand extends Command
     public function execute(InputInterface $input, OutputInterface $output): int
     {
         $composerCommand = $input->getArgument('cmd');
-        $command = (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') ? 'where' : 'which';
-        $composerPathFinder = new Process([$command, 'composer']);
+
+        $executableFinder = new \Symfony\Component\Process\ExecutableFinder();
+        $composerPath = $executableFinder->find('composer');
+
+        if (!$composerPath) {
+            throw new \Exception('Path to composer not found');
+        }
+
+
+        $composerPathFinder = Process::fromShellCommandline('/usr/bin/which composer');
         $composerPathFinder->run();
 
         if (!$composerPathFinder->isSuccessful()) {

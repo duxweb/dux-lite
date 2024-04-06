@@ -29,14 +29,14 @@ class YarnCommand extends Command
     public function execute(InputInterface $input, OutputInterface $output): int
     {
         $yarnCommand = $input->getArgument('cmd');
-        $command = (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') ? 'where' : 'which';
-        $yarnPathFinder = new Process([$command, 'yarn']);
-        $yarnPathFinder->run();
 
-        if (!$yarnPathFinder->isSuccessful()) {
-            throw new ProcessFailedException($yarnPathFinder);
+        $executableFinder = new \Symfony\Component\Process\ExecutableFinder();
+        $yarnPath = $executableFinder->find('yarn');
+
+        if (!$yarnPath) {
+            throw new \Exception('Path to yarn not found');
         }
-        $yarnPath = trim($yarnPathFinder->getOutput());
+
 
         $process = new Process(['yarn', 'config', 'set', 'registry', 'https://registry.npm.taobao.org']);
         $process->run();
