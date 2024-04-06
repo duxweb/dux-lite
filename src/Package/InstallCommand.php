@@ -35,9 +35,7 @@ class InstallCommand extends Command
         $name = $input->getArgument('name');
         $build = $input->getOption('build');
 
-
         $helper = $this->getHelper('question');
-
         $auth = Package::auth($helper, $input, $output);
         if (is_int($auth)) {
             return $auth;
