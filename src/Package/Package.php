@@ -354,7 +354,11 @@ class Package
             return '';
         }
         $content = FileSystem::read($keyFile);
-        return decryption($content);
+        $key = '';
+        try {
+            $key = decryption($content);
+        }catch (\Exception $e) {}
+        return $key ?: '';
     }
 
     public static function request(string $method, string $path, array $params): array
