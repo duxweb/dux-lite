@@ -19,7 +19,7 @@ class AuthService
     {
         $jwtStr = str_replace('Bearer ', '', $request->getHeaderLine('Authorization'));
         try {
-            $jwt = JWT::decode($jwtStr, new Key(App::config("use")->get("app.secret"), 'has256'));
+            $jwt = JWT::decode($jwtStr, new Key(App::config("use")->get("app.secret"), 'HS256'));
 
         } catch (Exception $e) {
             return null;
