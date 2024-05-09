@@ -144,7 +144,7 @@ class Excel
             foreach ($label as $key => $vo) {
                 $col = $worksheet->setCellValueExplicit([$key + 1, $headRow], $vo['name'], DataType::TYPE_STRING);
                 if ($vo['merge']) {
-                    $col->mergeCells([1, $headRow, $vo['merge'], 2]);
+                    $col->mergeCells([$key + 1, $headRow, $key + 1 + $vo['merge'], $headRow]);
                 }
                 $worksheet->getStyle([$key + 1, $headRow])->applyFromArray($styleArray);
             }
