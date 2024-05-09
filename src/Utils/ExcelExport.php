@@ -2,7 +2,7 @@
 
 namespace Dux\Utils;
 
-use App\Safe\Web\Excel\Sheet;
+use Dux\Utils\Excel\Sheet;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use Psr\Http\Message\ResponseInterface;
 
