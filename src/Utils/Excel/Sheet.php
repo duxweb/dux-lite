@@ -213,7 +213,7 @@ class Sheet
             return;
         }
         $this->worksheet->setCellValue([1, $rowIndex], $this->remark)->mergeCells([1, $rowIndex, $columnNum, $rowIndex]);
-        $this->worksheet->getStyle([1, 2])->applyFromArray([
+        $this->worksheet->getStyle([1, $rowIndex])->applyFromArray([
             'alignment' => [
                 'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
             ],
