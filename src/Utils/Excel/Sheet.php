@@ -68,7 +68,7 @@ class Sheet
                 'id' => 1,
             ]
         ];*/
-        $this->data[] = $data;
+        $this->data = $data;
         return $this;
     }
 
