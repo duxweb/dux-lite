@@ -48,5 +48,21 @@ class ExcelExport
         return $response;
     }
 
+    public function getFile(string $name, ResponseInterface $response): string
+    {
+        foreach ($this->sheet as $k => $sheet) {
+            $sheet->send($this->excel, $k);
+        }
+
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($this->excel);
+        header('Content-Type:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition:attachment; filename=' . rawurlencode($name . '-' . date('YmdHis')) . '.xlsx');
+        header('Cache-Control:max-age=0');
+
+        $output = tempnam(sys_get_temp_dir(), 'spreadsheet');
+        $writer->save($output);
+        return $output;
+    }
+
 
 }
