@@ -83,12 +83,21 @@ class Excel
      * 表格导出
      * @param string $title
      * @param string $subtitle
-     * @param array $label
+     * @param array $labels
      * @param array $data
      */
-    public static function export(string $title, string $subtitle, array $label, array $data, ResponseInterface $response): ResponseInterface
+    public static function export(string $title, string $subtitle, array $labels, array $data, ResponseInterface $response): ResponseInterface
     {
-        $count = count($label);
+        // 获取列数据
+        if (is_array($labels[0])) {
+            $labels = $labels[0];
+        }
+        $lengths = array_map('count', $labels);
+        $longestIndex = array_search(max($lengths), $lengths);
+        $mainLabel = $labels[$longestIndex];
+        $count = count($mainLabel);
+
+        // 设置表格
         $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
         $worksheet = $spreadsheet->getSheet(0);
         //标题
@@ -103,16 +112,16 @@ class Excel
         ];
         $worksheet->getStyle([1, 1])->applyFromArray($styleCenter);
 
-        foreach ($label as $key => $vo) {
-            $worksheet->getColumnDimensionByColumn($key + 1)->setWidth($vo['width']);
-        }
-
         $worksheet->setCellValue([1, 2], $subtitle)->mergeCells([1, 2, $count, 2]);
         $worksheet->getStyle([1, 2])->applyFromArray([
             'alignment' => [
                 'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
             ],
         ]);
+
+        foreach ($mainLabel as $key => $vo) {
+            $worksheet->getColumnDimensionByColumn($key + 1)->setWidth($vo['width']);
+        }
 
         //表头
         $styleArray = [
@@ -129,11 +138,19 @@ class Excel
                 'size' => 12,
             ],
         ];
+
         $headRow = 3;
-        foreach ($label as $key => $vo) {
-            $worksheet->setCellValueExplicit([$key + 1, $headRow], $vo['name'], DataType::TYPE_STRING);
-            $worksheet->getStyle([$key + 1, $headRow])->applyFromArray($styleArray);
+        foreach ($labels as $label) {
+            foreach ($label as $key => $vo) {
+                $col = $worksheet->setCellValueExplicit([$key + 1, $headRow], $vo['name'], DataType::TYPE_STRING);
+                if ($vo['merge']) {
+                    $col->mergeCells([1, $headRow, $vo['merge'], 2]);
+                }
+                $worksheet->getStyle([$key + 1, $headRow])->applyFromArray($styleArray);
+            }
+            $headRow++;
         }
+
         foreach ($data as $list) {
             $headRow++;
             foreach ($list as $k => $vo) {
