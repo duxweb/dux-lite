@@ -38,7 +38,7 @@ class Excel
             $tmp = fopen($tmpFile, 'w');
             fwrite($tmp, $fileTmp);
             fclose($tmp);
-        }else {
+        } else {
             $tmpFile = $path;
         }
 
@@ -89,8 +89,8 @@ class Excel
     public static function export(string $title, string $subtitle, array $labels, array $data, ResponseInterface $response): ResponseInterface
     {
         // 获取列数据
-        if (is_array($labels[0])) {
-            $labels = $labels[0];
+        if (!is_array($labels[0])) {
+            $labels[] = $labels;
         }
         $lengths = array_map('count', $labels);
         $longestIndex = array_search(max($lengths), $lengths);
@@ -112,6 +112,7 @@ class Excel
         ];
         $worksheet->getStyle([1, 1])->applyFromArray($styleCenter);
 
+        // 副标题
         $worksheet->setCellValue([1, 2], $subtitle)->mergeCells([1, 2, $count, 2]);
         $worksheet->getStyle([1, 2])->applyFromArray([
             'alignment' => [
@@ -119,11 +120,12 @@ class Excel
             ],
         ]);
 
+        // 单元格宽度
         foreach ($mainLabel as $key => $vo) {
             $worksheet->getColumnDimensionByColumn($key + 1)->setWidth($vo['width']);
         }
 
-        //表头
+        // 单元格样式
         $styleArray = [
             'borders' => [
                 'outline' => [
@@ -139,34 +141,84 @@ class Excel
             ],
         ];
 
+
         $headRow = 3;
         foreach ($labels as $label) {
-            foreach ($label as $key => $vo) {
-                $col = $worksheet->setCellValueExplicit([$key + 1, $headRow], $vo['name'], DataType::TYPE_STRING);
+            $fromCol = 1;
+            foreach ($label as $vo) {
+                $toCol = $fromCol;
+                $col = $worksheet->setCellValueExplicit([$fromCol, $headRow], $vo['name'], DataType::TYPE_STRING);
+
                 if ($vo['merge']) {
-                    $col->mergeCells([$key + 1, $headRow, $key + 1 + $vo['merge'], $headRow]);
+                    $toCol = $fromCol + $vo['merge'] - 1;
+                    $col->mergeCells([$fromCol, $headRow, $toCol, $headRow]);
                 }
-                $worksheet->getStyle([$key + 1, $headRow])->applyFromArray($styleArray);
+
+                $gridStyle = $styleArray;
+
+                if ($vo['align'] == 'left') {
+                    $gridStyle['alignment'] = [
+                        'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT,
+                    ];
+                }
+                if ($vo['align'] == 'center') {
+                    $gridStyle['alignment'] = [
+                        'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+                    ];
+                }
+                if ($vo['align'] == 'right') {
+                    $gridStyle['alignment'] = [
+                        'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_RIGHT,
+                    ];
+                }
+
+                $worksheet->getStyle([$fromCol, $headRow, $toCol, $headRow])->applyFromArray($gridStyle);
+
+                if ($vo['merge']) {
+                    $fromCol = $toCol;
+                }
+
+                $fromCol++;
             }
             $headRow++;
         }
 
         foreach ($data as $list) {
-            $headRow++;
             foreach ($list as $k => $vo) {
                 if (is_array($vo)) {
                     $callback = $vo['callback'];
                     $content = $vo['content'];
+                    $align = $vo['align'];
                 } else {
                     $content = $vo;
                     $callback = '';
+                    $align = '';
                 }
                 $worksheet->setCellValueExplicit([$k + 1, $headRow], $content, DataType::TYPE_STRING);
-                $item = $worksheet->getStyle([$k + 1, $headRow])->applyFromArray($styleArray);
+
+                $gridStyle = $styleArray;
+                if ($align == 'left') {
+                    $gridStyle['alignment'] = [
+                        'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT,
+                    ];
+                }
+                if ($align == 'center') {
+                    $gridStyle['alignment'] = [
+                        'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+                    ];
+                }
+                if ($align == 'right') {
+                    $gridStyle['alignment'] = [
+                        'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_RIGHT,
+                    ];
+                }
+
+                $item = $worksheet->getStyle([$k + 1, $headRow])->applyFromArray($gridStyle);
                 if (is_callable($callback)) {
                     $callback($item, $worksheet);
                 }
             }
+            $headRow++;
         }
 
         unset($worksheet);
