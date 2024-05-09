@@ -194,7 +194,6 @@ class Sheet
             return;
         }
         foreach ($this->data as $data) {
-
             $index = 1;
             foreach ($this->header as $field) {
                 $this->worksheet->setCellValueExplicit([$index, $rowIndex], $data[$field->data['name']], DataType::TYPE_STRING);
@@ -202,8 +201,8 @@ class Sheet
                 $this->worksheet->getStyle([$index, $rowIndex, $index, $rowIndex])->applyFromArray([...$this->getGridStyle(), ...$field->getStyle()]);
                 $index++;
             }
+            $rowIndex++;
         }
-        $rowIndex++;
     }
 
 
