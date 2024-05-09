@@ -39,9 +39,6 @@ class ExcelExport
         }
 
         $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($this->excel);
-        header('Content-Type:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition:attachment; filename=' . rawurlencode($name . '-' . date('YmdHis')) . '.xlsx');
-        header('Cache-Control:max-age=0');
 
         $output = fopen('php://output', 'rw+');
         $writer->save($output);
@@ -49,10 +46,10 @@ class ExcelExport
         $stream = new \Slim\Psr7\Stream($output);
 
         $response
-            ->withHeader('Content-Type', 'application/zip')
-            ->withHeader('Content-Transfer-Encoding', 'Binary')
-            ->withHeader('Content-Disposition', 'attachment; filename='.date('YmdHis').'.zip')
+            ->withHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+            ->withHeader('Content-Disposition', 'attachment; filename='.rawurlencode($name . '-' . date('YmdHis')) . '.xlsx')
             ->withHeader('Content-Length', filesize($output))
+            ->withHeader('Cache-Control', 'max-age=0')
             ->withBody($stream);
 
         return $response;
