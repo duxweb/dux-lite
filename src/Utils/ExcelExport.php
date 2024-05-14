@@ -40,19 +40,21 @@ class ExcelExport
 
         $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($this->excel);
 
-        $output = fopen('php://output', 'rw+');
+        $output = fopen('php://temp', 'w+');
         $writer->save($output);
+
 
         $stream = new \Slim\Psr7\Stream($output);
 
-        $response
+        fseek($output,0,SEEK_END);
+        $size = ftell($output);
+
+        return $response
             ->withHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
             ->withHeader('Content-Disposition', 'attachment; filename='.rawurlencode($name . '-' . date('YmdHis')) . '.xlsx')
-            ->withHeader('Content-Length', filesize($output))
+            ->withHeader('Content-Length', $size)
             ->withHeader('Cache-Control', 'max-age=0')
             ->withBody($stream);
-
-        return $response;
     }
 
     public function getFile(): string
