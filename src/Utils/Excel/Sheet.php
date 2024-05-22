@@ -196,7 +196,11 @@ class Sheet
         foreach ($this->data as $data) {
             $index = 1;
             foreach ($this->header as $field) {
-                $this->worksheet->setCellValueExplicit([$index, $rowIndex], $data[$field->data['name']], DataType::TYPE_STRING);
+                if (is_callable($data[$field->data['name']])) {
+                    $data[$field->data['name']]($this->worksheet, [$index, $rowIndex]);
+                }else {
+                    $this->worksheet->setCellValueExplicit([$index, $rowIndex], $data[$field->data['name']], DataType::TYPE_STRING);
+                }
                 // 设置样式
                 $this->worksheet->getStyle([$index, $rowIndex, $index, $rowIndex])->applyFromArray([...$this->getGridStyle(), ...$field->getStyle()]);
                 $index++;
@@ -237,5 +241,7 @@ class Sheet
             ],
         ];
     }
+
+
 
 }

@@ -38,6 +38,7 @@ class HeaderItem
     {
         return [
             'alignment' => [
+                'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
                 'horizontal' => $this->data['align'],
             ]
         ];
