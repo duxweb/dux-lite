@@ -235,6 +235,7 @@ class Sheet
             ],
             'alignment' => [
                 'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+                'wrapText' => true,
             ],
             'font' => [
                 'size' => 12,
