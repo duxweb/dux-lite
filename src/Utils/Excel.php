@@ -81,6 +81,7 @@ class Excel
 
     /**
      * 表格导出
+     * @deprecated use ExcelExport Class
      * @param string $title
      * @param string $subtitle
      * @param array $labels
