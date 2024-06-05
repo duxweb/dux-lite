@@ -29,7 +29,7 @@ class Del
         $files = [];
         $phpDependencies = [];
         $jsDependencies = [];
-        foreach ($appPackages as $packageName) {
+        foreach ($appPackages as $packageName => $ver) {
 
             // 查找当前包
             $package = $packages->firstWhere('name', $packageName);
