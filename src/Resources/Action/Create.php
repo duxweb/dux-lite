@@ -34,8 +34,8 @@ trait Create
             $model->$key = $vo;
         }
 
-        $this->createBefore($data);
-        $this->event->run('createBefore', $data);
+        $this->createBefore($data, $model);
+        $this->event->run('createBefore', $data, $model);
 
         $model->save();
 
@@ -47,7 +47,7 @@ trait Create
         return send($response, $this->translation($request, 'create'));
     }
 
-    public function createBefore(Data $data): void
+    public function createBefore(Data $data, mixed $info): void
     {
     }
 
