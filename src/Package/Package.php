@@ -22,7 +22,7 @@ use ZipArchive;
 
 class Package
 {
-    public static string $url = 'http://dux.cn';
+    public static string $url = 'http://dux.plus';
 
     public static function downloadPackages(OutputInterface $output, Collection $packages, Collection $dependencies, Collection $apps, Collection $composers, Collection $node, Collection $files, array $data): void
     {
