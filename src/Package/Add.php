@@ -20,7 +20,7 @@ class Add
         $appLockJson = [
             "_readme" => [
                 "This file relies on the Dux application to be in a locked state",
-                "Read more about it at https://www.dux.plus"
+                "Read more about it at https://www.dux.cn"
             ]
         ];
         if (is_file($configFile)) {
