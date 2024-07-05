@@ -200,30 +200,23 @@ if (!function_exists('human_filesize')) {
 }
 
 if (!function_exists('str_hidden')) {
-    function str_hidden(string $string, $start = 0, $length = -1, string $re = '*'): string
+    function str_hidden(string $str, int $percent = 50, string $hide = '*'): string
     {
-        if (empty($string)) {
-            return '';
+        if (strpos($str, '@')) {
+            $email = explode('@', $str);
+            $str   = $email[0];
         }
-        if (is_string($start)) {
-            $start = mb_strpos($string, $start);
+        $length     = mb_strlen($str, 'utf-8');
+        $mid        = floor($length / 2);
+        $hideLength = floor($length * ($percent / 100));
+        $start      = (int)$mid - floor($hideLength / 2);
+        $hideStr    = '';
+        for ($i = 0; $i < $hideLength; $i++) {
+            $hideStr .= $hide;
         }
-        if (is_string($length)) {
-            $length = mb_strpos($string, $length) - $start;
-            // 防止此类极端情况：（dataDesensitization('aa@qq.com', 3, '@', '******')  output:// aa@******@qq.com）
-            // 此处＜0的情况需另外处理，将start参数重置为1 重置后 output:// a******@qq.com
-            if ($length < 0) {
-                $length = $length + $start - 1;
-                $start = 1;
-            }
+        if (!empty($email[1])) {
+            $str .= '@'.$email[1];
         }
-        $str = mb_substr($string, 0, $start);
-
-        $strBengin = mb_substr($string, $start + $length);
-        if (mb_strlen($re) === 1) {
-            $re = str_pad($re, $length, $re);
-        }
-
-        return $str . $re . $strBengin;
+        return substr_replace($str, $hideStr, $start, (int)$hideLength);
     }
 }
