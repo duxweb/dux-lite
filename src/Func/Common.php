@@ -200,10 +200,10 @@ if (!function_exists('human_filesize')) {
 }
 
 if (!function_exists('str_hidden')) {
-    function str_hidden(string $str, int $percent = 50, string $hide = '*'): string
+    function str_hidden(string $str, int $percent = 50, string $hide = '*', string $explode = ''): string
     {
-        if (strpos($str, '@')) {
-            $email = explode('@', $str);
+        if ($explode) {
+            $email = explode($explode, $str);
             $str   = $email[0];
         }
         $length     = mb_strlen($str, 'utf-8');
