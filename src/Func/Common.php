@@ -172,7 +172,7 @@ if (!function_exists('__')) {
         if (isset($params[0])) {
             if (is_array($params[0])) {
                 $parameters = $params[0];
-            }else {
+            } else {
                 $domain = $params[0];
             }
         }
@@ -180,7 +180,7 @@ if (!function_exists('__')) {
         if (isset($params[1])) {
             if (is_array($params[1])) {
                 $parameters = $params[1];
-            }else {
+            } else {
                 $domain = $params[1];
             }
         }
@@ -193,8 +193,37 @@ if (!function_exists('human_filesize')) {
     function human_filesize($bytes, $decimals = 2): string
     {
         $size = ['B', 'kB', 'MB', 'GB', 'TB', 'PB'];
-        $factor = floor((strlen((string) $bytes) - 1) / 3);
-        return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor)) .@$size[$factor];
+        $factor = floor((strlen((string)$bytes) - 1) / 3);
+        return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor)) . @$size[$factor];
     }
 
+}
+
+if (!function_exists('str_hidden')) {
+    function str_hidden(string $string, $start = 0, $length = -1, string $re = '*'): string
+    {
+        if (empty($string)) {
+            return '';
+        }
+        if (is_string($start)) {
+            $start = mb_strpos($string, $start);
+        }
+        if (is_string($length)) {
+            $length = mb_strpos($string, $length) - $start;
+            // 防止此类极端情况：（dataDesensitization('aa@qq.com', 3, '@', '******')  output:// aa@******@qq.com）
+            // 此处＜0的情况需另外处理，将start参数重置为1 重置后 output:// a******@qq.com
+            if ($length < 0) {
+                $length = $length + $start - 1;
+                $start = 1;
+            }
+        }
+        $str = mb_substr($string, 0, $start);
+
+        $strBengin = mb_substr($string, $start + $length);
+        if (mb_strlen($re) === 1) {
+            $re = str_pad($re, $length, $re);
+        }
+
+        return $str . $re . $strBengin;
+    }
 }
