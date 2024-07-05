@@ -217,6 +217,6 @@ if (!function_exists('str_hidden')) {
         if (!empty($email[1])) {
             $str .= '@'.$email[1];
         }
-        return substr_replace($str, $hideStr, $start, (int)$hideLength);
+        return substr_replace($str, $hideStr, (int)$start, (int)$hideLength);
     }
 }
