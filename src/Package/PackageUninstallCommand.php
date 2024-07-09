@@ -31,7 +31,7 @@ class PackageUninstallCommand extends Command
         $name = $input->getArgument('name');
 
         try {
-            Del::main($output, [$name]);
+            Del::main($output, [$name => 'last']);
         } finally {
             FileSystem::delete(data_path('package'));
         }
