@@ -7,5 +7,5 @@ namespace Dux\Handlers;
  * ExceptionBusiness
  */
 class ExceptionBusiness  extends Exception {
-
+    protected $code = 500;
 }
