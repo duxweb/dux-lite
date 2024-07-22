@@ -36,15 +36,15 @@ class ErrorHtmlRenderer extends HtmlErrorRenderer
                 $tplError = dirname(__DIR__) . "/Tpl/error.latte";
             }
 
-            $desc = $this->getErrorDescription($exception);
-            if ($exception instanceof Exception) {
-                $desc = $exception->getMessage();
-            }
 
-            return App::$bootstrap->view->renderToString($exception->getCode() == 404 ? $tplNotFound : $tplError, [
-                "code" => $exception->getCode(),
-                "title" => $this->getErrorTitle($exception),
-                "desc" => $desc,
+            $code = $exception->getCode() ?: 500;
+            $title = $this->getErrorTitle($exception);
+            $desc = $this->getErrorDescription($exception);
+
+            return App::$bootstrap->view->renderToString($code == 404 ? $tplNotFound : $tplError, [
+                "code" => $code,
+                "title" => $title,
+                "desc" => $title ?: $desc,
                 "back" => App::$bootstrap->exceptionBack,
             ]);
 
