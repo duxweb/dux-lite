@@ -39,7 +39,6 @@ use Monolog\Logger;
 use Noodlehaus\Config;
 use Phpfastcache\Helper\Psr16Adapter;
 use Predis\Client;
-use Redis;
 use ReflectionClass;
 use Slim\App as SlimApp;
 use Symfony\Component\Console\Application;
@@ -67,7 +66,7 @@ class App
      * @throws DependencyException
      * @throws NotFoundException
      */
-    public static function create(string $basePath, string $lang = 'en'): Bootstrap
+    public static function create(string $basePath, string $lang = 'en-US'): Bootstrap
     {
         self::$basePath = $basePath;
         self::$configPath = $basePath . '/config';
@@ -506,11 +505,12 @@ class App
      * @throws DependencyException
      * @throws NotFoundException
      */
-    public static function apiEvent($className): ApiEvent {
+    public static function apiEvent($className): ApiEvent
+    {
         $name = "api.event.$className";
         if (!self::di()->has($name)) {
             $event = new ApiEvent();
-            self::event()->dispatch($event,"api.$className");
+            self::event()->dispatch($event, "api.$className");
             self::di()->set($name, $event);
             return $event;
         }

@@ -185,7 +185,7 @@ if (!function_exists('__')) {
             }
         }
 
-        return App::trans()->trans($value, $parameters, $domain, App::di()->get('language', 'en-US'));
+        return App::trans()->trans($value, $parameters, $domain, App::di()->get('language'));
     }
 }
 
