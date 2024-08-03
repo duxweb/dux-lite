@@ -167,7 +167,7 @@ if (!function_exists('__')) {
     function __(string $value, ...$params): string
     {
         $parameters = [];
-        $domain = '';
+        $domain = null;
 
         if (isset($params[0])) {
             if (is_array($params[0])) {
@@ -185,7 +185,7 @@ if (!function_exists('__')) {
             }
         }
 
-        return App::trans()->trans($value, $parameters, $domain, App::di()->get('language'));
+        return App::trans()->trans($value, $parameters, $domain, App::di()->get('language', 'en-US'));
     }
 }
 
@@ -204,18 +204,18 @@ if (!function_exists('str_hidden')) {
     {
         if ($explode) {
             $email = explode($explode, $str);
-            $str   = $email[0];
+            $str = $email[0];
         }
-        $length     = mb_strlen($str, 'utf-8');
-        $mid        = floor($length / 2);
+        $length = mb_strlen($str, 'utf-8');
+        $mid = floor($length / 2);
         $hideLength = floor($length * ($percent / 100));
-        $start      = (int)$mid - floor($hideLength / 2);
-        $hideStr    = '';
+        $start = (int)$mid - floor($hideLength / 2);
+        $hideStr = '';
         for ($i = 0; $i < $hideLength; $i++) {
             $hideStr .= $hide;
         }
         if (!empty($email[1])) {
-            $str .= '@'.$email[1];
+            $str .= '@' . $email[1];
         }
         return substr_replace($str, $hideStr, (int)$start, (int)$hideLength);
     }
