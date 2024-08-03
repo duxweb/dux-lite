@@ -9,7 +9,6 @@ use Clockwork\Support\Slim\ClockworkMiddleware;
 use DI\Container;
 use DI\DependencyException;
 use DI\NotFoundException;
-use Dux\Api\ApiEvent;
 use Dux\App\Attribute;
 use Dux\Cache\Cache;
 use Dux\Command\Command;
@@ -42,9 +41,9 @@ use Dux\Package\UpdateCommand;
 use Dux\Package\YarnCommand;
 use Dux\Permission\PermissionCommand;
 use Dux\Queue\QueueCommand;
-use Dux\Scheduler\SchedulerCommand;
 use Dux\Route\RouteCommand;
 use Dux\Scheduler\Scheduler;
+use Dux\Scheduler\SchedulerCommand;
 use Dux\View\View;
 use Illuminate\Pagination\Paginator;
 use Latte\Engine;
@@ -108,6 +107,8 @@ class Bootstrap
                 $lang = App::config('use')->get('lang');
             } else {
                 $lang = $request->getHeaderLine('Accept-Language');
+                //处理浏览器额外字符
+                $lang = explode(',', $lang)[0];
             }
             $di->set('language', $lang);
             return $handler->handle($request);
@@ -192,7 +193,6 @@ class Bootstrap
         $commands[] = BackupCommand::class;
         $commands[] = RestoreCommand::class;
         $this->command = Command::init($commands);
-
 
 
         // 注册模型迁移
