@@ -167,7 +167,7 @@ if (!function_exists('__')) {
     function __(string $value, ...$params): string
     {
         $parameters = [];
-        $domain = null;
+        $domain = '';
 
         if (isset($params[0])) {
             if (is_array($params[0])) {

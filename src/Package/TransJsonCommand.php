@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace Dux\Package;
 
-use Dux\Handlers\Exception;
+use Dux\App;
 use GuzzleHttp\Client;
 use Nette\Utils\FileSystem;
 use Noodlehaus\Parser\Json;
@@ -31,7 +31,8 @@ class TransJsonCommand extends Command
             'please enter the app name'
         )
             ->addOption('pack', null, InputOption::VALUE_REQUIRED, 'Language pack name.')
-            ->addOption('lang', null, InputOption::VALUE_REQUIRED, 'Source language.');
+            ->addOption('lang', null, InputOption::VALUE_REQUIRED, 'Source language.')
+            ->addOption('path', null, InputOption::VALUE_REQUIRED, 'Path alias .');
     }
 
 
@@ -39,13 +40,18 @@ class TransJsonCommand extends Command
     {
         $name = $input->getArgument('name');
         $pack = $input->getOption('pack');
+        //支持别名路径和相对路径
+        $path = $input->getOption('path') ?: 'web/src/pages/';
+        if (!str_contains($path, '/')) {
+            $path = App::config('trans')->get("json.{$path}");
+        }
         if ($pack && $pack != 'common') {
             $pack = $pack . '.';
         }
         $lang = $input->getOption('lang');
         $io = new SymfonyStyle($input, $output);
 
-        $langFile = base_path('web/src/pages/' . lcfirst($name) . '/locales/' . $pack . $lang . '.json');
+        $langFile = base_path($path . lcfirst($name) . '/locales/' . $pack . $lang . '.json');
         if (!is_file($langFile)) {
             $io->error('File does not exist');
             return Command::FAILURE;
@@ -61,8 +67,8 @@ class TransJsonCommand extends Command
             return $auth;
         }
 
-        Trans::main($auth, $lang, $data, file_get_contents($langFile), function ($lang) use ($name, $pack) {
-            return base_path('web/src/pages/' . lcfirst($name) . '/locales/' . $pack . $lang . '.json');
+        Trans::main($auth, $lang, $data, file_get_contents($langFile), function ($lang) use ($name, $pack, $path) {
+            return base_path($path . lcfirst($name) . '/locales/' . $pack . $lang . '.json');
         });
 
         $io->success('Trans Success');
