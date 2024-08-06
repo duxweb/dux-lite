@@ -35,7 +35,7 @@ composer require @duxweb/dux-lite
 
 👤 **duxweb**
 
-* Website: https://dux.plus
+* Website: https://www.dux.cn
 * Github: [@duxweb](https://github.com/duxweb)
 
 ## 🤝 Contributing
