@@ -6,9 +6,7 @@
 <h1 align="center">Dux Lite</h1>
 
 <p align="center">
-<a href="https://lite2.dux.plus/zh/" target="_blank">中文文档</a>
-|
-<a href="https://lite2.dux.plus/en/" target="_blank">English Docs</a>
+<a href="https://next.dux.cn/" target="_blank">中文文档</a>
 <p>
 
 
