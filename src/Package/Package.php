@@ -3,6 +3,7 @@
 namespace Dux\Package;
 
 use Composer\Semver\Semver;
+use Dux\App;
 use Dux\Handlers\Exception;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
@@ -121,7 +122,7 @@ class Package
             $appDir => app_path(ucfirst($data['app'])),
         ];
         if (is_dir($jsDir)) {
-            $copyMaps[$jsDir] = base_path('web/src/pages/' . $data['app']);
+            $copyMaps[$jsDir] = base_path(App::config('use')->get('web.path', 'web') . '/src/pages/' . $data['app']);
         }
         if (is_file($configFile)) {
             $copyMaps[$configFile] = config_path($data['app'] . '.yaml');
@@ -207,7 +208,7 @@ class Package
             return;
         }
 
-        $file = base_path('web/package.json');
+        $file = base_path(App::config('use')->get('web.path', 'web') . '/package.json');
         if (!is_file($file)) {
             throw new Exception('package.json file does not exist');
         }
@@ -357,7 +358,8 @@ class Package
         $key = '';
         try {
             $key = decryption($content);
-        }catch (\Exception $e) {}
+        } catch (\Exception $e) {
+        }
         return $key ?: '';
     }
 

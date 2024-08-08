@@ -2,6 +2,7 @@
 
 namespace Dux\Package;
 
+use Dux\App;
 use Illuminate\Support\Collection;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -64,7 +65,7 @@ class Del
             // 建立文件索引
             $app = $package['app'];
             $appPath = app_path(ucfirst($app));
-            $jsPath = base_path('web/src/pages/' . $app);
+            $jsPath = base_path(App::config('use')->get('web.path', 'web') . '/src/pages/' . $app);
             $configPath = config_path($app . '.yaml');
 
             if (is_dir($appPath)) {

@@ -41,9 +41,9 @@ class TransJsonCommand extends Command
         $name = $input->getArgument('name');
         $pack = $input->getOption('pack');
         //支持别名路径和相对路径
-        $path = $input->getOption('path') ?: 'web/src/pages/';
+        $path = $input->getOption('path') ?: (App::config('use')->get('web.path', 'web') . '/src/pages/');
         if (!str_contains($path, '/')) {
-            $path = App::config('trans')->get("json.{$path}");
+            $path = rtrim(App::config('trans')->get("json.{$path}"), '/') . '/';
         }
         if ($pack && $pack != 'common') {
             $pack = $pack . '.';

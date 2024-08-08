@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Dux\Package;
 
+use Dux\App;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -40,7 +41,7 @@ class YarnCommand extends Command
 //        $process->run();
 
         $command = array_merge([$yarnPath], is_array($yarnCommand) ? $yarnCommand : [$yarnCommand]);
-        $workingDirectory = base_path('web');
+        $workingDirectory = base_path(App::config('use')->get('web.path', 'web'));
         $process = new Process($command, $workingDirectory);
         $process->setTimeout(3600);
 

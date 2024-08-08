@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Dux\Package;
 
+use Dux\App;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\TransferStats;
@@ -88,7 +89,7 @@ class PushCommand extends Command
         mkdir($jsDir, 0777, true);
 
         $appSourceDir = app_path(ucfirst($app));
-        $jsSourceDir = base_path('web/src/pages/' . lcfirst($app));
+        $jsSourceDir = base_path(App::config('use')->get('web.path', 'web') . '/src/pages/' . lcfirst($app));
         $configSourceFile = config_path(lcfirst($app) . '.yaml');
 
         FileSystem::copy($appSourceDir, $appDir);
