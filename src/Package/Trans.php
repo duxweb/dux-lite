@@ -2,6 +2,8 @@
 
 namespace Dux\Package;
 
+use Dux\App;
+
 class Trans
 {
     public static function main(string $token, string $lang, array $data, string $content, callable $callback): void
@@ -23,7 +25,9 @@ class Trans
             'json' => [
                 'content' => $resultStr,
                 'lang' => $lang,
-            ]
+                'langMaps' => App::config('trans')->get('langMaps')
+            ],
+            'timeout' => App::config('trans')->get('timeout', 60),
         ]);
 
         foreach ($data as $key => $vo) {
