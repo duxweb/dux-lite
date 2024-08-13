@@ -142,7 +142,13 @@ class App
         if (!is_file($file)) {
             $file = App::$configPath . "/$name.yaml";
         }
-        $config = new Config($file, new Yaml());
+        $string = false;
+        //配置文件不存在空处理
+        if (!is_file($file)) {
+            $file = '';
+            $string = true;
+        }
+        $config = new Config($file, new Yaml(), $string);
         self::$di->set("config." . $name, $config);
         return $config;
     }

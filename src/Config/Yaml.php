@@ -46,7 +46,7 @@ class Yaml extends \Noodlehaus\Parser\Yaml
             );
         }
 
-        return $this->parse($data);
+        return (array)$this->parse($data);
     }
 
     protected function parse($data = null): ?array
