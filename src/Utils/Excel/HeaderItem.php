@@ -5,6 +5,7 @@ namespace Dux\Utils\Excel;
 class HeaderItem
 {
     public array $data = [];
+
     public function __construct(string $name)
     {
         $this->data['name'] = $name;
@@ -31,6 +32,17 @@ class HeaderItem
     public function group(string $value): static
     {
         $this->data['group'] = $value;
+        return $this;
+    }
+
+    /**
+     * 字符类型
+     * @param string $value
+     * @return $this
+     */
+    public function dataType(string $value): static
+    {
+        $this->data['data_type'] = $value;
         return $this;
     }
 

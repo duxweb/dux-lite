@@ -3,8 +3,8 @@
 namespace Dux\Utils\Excel;
 
 use PhpOffice\PhpSpreadsheet\Cell\DataType;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
-use \PhpOffice\PhpSpreadsheet\Spreadsheet;
 
 class Sheet
 {
@@ -198,8 +198,8 @@ class Sheet
             foreach ($this->header as $field) {
                 if (is_callable($data[$field->data['name']])) {
                     $data[$field->data['name']]($this->worksheet, [$index, $rowIndex]);
-                }else {
-                    $this->worksheet->setCellValueExplicit([$index, $rowIndex], $data[$field->data['name']], DataType::TYPE_STRING);
+                } else {
+                    $this->worksheet->setCellValueExplicit([$index, $rowIndex], $data[$field->data['name']], $field->data['data_type'] ?? DataType::TYPE_STRING);
                 }
                 // 设置样式
                 $this->worksheet->getStyle([$index, $rowIndex, $index, $rowIndex])->applyFromArray([...$this->getGridStyle(), ...$field->getStyle()]);
@@ -242,7 +242,6 @@ class Sheet
             ],
         ];
     }
-
 
 
 }
