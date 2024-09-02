@@ -3,10 +3,9 @@
 namespace Dux\Queue;
 
 use Dux\App;
-use Exception;
-use Interop\Queue\Processor;
-use Interop\Queue\Message;
 use Interop\Queue\Context;
+use Interop\Queue\Message;
+use Interop\Queue\Processor;
 
 class QueueProcessor implements Processor
 {
@@ -26,8 +25,8 @@ class QueueProcessor implements Processor
 
         try {
             $object = new $data['class'];
-            call_user_func([$object, $data['method']], $data['params']);
-        } catch (Exception $e) {
+            call_user_func([$object, $data['method']], ...$data['params']);
+        } catch (\Throwable $e) {
             App::log('queue')->error($e->getMessage(), [
                 'file' => $e->getFile() . ':' . $e->getLine(),
             ]);
