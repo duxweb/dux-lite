@@ -107,8 +107,13 @@ class Bootstrap
                 $lang = App::config('use')->get('lang');
             } else {
                 $lang = $request->getHeaderLine('Accept-Language');
-                //处理浏览器额外字符
-                $lang = explode(',', $lang)[0];
+                $langParsing = App::config('use')->get('langParsing');
+                if ($langParsing) {
+                    $lang = $langParsing($lang);
+                } else {
+                    //处理浏览器额外字符
+                    $lang = explode(',', $lang)[0];
+                }
             }
             $di->set('language', $lang);
             return $handler->handle($request);
