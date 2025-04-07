@@ -5,6 +5,7 @@ namespace Dux\Scheduler;
 use Dux\App;
 use Dux\Handlers\Exception;
 use GO\Scheduler as GoScheduler;
+use React\EventLoop\Loop;
 
 class Scheduler
 {
@@ -52,6 +53,14 @@ class Scheduler
 
     public function run(): void
     {
-        $this->scheduler->work();
+        $loop = Loop::get();
+        // 定时检查任务
+        $loop->addPeriodicTimer(1, function () {
+            $seconds = [0];
+            if (in_array((int)date('s'), $seconds)) {
+                $this->scheduler->run();
+            }
+        });
+        $loop->run();
     }
 }
