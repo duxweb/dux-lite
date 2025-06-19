@@ -1,13 +1,12 @@
 <?php
 declare(strict_types=1);
 
-namespace Dux\App;
+namespace Core\App;
 
-use Dux\Bootstrap;
+use Core\Bootstrap;
 
-class AppExtend
+abstract class AppExtend
 {
-
     /**
      * @param Bootstrap $app
      * @return void

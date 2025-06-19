@@ -1,6 +1,6 @@
 <?php
 
-namespace Dux\Resources\Action;
+namespace Core\Resources\Action;
 
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -16,16 +16,16 @@ trait One
 
         $info = collect();
         if ($id) {
-            $query = $this->model::query()->where($this->key, $id);
+            $model = $this->queryModel($this->model);
+            $query = $model->where($this->key, $id);
             $this->queryOne($query, $request, $args);
             $this->query($query);
             $this->event->run('queryOne', $query, $request, $args);
             $this->event->run('query', $query);
             $info = $query->first();
-            $assign = $this->transformData($info, function ($item) {
-                return [...$this->transform($item), ...$this->event->get('transform', $item)];
+            $assign = $this->transformData($info, function ($item) use ($request) {
+                return [...$this->transform($item, $request), ...$this->event->get('transform', $item)];
             });
-
         } else {
             $assign = [
                 'data' => null,
@@ -44,5 +44,4 @@ trait One
 
         return send($response, "ok", $assign['data'], $assign['meta']);
     }
-
 }

@@ -1,10 +1,12 @@
 <?php
+
 declare(strict_types=1);
 
-namespace Dux\Validator;
+namespace Core\Validator;
 
 // https://github.com/vlucas/valitron
-use Dux\Handlers\ExceptionValidator;
+
+use Core\Handlers\ExceptionValidator;
 
 class Validator
 {
@@ -100,5 +102,4 @@ class Validator
 
         return $validators;
     }
-
 }

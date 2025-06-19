@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Dux\Database\Attribute;
+namespace Core\Database\Attribute;
 
 use Attribute;
 

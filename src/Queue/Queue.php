@@ -1,9 +1,10 @@
 <?php
+
 declare(strict_types=1);
 
-namespace Dux\Queue;
+namespace Core\Queue;
 
-use Dux\App;
+use Core\App;
 use Enqueue\Consumption\QueueConsumer;
 use Enqueue\Redis\RedisConnectionFactory;
 use Enqueue\AmqpLib\AmqpConnectionFactory;
@@ -62,7 +63,5 @@ class Queue
         $consumer = new QueueConsumer($this->context);
         $consumer->bind($this->context->createQueue($this->prefix . $name), $processor);
         $consumer->consume();
-
     }
-
 }

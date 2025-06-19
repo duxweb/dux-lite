@@ -1,14 +1,15 @@
 <?php
+
 declare(strict_types=1);
 
-namespace Dux\Route;
+namespace Core\Route;
 
 use DI\DependencyException;
 use DI\NotFoundException;
-use Dux\App;
-use Dux\Bootstrap;
-use Dux\Handlers\Exception;
-use Dux\Route\Attribute\RouteGroup;
+use Core\App;
+use Core\Bootstrap;
+use Core\Handlers\Exception;
+use Core\Route\Attribute\RouteGroup;
 
 class Register
 {
@@ -44,78 +45,89 @@ class Register
 
     /**
      * 注解路由注册
-     * @param Bootstrap $bootstrap
      * @return void
      * @throws DependencyException
      * @throws NotFoundException
      */
-    public function registerAttribute(Bootstrap $bootstrap): void
+    public function registerAttribute(): void
     {
-        $attributes = (array)App::di()->get("attributes");
+        $attributes = App::attributes();
 
-        $permission = $bootstrap->getPermission();
-        $groupClass = [];
-        $permissionClass = [];
+        foreach ($attributes as $item) {
+            $groupInfo = [];
+            foreach ($item["annotations"] as $annotation) {
+                if ($annotation["name"] != RouteGroup::class) {
+                    continue;
+                }
+                $groupInfo = $annotation;
+            }
 
-        foreach ($attributes as $attribute => $list) {
-            if (
-                $attribute != RouteGroup::class
-            ) {
-                continue;
-            }
-            foreach ($list as $vo) {
-                $params = $vo["params"];
-                $class = $vo["class"];
-                [$className, $methodName, $name] = $this->formatFile($class);
-                $group = $this->get($params["app"])->group($params["pattern"], ...($params["middleware"] ?? []));
-                $groupClass[$className] = $group;
-            }
-        }
+            $routeGroup = null;
+            if ($groupInfo) {
+                $groupClass = $item["class"];
+                $groupParams = $groupInfo["params"];
+                $appName = $groupParams["app"];
+                $groupName = $groupParams["name"];
 
-        foreach ($attributes as $attribute => $list) {
-            if (
-                $attribute != \Dux\Route\Attribute\Route::class
-            ) {
-                continue;
+                if (!$appName) {
+                    throw new \Exception("class [" . $groupClass . "] route attribute parameter missing \"app\" ");
+                }
+
+                if (!$groupName) {
+                    // 获取当前类和应用目录
+                    [$_, $_, $name] = $this->parseClass($groupClass);
+                    $groupName = $name;
+                }
+
+                $routeGroup = $this->get($appName)->group($groupParams["route"], $groupName, ...($groupParams["middleware"] ?? []));
             }
-            foreach ($list as $vo) {
-                $params = $vo["params"];
-                $class = $vo["class"];
-                [$className, $methodName, $name] = $this->formatFile($class);
-                // route
-                if (str_contains($class, ":")) {
-                    // method
-                    if (!$params["app"] && !isset($groupClass[$className])) {
-                        continue;
-                    }
-                    $group = $params["app"] ? $this->get($params["app"]) : $groupClass[$className];
+
+
+            foreach ($item["annotations"] as $annotation) {
+                if ($annotation["name"] != \Core\Route\Attribute\Route::class) {
+                    continue;
+                }
+
+                $params = $annotation["params"];
+                $class = $annotation["class"];
+                $name = $params["name"];
+                $appName = $params["app"];
+
+                if (!$name) {
+                    [$className, $methodName, $name] = $this->parseClass($class);
+                }
+
+                if ($routeGroup) {
+                    $routeGroup->map(
+                        methods: is_array($params["methods"]) ? $params["methods"] : [$params["methods"]],
+                        pattern: $params["route"] ?? "",
+                        callable: $class,
+                        name: lcfirst($methodName),
+                        middleware: $params["middleware"] ?? []
+                    );
                 } else {
-                    // class
-                    if (empty($params["app"])) {
+                    if (!$appName) {
                         throw new \Exception("class [" . $class . "] route attribute parameter missing \"app\" ");
                     }
-                    $group = $this->get($params["app"]);
-                }
-                $name = $params["name"] ?: $name . ($methodName ? "." . lcfirst($methodName) : "");
-                $group->map(
-                    methods: is_array($params["methods"]) ? $params["methods"] : [$params["methods"]],
-                    pattern: $params["pattern"] ?: '',
-                    callable: $class,
-                    name: $name
-                );
 
+                    $this->get($appName)->map(
+                        methods: is_array($params["methods"]) ? $params["methods"] : [$params["methods"]],
+                        pattern: $params["route"] ?? "",
+                        callable: $class,
+                        name: lcfirst($methodName),
+                        middleware: $params["middleware"] ?? []
+                    );
+                }
             }
         }
     }
 
-    private function formatFile($class): array
+    private function parseClass(string $class): array
     {
         [$className, $methodName] = explode(":", $class, 2);
         $classArr = explode("\\", $className);
         $layout = array_slice($classArr, -3, 1)[0];
         $name = lcfirst($layout) . "." . lcfirst(end($classArr));
-
         return [$className, $methodName, $name];
     }
-
 }

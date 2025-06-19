@@ -1,7 +1,8 @@
 <?php
+
 declare(strict_types=1);
 
-use Dux\App;
+use Core\App;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
@@ -15,7 +16,7 @@ use Psr\Http\Message\ResponseInterface;
  * @param int $code
  * @return ResponseInterface
  */
-function send(ResponseInterface $response, string $message, array $data = [], array $meta = [], int $code = 200): ResponseInterface
+function send(ResponseInterface $response, string $message, array|object|null $data = null, array $meta = [], int $code = 200): ResponseInterface
 {
     $result = [];
     $result["code"] = $code;
@@ -45,6 +46,13 @@ function sendText(ResponseInterface $response, string $message, int $code = 200)
         ->withStatus($code);
 }
 
+function sendTpl(ResponseInterface $response, string $tpl, array $data = [], string $name = 'web', int $code = 200): ResponseInterface
+{
+    $view = \Core\App::view($name);
+    $html = $view->renderToString($tpl, $data);
+    return sendText($response, $html, $code);
+}
+
 /**
  * @param string $name
  * @param array $params
@@ -52,9 +60,8 @@ function sendText(ResponseInterface $response, string $message, int $code = 200)
  */
 function url(string $name, array $params): string
 {
-    return App::app()->getRouteCollector()->getRouteParser()->urlFor($name, $params);
+    return App::web()->getRouteCollector()->getRouteParser()->urlFor($name, $params);
 }
-
 
 /**
  * @param Collection|LengthAwarePaginator|Model|null $data

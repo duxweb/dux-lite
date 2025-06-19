@@ -1,5 +1,6 @@
 {
   "name": "duxweb/dux-lite",
+  "version": "2.0.0",
   "type": "library",
   "description": "The lightweight framework based on slim php",
   "keywords": [
@@ -16,75 +17,70 @@
   },
   "authors": [
     {
-      "name": "duxphp",
-      "email": "admin@duxphp.com"
+      "name": "dux",
+      "email": "admin@dux.plus"
     }
   ],
   "minimum-stability": "dev",
   "prefer-stable": true,
   "require": {
-    "php": ">=8.2",
-    "ext-bcmath": "*",
-    "ext-curl": "*",
-    "ext-zip": "*",
-    "slim/slim": "^4.11",
-    "slim/psr7": "^1.6",
-    "monolog/monolog": "^3.2",
-    "php-di/php-di": "^6.4.0",
-    "hassankhan/config": "^3.0",
-    "symfony/yaml": "^6.2",
-    "phpfastcache/phpfastcache": "^9.1",
-    "nette/utils": "^3.2",
-    "enqueue/redis": "^0.10.19",
-    "symfony/console": "^6.2",
-    "league/flysystem": "^3.11",
-    "overtrue/flysystem-qiniu": "^3.2",
-    "overtrue/flysystem-cos": "^5.1",
-    "iidestiny/flysystem-oss": "^4",
-    "illuminate/database": "^10.0",
+    "php": ">=8.3",
+    "ext-zlib": "*",
+    "ext-pdo": "*",
+    "php-di/php-di": "^7.0",
+    "nesbot/carbon": "^3.8",
+    "nette/utils": "^4.0",
+    "hassankhan/config": "^3.1",
+    "vlucas/phpdotenv": "^5.6",
     "latte/latte": "^3.0",
-    "nette/php-generator": "^4.0",
-    "doctrine/dbal": "^3.5",
-    "illuminate/pagination": "^10.0",
-    "vlucas/valitron": "^1.4",
-    "bluem/tree": "^3.2",
-    "symfony/var-dumper": "^6.2",
-    "donatj/phpuseragentparser": "^1.7",
-    "nette/finder": "^2.6",
-    "nikic/php-parser": "^4.15",
-    "enqueue/enqueue": "^0.10.16",
-    "phpoffice/phpspreadsheet": "^1.26",
-    "godruoyi/php-snowflake": "^2.2",
-    "symfony/event-dispatcher": "^6.2",
-    "kalnoy/nestedset": "^6.0",
-    "symfony/process": "^6.2",
-    "itsgoingd/clockwork": "^5.1",
-    "intervention/image": "^3.5.0",
-    "vlucas/phpdotenv": "^5.5",
-    "symfony/translation": "^6.3",
-    "symfony/messenger": "^6.3",
-    "jaybizzle/crawler-detect": "^1.2",
-    "xantios/mimey": "^2.2",
-    "maennchen/zipstream-php": "^3.1",
-    "peppeocchi/php-cron-scheduler": "^4.0",
-    "voku/simple_html_dom": "^4.8",
-    "stevebauman/hypertext": "^1.0",
-    "symfony/lock": "^6.3",
-    "zoujingli/ip2region": "^2.0",
-    "ezyang/htmlpurifier": "^4.17",
+    "symfony/event-dispatcher": "^7.1",
+    "devium/toml": "^1.0",
+    "monolog/monolog": "^3.7",
+    "symfony/console": "^7.1",
+    "symfony/process": "^7.1",
+    "illuminate/database": "^11.30",
+    "illuminate/pagination": "^11.30",
+    "illuminate/events": "^11.30",
+    "doctrine/dbal": "^4.2",
+    "fileeye/mimemap": "^2.2",
+    "slim/psr7": "^1.7",
+    "nunomaduro/termwind": "^2.2",
+    "symfony/var-dumper": "^7.1",
     "predis/predis": "^2.2",
+    "symfony/cache": "^7.1",
+    "symfony/lock": "^7.1",
+    "firebase/php-jwt": "^6.10",
+    "tuupola/slim-basic-auth": "^3.4",
+    "jimtools/jwt-auth": "^2.1",
+    "slim/slim": "4.*",
+    "willdurand/negotiation": "^3.1",
+    "aws/aws-sdk-php": "^3.326",
+    "vlucas/valitron": "^1.4",
+    "kalnoy/nestedset": "^6.0",
+    "zoujingli/ip2region": "^2.0",
+    "eftec/bladeone": "^4.16",
+    "enqueue/enqueue": "^0.10.24",
+    "enqueue/redis": "^0.10.19",
     "enqueue/amqp-lib": "^0.10.19",
-    "jimtools/jwt-auth": "^1.0",
-    "react/event-loop": "^1.5"
-  },
-  "require-dev": {
-    "composer/composer": "^2.0",
-    "phpunit/phpunit": "^9.5"
+    "peppeocchi/php-cron-scheduler": "^4.0"
   },
   "autoload": {
     "psr-4": {
-      "Dux\\": "src/",
-      "Dux\\Tests\\": "tests"
+      "Core\\": "src/",
+      "Core\\Tests\\": "tests"
     }
+  },
+  "require-dev": {
+    "pestphp/pest": "^3.5",
+    "pestphp/pest-plugin-stressless": "^3.0",
+    "mockery/mockery": "^1.6"
+  },
+  "config": {
+    "allow-plugins": {
+      "pestphp/pest-plugin": true
+    }
+  },
+  "scripts": {
+    "test": "./vendor/bin/pest"
   }
 }

@@ -1,11 +1,21 @@
 <?php
+
 declare(strict_types=1);
 
 use Carbon\Carbon;
-use Dux\App;
-use Dux\Handlers\ExceptionBusiness;
+use Core\App;
+use Core\Handlers\ExceptionBusiness;
 use Symfony\Component\VarDumper\VarDumper;
 
+if (!function_exists('dd')) {
+
+    function dd(...$vars): void
+    {
+        foreach ($vars as $v) {
+            VarDumper::dump($v);
+        }
+    }
+}
 
 if (!function_exists('base_path')) {
     function base_path(string $path = ""): string
@@ -52,37 +62,12 @@ if (!function_exists('sys_path')) {
 }
 
 if (!function_exists('now')) {
-    function now(): Carbon
+    function now(DateTimeZone|string|int|null $timezone = null): Carbon
     {
-        return Carbon::now();
+        return Carbon::now($timezone);
     }
 }
 
-if (!function_exists('dux_debug')) {
-    function dux_debug(...$args): void
-    {
-
-        // 注册公共头
-        if (!in_array(PHP_SAPI, ['cli', 'phpdbg'], true) && !headers_sent()) {
-            header('Access-Control-Allow-Origin: *');
-            header('Access-Control-Allow-Methods: *');
-            header('Access-Control-Allow-Headers: *');
-        }
-
-        foreach ($args as $v) {
-            VarDumper::dump($v);
-        }
-        die;
-    }
-}
-
-
-if (!function_exists('clock')) {
-    function clock(): \Clockwork\Clockwork
-    {
-        return App::di()->get('clock');
-    }
-}
 
 
 if (!function_exists('get_ip')) {
@@ -185,7 +170,7 @@ if (!function_exists('__')) {
             }
         }
 
-        return App::trans()->trans($value, $parameters, $domain, App::di()->get('language'));
+        return App::trans()->trans($value, $parameters, $domain, App::di()->get('lang', App::$lang));
     }
 }
 
@@ -196,7 +181,6 @@ if (!function_exists('human_filesize')) {
         $factor = floor((strlen((string)$bytes) - 1) / 3);
         return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor)) . @$size[$factor];
     }
-
 }
 
 if (!function_exists('str_hidden')) {

@@ -1,7 +1,8 @@
 <?php
+
 declare(strict_types=1);
 
-namespace Dux\Validator;
+namespace Core\Validator;
 
 use ArrayAccess;
 
@@ -63,5 +64,4 @@ class Data implements ArrayAccess
     {
         return $this->array;
     }
-
 }

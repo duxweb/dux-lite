@@ -1,10 +1,10 @@
 <?php
 
-namespace Dux\Resources\Action;
+namespace Core\Resources\Action;
 
 use Closure;
-use Dux\App;
-use Dux\Handlers\ExceptionBusiness;
+use Core\App;
+use Core\Handlers\ExceptionBusiness;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
@@ -19,7 +19,8 @@ trait Delete
 
         App::db()->getConnection()->beginTransaction();
 
-        $query = $this->model::query()->where($this->key, $id);
+        $model = $this->queryModel($this->model);
+        $query = $model->where($this->key, $id);
         $this->queryOne($query, $request, $args);
         $this->query($query);
 

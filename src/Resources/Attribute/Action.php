@@ -1,7 +1,8 @@
 <?php
+
 declare(strict_types=1);
 
-namespace Dux\Resources\Attribute;
+namespace Core\Resources\Attribute;
 
 use Attribute;
 
@@ -21,7 +22,5 @@ class Action
         string       $name = '',
         ?bool        $auth = null,
         bool        $can = true,
-    )
-    {
-    }
+    ) {}
 }

@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace Dux\Permission;
+namespace Core\Permission;
 
-use Dux\App;
+use Core\App;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Helper\TableCell;
@@ -15,17 +15,10 @@ use Symfony\Component\Console\Output\OutputInterface;
 class PermissionCommand extends Command
 {
 
-    protected static $defaultName = 'permission';
-    protected static $defaultDescription = 'show permission list';
-
-
     protected function configure(): void
     {
-        $this->addArgument(
-            'group',
-            InputArgument::OPTIONAL,
-            'Who do you want to greet (separate multiple names with a space)?'
-        );
+        $this->setName("permission:list")->setDescription('show permission list');
+        $this->addArgument('group', InputArgument::OPTIONAL, 'show group permission');
     }
 
     public function execute(InputInterface $input, OutputInterface $output): int
@@ -33,9 +26,9 @@ class PermissionCommand extends Command
 
         $group = $input->getArgument("group");
         if ($group) {
-            $permissionList = [$group => App::$bootstrap->permission->get($group)];
+            $permissionList = [$group => App::permission()->get($group)];
         } else {
-            $permissionList = App::$bootstrap->permission->app;
+            $permissionList = App::permission()->app;
         }
 
         foreach ($permissionList as $key => $item) {
@@ -45,17 +38,16 @@ class PermissionCommand extends Command
                 if ($k) {
                     $data[] = new TableSeparator();
                 }
-                $data[] = [$permission["label"]];
+                $data[] = [$permission["name"]];
                 foreach ($permission["children"] as $vo) {
-                    $data[] = [$vo["label"], $vo["name"]];
-
+                    $data[] = [$vo["name"]];
                 }
             }
             $table = new Table($output);
             $table
                 ->setHeaders([
-                    [new TableCell("permissions {$key}", ['colspan' => 2])],
-                    ['Label', 'Name']
+                    [new TableCell("permissions {$key}", ['colspan' => 1])],
+                    ['Name']
                 ])
                 ->setRows($data);
             $table->render();

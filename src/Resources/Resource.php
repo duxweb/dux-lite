@@ -1,20 +1,20 @@
 <?php
+
 declare(strict_types=1);
 
-namespace Dux\Resources;
+namespace Core\Resources;
 
-use Dux\Bootstrap;
-use Dux\Permission\Permission;
-use Dux\Route\Route;
+use Core\App;
+use Core\Permission\Permission;
+use Core\Route\Route;
+use Core\Auth\AuthMiddleware;
 
 class Resource
 {
     private array $authMiddleware = [];
     private array $middleware = [];
 
-    public function __construct(public string $name, public string $route)
-    {
-    }
+    public function __construct(public string $name, public string $route) {}
 
     public function addMiddleware(object ...$middleware): self
     {
@@ -38,15 +38,19 @@ class Resource
         return $this->authMiddleware;
     }
 
-
     public function getAllMiddleware(): array
     {
         return array_filter([...$this->middleware, ...$this->authMiddleware]);
     }
 
-    public function run(Bootstrap $bootstrap): void
+    public function run(): void
     {
-        $bootstrap->getPermission()->set($this->name, new Permission());
-        $bootstrap->getRoute()->set($this->name, new Route($this->route));
+        $middle = [
+            new AuthMiddleware($this->name),
+            ...$this->getAllMiddleware()
+        ];
+
+        App::route()->set($this->name, new Route($this->route, $this->name, ...$middle));
+        App::permission()->set($this->name, new Permission());
     }
 }

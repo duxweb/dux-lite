@@ -1,16 +1,18 @@
 <?php
+
 declare(strict_types=1);
 
-namespace Dux\Lock;
+namespace Core\Lock;
 
-use Dux\App;
-use Dux\Handlers\Exception;
+use Core\App;
+use Core\Handlers\Exception;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Lock\Store\FlockStore;
 use Symfony\Component\Lock\Store\RedisStore;
 use Symfony\Component\Lock\Store\SemaphoreStore;
 
-class Lock {
+class Lock
+{
 
     public static function init(string $type = 'semaphore'): LockFactory
     {

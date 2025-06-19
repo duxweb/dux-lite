@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace Dux\Scheduler;
+namespace Core\Scheduler;
 
-use Dux\App;
+use Core\App;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Input\InputInterface;
@@ -11,15 +11,17 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class SchedulerCommand extends Command
 {
+    protected function configure(): void
+    {
+        $this->setName("scheduler")->setDescription('Scheduler start service');
+    }
 
-    protected static $defaultName = 'scheduler';
-    protected static $defaultDescription = 'Scheduler start service';
 
     public function execute(InputInterface $input, OutputInterface $output): int
     {
         $data = App::scheduler()->data ?: [['Not Scheduler Jobs']];
         $table = new Table($output);
-        $table->setHeaders(['DuxCMS Scheduler Service', date('Y-m-d H:i:s')])
+        $table->setHeaders(['Core Scheduler Service', date('Y-m-d H:i:s')])
             ->setRows($data);
         $table->render();
         App::scheduler()->run();

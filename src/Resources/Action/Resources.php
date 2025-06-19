@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Dux\Resources\Action;
+namespace Core\Resources\Action;
 
-use Dux\App;
-use Dux\Resources\ResourcesEvent;
-use Dux\Validator\Data;
+use Core\App;
+use Core\Resources\ResourcesEvent;
+use Core\Validator\Data;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -100,8 +100,17 @@ abstract class Resources
      * @param array $args
      * @return void
      */
-    public function init(ServerRequestInterface $request, ResponseInterface $response, array $args): void
+    public function init(ServerRequestInterface $request, ResponseInterface $response, array $args): void {}
+
+
+    /**
+     * 获取模型
+     * @param string $model
+     * @return Model
+     */
+    public function queryModel(string $model): Builder
     {
+        return $model::query();
     }
 
     /**
@@ -115,15 +124,12 @@ abstract class Resources
         return [];
     }
 
-
     /**
      * 单条或多条数据查询
      * @param Builder $query
      * @return void
      */
-    public function query(Builder $query)
-    {
-    }
+    public function query(Builder $query) {}
 
     /**
      * 多条数据查询
@@ -132,9 +138,7 @@ abstract class Resources
      * @param ServerRequestInterface $request
      * @return void
      */
-    public function queryMany(Builder $query, ServerRequestInterface $request, array $args)
-    {
-    }
+    public function queryMany(Builder $query, ServerRequestInterface $request, array $args) {}
 
     /**
      * 单条数据查询
@@ -143,9 +147,7 @@ abstract class Resources
      * @param array $args
      * @return void
      */
-    public function queryOne(Builder $query, ServerRequestInterface $request, array $args)
-    {
-    }
+    public function queryOne(Builder $query, ServerRequestInterface $request, array $args) {}
 
     /**
      * 多条元数据
@@ -260,5 +262,4 @@ abstract class Resources
         }
         return $array;
     }
-
 }

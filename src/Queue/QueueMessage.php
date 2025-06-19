@@ -1,7 +1,8 @@
 <?php
+
 declare(strict_types=1);
 
-namespace Dux\Queue;
+namespace Core\Queue;
 
 
 class QueueMessage
@@ -18,8 +19,7 @@ class QueueMessage
         public string     $method = '',
         public array      $params = [],
         public string $name = '',
-    )
-    {
+    ) {
         $this->queue = $this->context->createQueue($name);
         $this->message = $this->context->createMessage(json_encode([
             'class' => $this->class,

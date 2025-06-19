@@ -1,10 +1,10 @@
 <?php
 
-namespace Dux\Resources\Action;
+namespace Core\Resources\Action;
 
-use Dux\App;
-use Dux\Validator\Data;
-use Dux\Validator\Validator;
+use Core\App;
+use Core\Validator\Data;
+use Core\Validator\Validator;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 

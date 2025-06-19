@@ -1,9 +1,10 @@
 <?php
 
-namespace Dux\Scheduler;
+namespace Core\Scheduler;
 
-use Dux\App;
-use Dux\Handlers\Exception;
+use Core\App;
+use Core\Handlers\Exception;
+use Core\Scheduler\Attribute\Scheduler as AttributeScheduler;
 use GO\Scheduler as GoScheduler;
 use React\EventLoop\Loop;
 
@@ -53,6 +54,7 @@ class Scheduler
 
     public function run(): void
     {
+        $this->scheduler->work();
         $loop = Loop::get();
         // 定时检查任务
         $loop->addPeriodicTimer(1, function () {
@@ -62,5 +64,21 @@ class Scheduler
             }
         });
         $loop->run();
+    }
+
+
+    public function registerAttribute(): void
+    {
+        $attributes = App::attributes();
+
+        foreach ($attributes as $item) {
+            foreach ($item["annotations"] as $annotation) {
+                if ($annotation["name"] != AttributeScheduler::class) {
+                    continue;
+                }
+                $params = $annotation["params"];
+                $this->add($params["cron"], explode(':', $annotation["class"]));
+            }
+        }
     }
 }

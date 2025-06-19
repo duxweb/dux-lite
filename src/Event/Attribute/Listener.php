@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Dux\Event\Attribute;
+namespace Core\Event\Attribute;
 
 use Attribute;
 

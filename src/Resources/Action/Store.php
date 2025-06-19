@@ -1,11 +1,11 @@
 <?php
 
-namespace Dux\Resources\Action;
+namespace Core\Resources\Action;
 
-use Dux\App;
-use Dux\Handlers\ExceptionBusiness;
-use Dux\Validator\Data;
-use Dux\Validator\Validator;
+use Core\App;
+use Core\Handlers\ExceptionBusiness;
+use Core\Validator\Data;
+use Core\Validator\Validator;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
@@ -46,7 +46,8 @@ trait Store
 
         App::db()->getConnection()->beginTransaction();
 
-        $query = $this->model::query()->where($this->key, $id);
+        $model = $this->queryModel($this->model);
+        $query = $model->where($this->key, $id);
         $this->queryOne($query, $request, $args);
         $this->query($query);
         $this->event->run('queryOne', $query, $request, $args);

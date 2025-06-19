@@ -1,9 +1,7 @@
 <?php
 
-namespace Dux\Resources;
+namespace Core\Resources;
 
-use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Message\ServerRequestInterface;
 use Symfony\Contracts\EventDispatcher\Event;
 
 class ResourcesEvent extends Event
@@ -11,9 +9,7 @@ class ResourcesEvent extends Event
 
     private array $data = [];
 
-    public function __construct()
-    {
-    }
+    public function __construct() {}
 
     public function init(callable $fun): void
     {

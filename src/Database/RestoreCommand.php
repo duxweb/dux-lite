@@ -1,28 +1,33 @@
 <?php
+
 declare(strict_types=1);
 
-namespace Dux\Database;
+namespace Core\Database;
 
-use Dux\App;
+use Core\App;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Process\Exception\ProcessFailedException;
 use Symfony\Component\Process\Process;
 
-class RestoreCommand extends Command {
-
-    protected static $defaultName = 'db:restore';
-    protected static $defaultDescription = 'restore the database';
+class RestoreCommand extends Command
+{
 
 
-    public function execute(InputInterface $input, OutputInterface $output): int {
+    protected function configure(): void
+    {
+        $this->setName("db:restore")->setDescription('Restore the database');
+    }
+
+    public function execute(InputInterface $input, OutputInterface $output): int
+    {
 
         $dirPath = data_path('backup/');
         if (!is_dir($dirPath)) {
             mkdir($dirPath);
         }
-        $files = glob($dirPath .'*.sql');
+        $files = glob($dirPath . '*.sql');
         sort($files);
         $latestFile = end($files);
 

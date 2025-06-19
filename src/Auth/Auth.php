@@ -1,18 +1,19 @@
 <?php
+
 declare(strict_types=1);
 
-namespace Dux\Auth;
+namespace Core\Auth;
 
-use Dux\App;
-use Dux\Handlers\ExceptionBusiness;
+use Core\App;
 use Firebase\JWT\JWT;
+use Firebase\JWT\Key;
 use Psr\Http\Message\ServerRequestInterface as Request;
-use Psr\Http\Server\RequestHandlerInterface as RequestHandler;
-use Slim\Routing\RouteContext;
 
-class Auth {
+class Auth
+{
 
-    public static function token(string $app, $params = [], int $expire = 86400): string {
+    public static function token(string $app, $params = [], int $expire = 86400): string
+    {
         $time = time();
         $payload = [
             'sub' => $app,
@@ -20,6 +21,23 @@ class Auth {
             'exp' => $time + $expire,
         ];
         $payload = [...$payload, ...$params];
-        return JWT::encode($payload, \Dux\App::config("use")->get("app.secret"), 'HS256');
+        return 'Bearer ' . JWT::encode($payload, App::config("use")->get("app.secret"), 'HS256');
+    }
+
+    public static function decode(Request $request, string $app): ?array
+    {
+        $jwtStr = str_replace('Bearer ', '', $request->getHeaderLine('Authorization'));
+        try {
+            $jwt = JWT::decode($jwtStr, new Key(App::config("use")->get("app.secret"), 'HS256'));
+        } catch (\Exception $e) {
+            return null;
+        }
+        if (!$jwt->sub || !$jwt->id) {
+            return null;
+        }
+        if ($jwt->sub !== $app) {
+            return null;
+        }
+        return (array) $jwt;
     }
 }

@@ -1,8 +1,8 @@
 <?php
 
-namespace Dux\Api;
+namespace Core\Api;
 
-use Dux\Handlers\ExceptionBusiness;
+use Core\Handlers\ExceptionBusiness;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Server\RequestHandlerInterface as RequestHandler;
@@ -17,16 +17,14 @@ class ApiMiddleware
     protected int $time = 60;
 
 
-    public function __construct(public $callback)
-    {
-    }
+    public function __construct(public $callback) {}
 
     public function __invoke(Request $request, RequestHandler $handler): Response
     {
 
         // 请求超时
         if (!$this->allowTimestamp($request)) {
-            throw new ExceptionBusiness('Request Timeout', 408);
+            //throw new ExceptionBusiness('Request Timeout', 408);
         }
         // 签名失败
         if (!$this->signVerify($request)) {
@@ -58,8 +56,17 @@ class ApiMiddleware
         $signData[] = $request->getUri()->getPath();
         $signData[] = urldecode($request->getUri()->getQuery());
         $signData[] = $time;
+
         $signStr = hash_hmac("SHA256", implode("\n", $signData), $secretKey);
-        return $signStr === $sign;
+
+
+        $signDataCheck = [];
+        $signDataCheck[] = $request->getUri()->getPath();
+        $signDataCheck[] = $request->getUri()->getQuery();
+        $signDataCheck[] = $time;
+        $signStrCheck = hash_hmac("SHA256", implode("\n", $signDataCheck), $secretKey);
+
+        return $signStr === $sign || $signStrCheck === $sign;
     }
 
     /**

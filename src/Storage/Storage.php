@@ -1,39 +1,36 @@
 <?php
 declare(strict_types=1);
 
-namespace Dux\Storage;
+namespace Core\Storage;
 
-use Dux\App;
-use League\Flysystem\Filesystem;
-use League\Flysystem\Local\LocalFilesystemAdapter;
-use Overtrue\Flysystem\Cos\CosAdapter;
-use Overtrue\Flysystem\Qiniu\QiniuAdapter;
-use Iidestiny\Flysystem\Oss\OssAdapter;
+use Core\Storage\Contracts\StorageInterface;
+use Core\Storage\Drivers\LocalDriver;
+use Core\Storage\Drivers\S3Driver;
+use Core\Storage\Exceptions\StorageException;
 
-class Storage {
-    public static function init(string $type, array $config): Filesystem {
-        switch ($type) {
-            case "qiniu":
-                // https://github.com/overtrue/flysystem-qiniu
-                $adapter = new QiniuAdapter($config["accessKey"], $config["secretKey"], $config["bucket"], $config["domain"]);
-                break;
-            case "cos":
-                // https://github.com/overtrue/flysystem-cos
-                $adapter = new CosAdapter($config);
-                break;
-            case "oss":
-                $adapter = new OssAdapter($config["accessKeyId"], $config["accessKeySecret"], $config["endpoint"], $config["bucket"], $config["isCName"], $config["prefix"] ?: '');
-                $adapter->setCdnUrl($config["domain"]);
-                break;
-            default:
-                $adapter = new LocalFilesystemAdapter(
-                    App::$basePath . "/" . $config["path"]
-                );
-        }
-        return new Filesystem(
-            $adapter,
-            ["public_url" => $config["public_url"]]
-        );
+class Storage
+{
+    private StorageInterface $driver;
 
+    public function __construct(string $driver, array $config, ?callable $signCallback = null)
+    {
+        $this->driver = match ($driver) {
+            'local' => new LocalDriver($config, $signCallback),
+            's3' => new S3Driver($config),
+            default => throw new StorageException('Driver not supported'),
+        };
     }
-}
+
+    public function getInstance(): StorageInterface
+    {
+        return $this->driver;
+    }
+
+    public function __call(string $name, array $arguments)
+    {
+        if (method_exists($this->driver, $name)) {
+            return $this->driver->$name(...$arguments);
+        }
+        throw new StorageException("Method {$name} not found");
+    }
+} 

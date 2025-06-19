@@ -1,8 +1,8 @@
 <?php
 
-namespace Dux\Queue;
+namespace Core\Queue;
 
-use Dux\App;
+use Core\App;
 use Interop\Queue\Context;
 use Interop\Queue\Message;
 use Interop\Queue\Processor;

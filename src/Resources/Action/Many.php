@@ -1,6 +1,6 @@
 <?php
 
-namespace Dux\Resources\Action;
+namespace Core\Resources\Action;
 
 use Illuminate\Database\Eloquent\Builder;
 use Kalnoy\Nestedset\Collection;
@@ -29,7 +29,7 @@ trait Many
         /**
          * @var $query Builder
          */
-        $query = $this->model::query();
+        $query = $this->queryModel($this->model);
 
         $key = $queryParams['id'];
         if ($key) {
@@ -59,16 +59,16 @@ trait Many
 
         if ($this->pagination['status']) {
             $result = $query->paginate($limit);
-        }else {
+        } else {
             if ($this->tree) {
                 $result = $query->get()->toTree();
-            }else {
+            } else {
                 $result = $query->get();
             }
         }
 
-        $assign = $this->transformData($result, function ($item): array {
-            return [...$this->transform($item), ...$this->event->get('transform', $item)];
+        $assign = $this->transformData($result, function ($item) use ($request): array {
+            return [...$this->transform($item, $request), ...$this->event->get('transform', $item)];
         });
 
         $assign['data'] = $this->filterData($this->includesMany, $this->excludesMany, $assign['data']);
@@ -83,5 +83,4 @@ trait Many
 
         return send($response, "ok", $assign['data'], $assign['meta']);
     }
-
 }

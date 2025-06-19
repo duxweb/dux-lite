@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace Dux\Permission;
+namespace Core\Permission;
 
-use Dux\Handlers\Exception;
+use Core\Handlers\Exception;
 
 class Register
 {

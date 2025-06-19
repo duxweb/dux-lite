@@ -1,29 +1,31 @@
 <?php
 declare(strict_types=1);
 
-namespace Dux\Database;
+namespace Core\Database;
 
-use Dux\App;
+use Core\App;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Process\Exception\ProcessFailedException;
 use Symfony\Component\Process\Process;
 
-class BackupCommand extends Command {
+class BackupCommand extends Command
+{
+    protected function configure(): void
+    {
+        $this->setName("db:backup")->setDescription('Backup the database');
+    }
 
-    protected static $defaultName = 'db:backup';
-    protected static $defaultDescription = 'Backup the database';
-
-
-    public function execute(InputInterface $input, OutputInterface $output): int {
+    public function execute(InputInterface $input, OutputInterface $output): int
+    {
 
         $dirPath = data_path('backup/');
         if (!is_dir($dirPath)) {
             mkdir($dirPath);
         }
 
-        $filePath = $dirPath.date('Y-m-d-His').'.sql';
+        $filePath = $dirPath . date('Y-m-d-His') . '.sql';
 
         $config = App::config("database")->get("db.drivers.default");
 

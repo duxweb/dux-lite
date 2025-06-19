@@ -1,16 +1,21 @@
 <?php
+
 declare(strict_types=1);
 
-namespace Dux\Database;
+namespace Core\Database;
 
-use Clockwork\DataSource\EloquentDataSource;
-use Dux\App;
+use Core\App;
+use Core\Database\Connection\MysqlConnection;
+use Core\Database\Connection\SqliteConnection;
 use Illuminate\Container\Container;
 use Illuminate\Database\Capsule\Manager;
+use Illuminate\Database\Connectors\MySqlConnector;
+use Illuminate\Database\Connectors\SQLiteConnector;
 use Illuminate\Events\Dispatcher;
 
 class Db
 {
+
     public static function init(array $configs): Manager
     {
         $capsule = new Manager;
@@ -20,17 +25,6 @@ class Db
         $event = new Dispatcher(new Container);
         $capsule->setEventDispatcher($event);
         $capsule->bootEloquent();
-
-        $status = App::config('use')->get('clock');
-        if ($status) {
-            $source = new EloquentDataSource(
-                $capsule->getDatabaseManager(),
-                $event,
-            );
-            clock()->addDataSource($source);
-            $source->listenToEvents();
-        }
-
         return $capsule;
     }
 }

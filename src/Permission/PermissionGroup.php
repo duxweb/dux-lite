@@ -1,21 +1,21 @@
 <?php
+
 declare(strict_types=1);
 
-namespace Dux\Permission;
+namespace Core\Permission;
 
 class PermissionGroup
 {
     private array $data = [];
+    public static array $actions = ['list', 'show', 'create', 'edit', 'store', 'delete'];
 
-    public function __construct(public string $app, public string $name, public int $order, public string $label, public string $pattern = "")
-    {
-    }
+    public function __construct(public string $app, public string $name, public string $label) {}
 
-    public function add(string $name, bool $complete = true): PermissionItem
+    public function add(string $name): void
     {
-        $item = new PermissionItem($complete ? $this->pattern . $this->name . "." . $name : $name);
-        $this->data[] = $item;
-        return $item;
+        $this->data[] = [
+            'name' => $this->name . "." . $name
+        ];
     }
 
     public function label(string $label): self
@@ -24,26 +24,41 @@ class PermissionGroup
         return $this;
     }
 
+
+
+    public function resources(array|false $actions = [], bool $softDelete = false): self
+    {
+        if ($actions === false) {
+            return $this;
+        }
+
+        if (!$actions) {
+            $actions = self::$actions;
+        }
+
+        $actions = array_intersect(self::$actions, $actions);
+
+        if ($softDelete) {
+            $actions = [...$actions, 'trash', 'restore'];
+        }
+
+        foreach ($actions as $vo) {
+            $this->add($vo);
+        }
+
+        return $this;
+    }
+
     public function get(): array
     {
-        $children = [];
-        foreach ($this->data as $vo) {
-            $children[] = $vo->get();
-        }
         return [
-            "label" => $this->label ?: __($this->pattern . $this->name . ".name", 'manage'),
-            "name" => "group:" . $this->pattern . $this->name,
-            "order" => $this->order,
-            "children" => $children,
+            "name" => "group:" . $this->name,
+            "children" => $this->data,
         ];
     }
 
     public function getData(): array
     {
-        $data = [];
-        foreach ($this->data as $vo) {
-            $data = [...$data, $vo->getData()];
-        }
-        return $data;
+        return $this->data;
     }
 }

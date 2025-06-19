@@ -1,18 +1,25 @@
 <?php
+
 declare(strict_types=1);
 
-namespace Dux\Logs;
+namespace Core\Logs;
 
-use Dux\App;
+use Core\App;
 use Monolog\Handler\RotatingFileHandler;
+use Monolog\Handler\StreamHandler;
 use Monolog\Level;
 use Monolog\Logger;
+use Monolog\LogRecord;
 
-class LogHandler {
+class LogHandler
+{
 
-    public static function init(string $name, Level $level): Logger {
-        $log = new Logger($name);
-        $log->pushHandler(new RotatingFileHandler(App::$dataPath . '/logs/' . $name . '.log', 15, $level, true, 0777));
-        return $log;
+    public static function init(string $name, Level $level): Logger
+    {
+        $fileHandle = new RotatingFileHandler(App::$dataPath . '/logs/' . $name . '.log', 15, $level, true, 0777);
+        $logger = new Logger($name);
+        $logger->useLoggingLoopDetection(false);
+        $logger->pushHandler($fileHandle);
+        return $logger;
     }
 }
