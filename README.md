@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <a href="https://next.dux.cn/" target="_blank">📖 中文文档</a> |
+  <a href="https://duxweb.github.io/dux-lite/" target="_blank">📖 中文文档</a> |
   <a href="https://github.com/duxweb/dux-lite" target="_blank">🏠 GitHub</a> |
   <a href="https://www.dux.cn" target="_blank">🌐 官网</a>
 </p>
@@ -400,17 +400,17 @@ volumes:
 3. 创建网站，设置运行目录为 `public`
 4. 配置 Nginx 伪静态规则
 
-详细部署说明请参考：[部署指南](https://next.dux.cn/guide/deployment.html)
+详细部署说明请参考：[部署指南](https://duxweb.github.io/dux-lite/guide/deployment.html)
 
 ## 📚 学习资源
 
 ### 📖 官方文档
 
-- **[完整文档](https://next.dux.cn/)** - 详细的使用指南和 API 参考
-- **[快速入门](https://next.dux.cn/guide/getting-started.html)** - 5分钟上手指南
-- **[架构设计](https://next.dux.cn/guide/overview.html)** - 了解框架设计理念
-- **[API 参考](https://next.dux.cn/api/)** - 完整的 API 文档
-- **[最佳实践](https://next.dux.cn/guide/best-practices.html)** - 开发最佳实践
+- **[完整文档](https://duxweb.github.io/dux-lite/)** - 详细的使用指南和 API 参考
+- **[快速入门](https://duxweb.github.io/dux-lite/guide/getting-started.html)** - 5分钟上手指南
+- **[架构设计](https://duxweb.github.io/dux-lite/guide/overview.html)** - 了解框架设计理念
+- **[API 参考](https://duxweb.github.io/dux-lite/api/)** - 完整的 API 文档
+- **[最佳实践](https://duxweb.github.io/dux-lite/guide/best-practices.html)** - 开发最佳实践
 
 ### 🎯 示例项目
 
@@ -485,7 +485,7 @@ volumes:
 </p>
 
 <p align="center">
-  <a href="https://next.dux.cn/">📖 文档</a> •
+  <a href="https://duxweb.github.io/dux-lite/">📖 文档</a> •
   <a href="https://github.com/duxweb/dux-lite/issues">🐛 报告问题</a> •
   <a href="https://github.com/duxweb/dux-lite/discussions">💡 功能建议</a>
 </p>
