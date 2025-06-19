@@ -24,7 +24,7 @@
   "minimum-stability": "dev",
   "prefer-stable": true,
   "require": {
-    "php": ">=8.3",
+    "php": ">=8.2",
     "ext-zlib": "*",
     "ext-pdo": "*",
     "php-di/php-di": "^7.0",
@@ -62,7 +62,8 @@
     "enqueue/enqueue": "^0.10.24",
     "enqueue/redis": "^0.10.19",
     "enqueue/amqp-lib": "^0.10.19",
-    "peppeocchi/php-cron-scheduler": "^4.0"
+    "peppeocchi/php-cron-scheduler": "^4.0",
+    "react/event-loop": "^1.5"
   },
   "autoload": {
     "psr-4": {
