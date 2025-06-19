@@ -74,7 +74,8 @@
     "ezyang/htmlpurifier": "^4.17",
     "predis/predis": "^2.2",
     "enqueue/amqp-lib": "^0.10.19",
-    "jimtools/jwt-auth": "^1.0"
+    "jimtools/jwt-auth": "^1.0",
+    "react/event-loop": "^1.5"
   },
   "require-dev": {
     "composer/composer": "^2.0",
