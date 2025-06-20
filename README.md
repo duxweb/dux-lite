@@ -96,6 +96,18 @@ flowchart TD
 
 ### 安装
 
+#### 方式一：快速开始模板（推荐）
+
+```bash
+# 使用项目模板快速创建新项目
+composer create-project duxweb/dux-lite-starter my-app
+
+# 进入项目目录
+cd my-app
+```
+
+#### 方式二：手动安装框架
+
 ```bash
 # 使用 Composer 创建新项目
 composer create-project duxweb/dux-lite my-app

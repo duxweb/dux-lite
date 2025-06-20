@@ -12,7 +12,25 @@
 
 ## 安装 DuxLite
 
-使用 Composer 创建新项目：
+### 方式一：使用项目模板（推荐）
+
+使用官方项目模板快速创建应用：
+
+```bash
+# 使用项目模板创建新项目
+composer create-project duxweb/dux-lite-starter my-app
+
+# 进入项目目录
+cd my-app
+
+# 设置权限
+chmod -R 755 data/
+chmod +x dux
+```
+
+### 方式二：手动安装
+
+手动安装框架并创建项目结构：
 
 ```bash
 composer require duxweb/dux-lite:^2.0
@@ -20,7 +38,20 @@ composer require duxweb/dux-lite:^2.0
 
 ## 创建应用
 
-### 1. 项目结构
+### 使用项目模板（推荐路径）
+
+如果您已经使用了项目模板创建项目，可以直接跳到 [运行应用](#运行应用) 部分。项目模板已经包含了完整的项目结构和配置文件。
+
+只需要：
+1. 编辑 `config/database.toml` 配置数据库连接
+2. 运行 `php dux db:sync` 初始化数据库
+3. 启动开发服务器测试
+
+### 手动创建项目（完整流程）
+
+如果您选择手动安装，请按照以下步骤创建项目：
+
+#### 1. 项目结构
 
 创建基本的项目结构：
 
@@ -40,9 +71,9 @@ my-app/
 └── composer.json
 ```
 
-### 2. 创建入口文件
+#### 2. 创建入口文件
 
-#### Web 入口文件
+##### Web 入口文件
 
 在 `public/index.php` 中创建应用入口：
 
@@ -63,7 +94,7 @@ App::create(basePath: dirname(__DIR__), debug: true, timezone: 'UTC');
 App::runWeb();
 ```
 
-#### 命令行工具文件
+##### 命令行工具文件
 
 在项目根目录创建 `dux` 文件（无扩展名）：
 
@@ -96,9 +127,9 @@ App::run();
 chmod +x dux
 ```
 
-### 3. 配置文件
+#### 3. 配置文件
 
-#### 应用配置 `config/use.toml`
+##### 应用配置 `config/use.toml`
 
 ```toml
 [app]
@@ -109,7 +140,7 @@ secret = "your-app-secret-key"
 domain = "http://localhost:8000"
 ```
 
-#### 模块注册 `config/app.toml`
+##### 模块注册 `config/app.toml`
 
 ```toml
 # 注册应用模块
@@ -118,7 +149,7 @@ registers = [
 ]
 ```
 
-### 4. 创建应用模块
+#### 4. 创建应用模块
 
 创建 `app/Web/App.php`：
 
@@ -151,7 +182,7 @@ class App extends AppExtend
 }
 ```
 
-### 5. 第一个路由
+#### 5. 第一个路由
 
 创建 `app/Web/Controllers/HelloController.php`：
 

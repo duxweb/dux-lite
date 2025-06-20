@@ -31,7 +31,32 @@ ext-fileinfo     # 文件信息
 
 ## 安装方式
 
-### 方式一：Composer 安装
+### 方式一：快速开始模板（推荐）
+
+使用官方项目模板，快速创建包含完整项目结构和示例代码的新应用：
+
+```bash
+# 使用项目模板创建新项目
+composer create-project duxweb/dux-lite-starter my-app
+
+# 进入项目目录
+cd my-app
+
+# 设置目录权限
+chmod -R 755 data/
+chmod +x dux
+
+```
+
+项目模板包含：
+- ✅ 完整的项目目录结构
+- ✅ 预配置的入口文件和命令行工具
+- ✅ 示例控制器和路由
+- ✅ 完整的配置文件模板
+- ✅ Web 服务器配置文件
+- ✅ 开箱即用的开发环境
+
+### 方式二：Composer 安装
 
 #### 新项目安装
 
@@ -53,7 +78,7 @@ mkdir -p public app config data/{logs,cache}
 composer require duxweb/dux-lite:^2.0
 ```
 
-### 方式二：下载源码
+### 方式三：下载源码
 
 ```bash
 # 克隆或下载源码
