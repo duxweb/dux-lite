@@ -116,23 +116,6 @@ composer create-project duxweb/dux-lite my-app
 composer require duxweb/dux-lite:^2.0
 ```
 
-### 基础配置
-
-```bash
-# 进入项目目录
-cd my-app
-
-# 设置目录权限
-chmod -R 755 data/
-chmod +x dux
-
-# 配置数据库连接
-# 编辑 config/database.toml
-
-# 初始化数据库
-php dux db:sync
-```
-
 ### 启动开发服务器
 
 ```bash
