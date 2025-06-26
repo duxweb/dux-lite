@@ -80,7 +80,6 @@ class App
         self::$bootstrap->registerConfig();
         self::$bootstrap->registerWeb();
         self::$bootstrap->registerPlugin();
-
         Plugin::register(self::$bootstrap);
 
     }

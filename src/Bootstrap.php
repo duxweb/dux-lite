@@ -128,8 +128,13 @@ class Bootstrap
 
         // 插件应用注册
         $pluginApps = Plugin::apps();
-        foreach ($pluginApps as $vo) {
-            App::$registerApp[] = $vo;
+        foreach ($pluginApps as $apps) {
+            if (!$vo) {
+                continue;
+            }
+            foreach ($apps as $app) {
+                App::$registerApp[] = $app;
+            }
         }
 
         // 应用初始化触发

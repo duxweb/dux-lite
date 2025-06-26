@@ -62,13 +62,13 @@
     "enqueue/redis": "^0.10.19",
     "enqueue/amqp-lib": "^0.10.19",
     "peppeocchi/php-cron-scheduler": "^4.0",
-    "react/event-loop": "^1.5"
+    "react/event-loop": "^1.5",
+    "composer/composer": "^2.8"
   },
   "require-dev": {
     "pestphp/pest": "^3.5",
     "pestphp/pest-plugin-stressless": "^3.0",
-    "mockery/mockery": "^1.6",
-    "composer/composer": "^2.8"
+    "mockery/mockery": "^1.6"
   },
   "autoload": {
     "psr-4": {

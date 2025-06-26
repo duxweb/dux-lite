@@ -13,6 +13,7 @@ abstract class ComposerPlugin implements PluginInterface
     protected Composer $composer;
     protected IOInterface $io;
     private ?array $composerData = null;
+    protected int $dirLevel = 2;
 
     public function activate(Composer $composer, IOInterface $io): void
     {
@@ -69,7 +70,7 @@ abstract class ComposerPlugin implements PluginInterface
         }
 
         $reflection = new \ReflectionClass($this);
-        $composerFile = dirname($reflection->getFileName(), 3) . '/composer.json';
+        $composerFile = dirname($reflection->getFileName(), $this->dirLevel) . '/composer.json';
 
         if (!file_exists($composerFile)) {
             return $this->composerData = null;
