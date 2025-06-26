@@ -18,7 +18,7 @@ class Nestedset
   public static function sort(string|Builder $model, int $id, int $beforeId, int $parentId)
   {
     $model = $model instanceof Builder ? $model : new $model();
-    $menu = $model->find($id);
+    $menu = $model->clone()->find($id);
     if (!$menu) {
         throw new ExceptionBusiness('node not found');
     }
@@ -28,14 +28,14 @@ class Nestedset
       $menu->saveAsRoot();
 
       if ($beforeId) {
-        $beforeNode = $model->find($beforeId);
+        $beforeNode = $model->clone()->find($beforeId);
         if (!$beforeNode) {
           throw new ExceptionBusiness('previous node not found');
         }
         $menu->afterNode($beforeNode)->save();
       } else {
         // 如果前一个节点不存在,则移动到最前面
-        $firstRoot = $model->whereNull('parent_id')->orderBy('_lft')->first();
+        $firstRoot = $model->clone()->whereNull('parent_id')->orderBy('_lft')->first();
         if ($firstRoot && $firstRoot->id !== $menu->id) {
           $menu->beforeNode($firstRoot)->save();
         }
@@ -44,7 +44,7 @@ class Nestedset
       return;
     }
 
-    $parentNode = $model->find($parentId);
+    $parentNode = $model->clone()->find($parentId);
     if (!$parentNode) {
       throw new ExceptionBusiness('parent node not found');
     }
@@ -54,7 +54,7 @@ class Nestedset
       return;
     }
 
-    $beforeNode = $model->find($beforeId);
+    $beforeNode = $model->clone()->find($beforeId);
     if (!$beforeNode) {
       throw new ExceptionBusiness('previous node not found');
     }
