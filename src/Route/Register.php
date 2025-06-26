@@ -7,7 +7,6 @@ namespace Core\Route;
 use DI\DependencyException;
 use DI\NotFoundException;
 use Core\App;
-use Core\Bootstrap;
 use Core\Handlers\Exception;
 use Core\Route\Attribute\RouteGroup;
 
@@ -70,6 +69,7 @@ class Register
                 $groupName = $groupParams["name"];
 
                 if (!$appName) {
+                    continue;
                     throw new \Exception("class [" . $groupClass . "] route attribute parameter missing \"app\" ");
                 }
 
@@ -107,6 +107,7 @@ class Register
                     );
                 } else {
                     if (!$appName) {
+                        continue;
                         throw new \Exception("class [" . $class . "] route attribute parameter missing \"app\" ");
                     }
 

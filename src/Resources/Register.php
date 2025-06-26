@@ -75,6 +75,7 @@ class Register
             $resName = $resInfo["params"]["name"];
 
             if (!$appName) {
+                continue;
                 throw new \Exception("class [" . $item["name"] . "] resource attribute parameter missing \"app\" ");
             }
 
