@@ -2,10 +2,9 @@
 
 namespace Core\Resources\Action;
 
-use Illuminate\Database\Eloquent\Builder;
-use Kalnoy\Nestedset\Collection;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Illuminate\Database\Eloquent\Builder;
 
 trait Many
 {
@@ -47,7 +46,7 @@ trait Many
         $this->event->run('queryMany', $query, $request, $args);
         $this->event->run('query', $query);
 
-        $keys = array_filter(explode(',', $queryParams['ids']));
+        $keys = array_filter(is_array($queryParams['ids']) ? $queryParams['ids'] : explode(',', $queryParams['ids']));
         if (isset($queryParams['ids'])) {
             $query->whereIn($this->key, $keys);
         }

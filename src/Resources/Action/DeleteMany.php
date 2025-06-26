@@ -16,7 +16,7 @@ trait DeleteMany
         $params =  $request->getQueryParams();
         $this->init($request, $response, $args);
         $this->event->run('init', $request, $response, $args);
-        $ids = explode(',', $params['ids']);
+        $ids = is_array($params['ids']) ? $params['ids'] : explode(',', $params['ids']);
         if (!$ids) {
             throw new ExceptionBusiness(__("message.emptyData", "common"));
         }
