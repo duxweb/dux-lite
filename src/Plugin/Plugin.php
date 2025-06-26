@@ -10,32 +10,40 @@ use Core\App\AppExtend;
 
 class Plugin
 {
+    private static bool $initialized = false;
+
     public static function init(): void
     {
-        $packages = \Composer\InstalledVersions::getAllRawData();
+        if (self::$initialized) {
+            return;
+        }
 
-        foreach ($packages as $installed) {
-            if (!isset($installed['versions'])) {
-                continue;
-            }
+        PluginRegistry::loadFromFile();
 
-            foreach ($installed['versions'] as $packageName => $packageData) {
-                if (!isset($packageData['type']) || $packageData['type'] !== 'duxlite-plugin') {
-                    continue;
-                }
+        $plugins = PluginRegistry::getAll();
 
-                $providers = $packageData['extra']['providers'];
-                if (!$providers || !is_array($providers)) {
-                    continue;
-                }
-
+        foreach ($plugins as $pluginInfo) {
+            $providers = $pluginInfo['config']['providers'] ?? [];
+            if (is_array($providers)) {
                 foreach ($providers as $provider) {
-                    if (class_exists($provider) && !in_array($provider, App::$registerPlugin)) {
+                    if (class_exists($provider) && !self::isProviderRegistered($provider)) {
                         App::$registerPlugin[] = new $provider();
                     }
                 }
             }
         }
+
+        self::$initialized = true;
+    }
+
+    private static function isProviderRegistered(string $providerClass): bool
+    {
+        foreach (App::$registerPlugin as $plugin) {
+            if (get_class($plugin) === $providerClass) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static function register(Bootstrap $bootstrap): void
