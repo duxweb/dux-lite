@@ -18,6 +18,7 @@ use Core\Handlers\ErrorXmlRenderer;
 use Core\Middleware\CorsMiddleware;
 use Core\Middleware\LangMiddleware;
 use Core\Permission\PermissionCommand;
+use Core\Plugin\Plugin;
 use Core\Queue\QueueCommand;
 use Core\Route\RouteCommand;
 use Core\Scheduler\SchedulerCommand;
@@ -72,6 +73,15 @@ class Bootstrap
     }
 
     /**
+     * 注册Composer插件
+     * @return void
+     */
+    public function registerPlugin(): void
+    {
+        Plugin::init();
+    }
+
+    /**
      * 加载路由
      * @return void
      */
@@ -116,6 +126,12 @@ class Bootstrap
             App::$registerApp[] = $vo;
         }
 
+        // 插件应用注册
+        $pluginApps = Plugin::apps();
+        foreach ($pluginApps as $vo) {
+            App::$registerApp[] = $vo;
+        }
+
         // 应用初始化触发
         foreach ($appList as $vo) {
             call_user_func([new $vo, "init"], $this);
@@ -130,6 +146,7 @@ class Bootstrap
         foreach ($appList as $vo) {
             call_user_func([new $vo, "register"], $this);
         }
+
 
         // 注解资源注册
         App::resource()->registerAttribute();
@@ -157,6 +174,7 @@ class Bootstrap
         foreach ($appList as $vo) {
             call_user_func([new $vo, "boot"], $this);
         }
+
     }
 
 

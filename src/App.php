@@ -11,6 +11,7 @@ use Core\Database\Migrate;
 use Core\Event\Event;
 use Core\Lock\Lock;
 use Core\Logs\LogHandler;
+use Core\Plugin\Plugin;
 use Core\Queue\Queue;
 use Core\Redis\Redis;
 use Core\Scheduler\Scheduler;
@@ -45,6 +46,7 @@ class App
     public static array $config;
     public static string $version = '0.0.1';
     public static array $registerApp = [];
+    public static array $registerPlugin = [];
     public static bool $debug = true;
     public static string $logo = '';
     public static string $lang = '';
@@ -77,6 +79,10 @@ class App
         self::$bootstrap->registerFunc();
         self::$bootstrap->registerConfig();
         self::$bootstrap->registerWeb();
+        self::$bootstrap->registerPlugin();
+
+        Plugin::register(self::$bootstrap);
+
     }
 
     public static function run()
@@ -84,6 +90,7 @@ class App
         self::$bootstrap->loadApp();
         self::$bootstrap->loadRoute();
         self::$bootstrap->loadCommand();
+        Plugin::boot(self::$bootstrap);
         self::$bootstrap->run();
     }
 
@@ -91,6 +98,7 @@ class App
     {
         self::$bootstrap->loadApp();
         self::$bootstrap->loadRoute();
+        Plugin::boot(self::$bootstrap);
         self::$bootstrap->runWeb();
     }
 
