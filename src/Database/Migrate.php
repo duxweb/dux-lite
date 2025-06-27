@@ -15,53 +15,76 @@ class Migrate
 {
     public array $migrate = [];
 
-    public function register(string ...$model): void
+    public function register(string $model, string $connectionName = 'default'): void
     {
-        $this->migrate = [...$this->migrate, ...$model];
+        $this->migrate[$connectionName][] = $model;
     }
 
-    public function migrate(OutputInterface $output, string $name = ''): void
+    public function migrate(OutputInterface $output, string $appName = ''): void
     {
-        $name = ucfirst($name);
-        $seeds = [];
-        $connect = App::db()->getConnection();
-        foreach ($this->migrate as $model) {
-            if ($name && !str_contains($model, "\\$name\\Models\\")) {
-                continue;
+        $appName = ucfirst($appName);
+
+        foreach ($this->migrate as $connectionName => $models) {
+
+            $seeds = [];
+            $syncModels = [];
+            $connect = App::db()->getConnection($connectionName);
+
+            foreach ($models as $model) {
+                if ($appName && !str_contains($model, "\\$appName\\Models\\")) {
+                    continue;
+                }
+
+                if (!method_exists($model, 'migration')) {
+                    continue;
+                }
+                $startTime = microtime(true);
+                $modelObj = new $model;
+                $this->migrateTable($connect, $modelObj, $seeds, $connectionName);
+
+                if (method_exists($model, 'migrationAfter')) {
+                    $modelObj->migrationAfter($connect);
+                }
+
+
+                $time = round(microtime(true) - $startTime, 3);
+                $output?->writeln("sync model <info>$model</info> {$time}s");
+
+                $syncModels[] = $modelObj;
             }
 
-            if (!method_exists($model, 'migration')) {
-                continue;
-            }
-            $startTime = microtime(true);
-            $modelObj = new $model;
-            $this->migrateTable($connect, $modelObj, $seeds);
-
-            if (method_exists($model, 'migrationAfter')) {
-                $modelObj->migrationAfter($modelObj->getConnection());
+            foreach ($seeds as $seed) {
+                $startTime = microtime(true);
+                $seed->seed($connect);
+                $time = round(microtime(true) - $startTime, 3);
+                $seedName = $seed::class;
+                $output?->writeln("sync send <info>$seedName</info> {$time}s");
             }
 
-            $time = round(microtime(true) - $startTime, 3);
-            $output?->writeln("sync model <info>$model</info> {$time}s");
+            foreach ($syncModels as $seed) {
+                if (!method_exists($seed, 'install')) {
+                    continue;
+                }
+
+                $startTime = microtime(true);
+                $seed->install($connect);
+                $time = round(microtime(true) - $startTime, 3);
+                $seedName = $seed::class;
+                $output?->writeln("sync install <info>$seedName</info> {$time}s");
+            }
+
         }
 
-        foreach ($seeds as $seed) {
-            $startTime = microtime(true);
-            $seed->seed($connect);
-            $time = round(microtime(true) - $startTime, 3);
-            $name = $seed::class;
-            $output?->writeln("sync send <info>$name</info> {$time}s");
-        }
     }
 
-    private function migrateTable(Connection $connect, Model $model, &$seed): void
+    private function migrateTable(Connection $connect, Model $model, &$seed, string $connectionName): void
     {
         $pre = $connect->getTablePrefix();
         $modelTable = $model->getTable();
         $tempTable = 'table_' . $modelTable;
-        $tableExists = App::db()->getConnection()->getSchemaBuilder()->hasTable($modelTable);
-        App::db()->getConnection()->getSchemaBuilder()->dropIfExists($tempTable);
-        App::db()->getConnection()->getSchemaBuilder()->create($tableExists ? $tempTable : $modelTable, function (Blueprint $table) use ($model) {
+        $tableExists = $connect->getSchemaBuilder()->hasTable($modelTable);
+        $connect->getSchemaBuilder()->dropIfExists($tempTable);
+        $connect->getSchemaBuilder()->create($tableExists ? $tempTable : $modelTable, function (Blueprint $table) use ($model) {
             if ($model->getTableComment()) {
                 $table->comment($model->getTableComment());
             }
@@ -74,8 +97,9 @@ class Migrate
             }
             return;
         }
+
         // 更新表字段
-        $connection = $this->getDoctrineConnection($model->getConnection());;
+        $connection = $this->getDoctrineConnection($connect);
         $schemaManager = $connection->createSchemaManager();
         $tableDiff = $schemaManager->createComparator()->compareTables(
             $schemaManager->introspectTable($pre . $modelTable),
@@ -84,7 +108,7 @@ class Migrate
         if (!$tableDiff->isEmpty()) {
             $schemaManager->alterTable($tableDiff);
         }
-        App::db()->getConnection()->getSchemaBuilder()->drop($tempTable);
+        $connect->getSchemaBuilder()->drop($tempTable);
     }
 
     public function getDoctrineConnection(Connection $modelConnection): \Doctrine\DBAL\Connection
@@ -108,8 +132,11 @@ class Migrate
                 if ($annotation["name"] != AutoMigrate::class) {
                     continue;
                 }
-                $this->register($annotation["class"]);
+                $arguments = $annotation["arguments"];
+                $connectionName = $arguments[0] ?? 'default';
+                $this->register($annotation["class"], $connectionName);
             }
         }
     }
 }
+
