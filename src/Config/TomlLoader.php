@@ -31,7 +31,7 @@ class TomlLoader implements ParserInterface
         } catch (Exception $exception) {
             throw new ParseException(
                 [
-                    'message'   => 'Error parsing YAML string',
+                    'message'   => 'Error parsing TOML string',
                     'exception' => $exception,
                 ]
             );
