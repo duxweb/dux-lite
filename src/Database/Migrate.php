@@ -15,69 +15,68 @@ class Migrate
 {
     public array $migrate = [];
 
-    public function register(string $model, string $connectionName = 'default'): void
+    public function register(string $model): void
     {
-        $this->migrate[$connectionName][] = $model;
+        $this->migrate[] = $model;
     }
 
     public function migrate(OutputInterface $output, string $appName = ''): void
     {
         $appName = ucfirst($appName);
 
-        foreach ($this->migrate as $connectionName => $models) {
 
-            $seeds = [];
-            $syncModels = [];
-            $connect = App::db()->getConnection($connectionName);
+        $seeds = [];
+        $syncModels = [];
 
-            foreach ($models as $model) {
-                if ($appName && !str_contains($model, "\\$appName\\Models\\")) {
-                    continue;
-                }
-
-                if (!method_exists($model, 'migration')) {
-                    continue;
-                }
-                $startTime = microtime(true);
-                $modelObj = new $model;
-                $this->migrateTable($connect, $modelObj, $seeds, $connectionName);
-
-                if (method_exists($model, 'migrationAfter')) {
-                    $modelObj->migrationAfter($connect);
-                }
-
-
-                $time = round(microtime(true) - $startTime, 3);
-                $output?->writeln("sync model <info>$model</info> {$time}s");
-
-                $syncModels[] = $modelObj;
+        foreach ($this->migrate as $model) {
+            if ($appName && !str_contains($model, "\\$appName\\Models\\")) {
+                continue;
             }
 
-            foreach ($seeds as $seed) {
-                $startTime = microtime(true);
-                $seed->seed($connect);
-                $time = round(microtime(true) - $startTime, 3);
-                $seedName = $seed::class;
-                $output?->writeln("sync send <info>$seedName</info> {$time}s");
+            if (!method_exists($model, 'migration')) {
+                continue;
+            }
+            $startTime = microtime(true);
+            $modelObj = new $model;
+
+            $connect = $modelObj->getConnection();
+            $this->migrateTable($connect, $modelObj, $seeds);
+
+            if (method_exists($model, 'migrationAfter')) {
+                $modelObj->migrationAfter($connect);
             }
 
-            foreach ($syncModels as $seed) {
-                if (!method_exists($seed, 'install')) {
-                    continue;
-                }
 
-                $startTime = microtime(true);
-                $seed->install($connect);
-                $time = round(microtime(true) - $startTime, 3);
-                $seedName = $seed::class;
-                $output?->writeln("sync install <info>$seedName</info> {$time}s");
-            }
+            $time = round(microtime(true) - $startTime, 3);
+            $output?->writeln("sync model <info>$model</info> {$time}s");
 
+            $syncModels[] = $modelObj;
         }
+
+        foreach ($seeds as $seed) {
+            $startTime = microtime(true);
+            $seed->seed($seed->getConnection());
+            $time = round(microtime(true) - $startTime, 3);
+            $seedName = $seed::class;
+            $output?->writeln("sync send <info>$seedName</info> {$time}s");
+        }
+
+        foreach ($syncModels as $seed) {
+            if (!method_exists($seed, 'install')) {
+                continue;
+            }
+
+            $startTime = microtime(true);
+            $seed->install($seed->getConnection());
+            $time = round(microtime(true) - $startTime, 3);
+            $seedName = $seed::class;
+            $output?->writeln("sync install <info>$seedName</info> {$time}s");
+        }
+
 
     }
 
-    private function migrateTable(Connection $connect, Model $model, &$seed, string $connectionName): void
+    private function migrateTable(Connection $connect, Model $model, &$seed): void
     {
         $pre = $connect->getTablePrefix();
         $modelTable = $model->getTable();
@@ -132,9 +131,7 @@ class Migrate
                 if ($annotation["name"] != AutoMigrate::class) {
                     continue;
                 }
-                $arguments = $annotation["arguments"];
-                $connectionName = $arguments[0] ?? 'default';
-                $this->register($annotation["class"], $connectionName);
+                $this->register($annotation["class"]);
             }
         }
     }

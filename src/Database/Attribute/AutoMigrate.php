@@ -8,6 +8,6 @@ use Attribute;
 #[Attribute(Attribute::TARGET_CLASS)]
 class AutoMigrate {
 
-    public function __construct(string $name = 'default') {
+    public function __construct() {
     }
 }
