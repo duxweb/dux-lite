@@ -230,7 +230,7 @@ class DocsCommand extends Command
         if (!in_array($groupName, array_column($this->openApiDoc['tags'], 'name'))) {
             $this->openApiDoc['tags'][] = [
                 'name' => $groupName,
-                'description' => $groupInfo['desc'] ?? $groupName
+                'description' => $groupInfo['desc']
             ];
         }
     }
@@ -240,6 +240,8 @@ class DocsCommand extends Command
         $operation = [
             'tags' => [$groupName],
             'summary' => $apiParams['name'] ?? '',
+            'name' => $apiParams['name'] ?? '',
+            'description' => $apiParams['desc'] ?? '',
             'operationId' => $this->generateOperationId($path, $method, $routeKey),
             'parameters' => $this->buildParameters($item, $routeKey),
             'responses' => $this->buildResponses($item, $apiParams, $routeKey)
