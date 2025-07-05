@@ -5,6 +5,7 @@ namespace Core\Docs;
 
 use Core\App;
 use Core\Docs\Attribute\Api;
+use Core\Docs\Attribute\Docs;
 use Core\Docs\Attribute\Header;
 use Core\Docs\Attribute\Params;
 use Core\Docs\Attribute\Payload;
@@ -136,14 +137,14 @@ class DocsCommand extends Command
         $hasMethod = isset($annotation['method']);
 
         match (true) {
-            $name === Api::class && !$hasMethod => $this->setApiGroup($groups, $item['class'], $annotation['params']),
+            $name === Docs::class && !$hasMethod => $this->setDocsGroup($groups, $item['class'], $annotation['params']),
             $name === Route::class && $hasMethod => $routes[$annotation['class']] = $annotation['params'],
             $name === RouteGroup::class && !$hasMethod => $this->setRouteGroup($groups, $item['class'], $annotation['params']),
             default => null
         };
     }
 
-    private function setApiGroup(array &$groups, string $className, array $params): void
+    private function setDocsGroup(array &$groups, string $className, array $params): void
     {
         if (!isset($groups[$className])) {
             $groups[$className] = [];
@@ -162,6 +163,13 @@ class DocsCommand extends Command
     private function processApiAnnotations(array $attributes, array $groups, array $routes): void
     {
         foreach ($attributes as $item) {
+            $className = $item['class'];
+
+            // Skip classes without Docs annotation
+            if (!isset($groups[$className])) {
+                continue;
+            }
+
             foreach ($item['annotations'] as $annotation) {
                 if ($annotation['name'] === Api::class && isset($annotation['method'])) {
                     $this->generateApiDoc($annotation, $item, $groups, $routes);
@@ -222,7 +230,7 @@ class DocsCommand extends Command
         if (!in_array($groupName, array_column($this->openApiDoc['tags'], 'name'))) {
             $this->openApiDoc['tags'][] = [
                 'name' => $groupName,
-                'description' => $groupInfo['name'] ?? $groupName
+                'description' => $groupInfo['desc'] ?? $groupName
             ];
         }
     }
@@ -236,10 +244,6 @@ class DocsCommand extends Command
             'parameters' => $this->buildParameters($item, $routeKey),
             'responses' => $this->buildResponses($item, $apiParams, $routeKey)
         ];
-
-        if ($apiParams['auth'] ?? true) {
-            $operation['security'] = [['bearerAuth' => []]];
-        }
 
         if ($requestBody = $this->buildRequestBody($item, $apiParams, $routeKey)) {
             $operation['requestBody'] = $requestBody;
