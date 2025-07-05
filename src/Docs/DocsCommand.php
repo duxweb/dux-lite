@@ -240,7 +240,6 @@ class DocsCommand extends Command
         $operation = [
             'tags' => [$groupName],
             'summary' => $apiParams['name'] ?? '',
-            'name' => $apiParams['name'] ?? '',
             'description' => $apiParams['desc'] ?? '',
             'operationId' => $this->generateOperationId($path, $method, $routeKey),
             'parameters' => $this->buildParameters($item, $routeKey),
@@ -275,6 +274,7 @@ class DocsCommand extends Command
                 $parameters[] = [
                     'name' => $params['field'],
                     'in' => $config['in'],
+                    'summary' => $params['name'],
                     'description' => $params['desc'] ?: $params['name'],
                     'required' => $params['required'] ?? ($config['in'] === 'path'),
                     'schema' => ['type' => $params['type']->value],
