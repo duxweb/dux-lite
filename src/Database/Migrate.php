@@ -24,7 +24,6 @@ class Migrate
     {
         $appName = ucfirst($appName);
 
-
         $seeds = [];
         $syncModels = [];
 

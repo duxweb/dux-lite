@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace Core;
 
 use Carbon\Carbon;
+use Core\App\AppCommand;
 use Core\Command\Command;
 use Core\Database\BackupCommand;
 use Core\Database\ListCommand;
 use Core\Database\MigrateCommand;
 use Core\Database\RestoreCommand;
+use Core\Docs\DocsCommand;
 use Core\Handlers\ErrorHandler;
 use Core\Handlers\ErrorHtmlRenderer;
 use Core\Handlers\ErrorJsonRenderer;
@@ -70,6 +72,11 @@ class Bootstrap
         AppFactory::setContainer(App::di());
         $this->web = AppFactory::create();
         App::$debug = App::config("use")->get("app.debug", false);
+
+        if (!App::$debug) {
+            $routeCollector = $this->web->getRouteCollector();
+            $routeCollector->setCacheFile(data_path("/cache/route.cache"));
+        }
     }
 
     /**
@@ -191,6 +198,7 @@ class Bootstrap
     {
         $commands = App::config("command")->get("registers", []);
 
+        $commands[] = AppCommand::class;
         $commands[] = BackupCommand::class;
         $commands[] = RestoreCommand::class;
         $commands[] = PermissionCommand::class;
@@ -199,6 +207,7 @@ class Bootstrap
         $commands[] = MigrateCommand::class;
         $commands[] = QueueCommand::class;
         $commands[] = SchedulerCommand::class;
+        $commands[] = DocsCommand::class;
 
         $commands = [...$commands, ...Command::registerAttribute()];
 

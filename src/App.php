@@ -207,7 +207,11 @@ class App
             return self::$di->get("attributes");
         }
 
-        $attributes = Attribute::load(self::$registerApp);
+        if (self::$debug) {
+            $attributes = Attribute::load(self::$registerApp);
+        } else {
+            $attributes = Attribute::getCache(self::$registerApp);
+        }
 
         self::$di->set("attributes", $attributes);
         return $attributes;

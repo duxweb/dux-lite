@@ -7,14 +7,14 @@ use Nette\Utils\Finder;
 
 class Attribute {
 
-    static function load(array $apps): array {
+    static function load(array $apps, bool $docs = false): array {
         $data = [];
         foreach ($apps as $vo) {
             $reflection = new \ReflectionClass($vo);
             $appDir = dirname($reflection->getFileName());
             $appDirLen = strlen($appDir);
             $files = Finder::findFiles("*/*.php")->from($appDir);
-            
+
             $attributes = [];
             foreach ($files as $file) {
                 $dirName = str_replace('/','\\',substr($file->getPath(),$appDirLen + 1));
@@ -25,8 +25,14 @@ class Attribute {
                 if (!class_exists($class)) {
                     continue;
                 }
+
+                if ($docs && str_starts_with($class, 'Core\\Docs\\Attribute\\')) {
+                    continue;
+                }
+
                 $classRef = new \ReflectionClass($class);
                 $attributes = $classRef->getAttributes();
+
 
                 $classAttributes = [
                     'class' => $class,
@@ -46,6 +52,11 @@ class Attribute {
 
                 $methods = $classRef->getMethods();
                 foreach ($methods as $method) {
+
+                    if ($docs && str_starts_with($method->getDeclaringClass()->getName(), 'Core\\Docs\\Attribute\\')) {
+                        continue;
+                    }
+
                     $attributes = $method->getAttributes();
                     foreach ($attributes as $attribute) {
                         if (!isset($data[$attribute->getName()]) && !class_exists($attribute->getName())) {
@@ -65,5 +76,20 @@ class Attribute {
         }
 
         return $data;
+    }
+
+    static function getCache(array $apps): array {
+        $cache = file_get_contents(data_path("/cache/attributes.cache"));
+        if (!$cache) {
+            $data = self::load($apps);
+            self::setCache($data);
+            return $data;
+        }
+
+        return include data_path("/cache/attributes.cache");
+    }
+
+    static function setCache(array $data): void {
+        file_put_contents(data_path("/cache/attributes.cache"), "<?php\nreturn " . var_export($data, true) . ";");
     }
 }
