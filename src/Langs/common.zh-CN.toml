@@ -32,3 +32,18 @@ errorTitle = "应用错误"
 errorMessage = "操作遇到了错误，请稍后再试"
 home = "回到首页"
 back = "返回上一页"
+
+[docs]
+title = "API文档"
+description = "基于注解生成的API文档"
+server_description = "开发服务器"
+success = "成功"
+bad_request = "请求错误"
+internal_server_error = "服务器内部错误"
+error_message = "服务器内部错误"
+http_status_code = "HTTP状态码"
+response_message = "响应消息"
+error_reason = "错误消息"
+response_data = "响应数据"
+metadata = "元数据"
+

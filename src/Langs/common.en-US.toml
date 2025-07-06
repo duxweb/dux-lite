@@ -32,3 +32,18 @@ errorTitle = "Application Error"
 errorMessage = "An error occurred while processing your request. Please try again later"
 home = "Back to home"
 back = "Go back to the previous page"
+
+[docs]
+title = "API Documentation"
+description = "Generated API documentation from annotations"
+server_description = "Development server"
+success = "Success"
+bad_request = "Bad Request"
+internal_server_error = "Internal Server Error"
+error_message = "Internal Server Error"
+http_status_code = "HTTP Status Code"
+response_message = "Response Message"
+error_reason = "Error Message"
+response_data = "Response Data"
+metadata = "Metadata"
+

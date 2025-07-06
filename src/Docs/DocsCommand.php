@@ -36,6 +36,8 @@ class DocsCommand extends Command
         ['class' => Header::class, 'in' => 'header']
     ];
 
+
+
     public function __construct()
     {
         parent::__construct();
@@ -47,13 +49,15 @@ class DocsCommand extends Command
         $this->setName("docs:build")
             ->setDescription('Build OpenAPI documentation from annotations')
             ->addOption('host', null, InputOption::VALUE_OPTIONAL, 'API host', 'localhost')
-            ->addOption('port', 'p', InputOption::VALUE_OPTIONAL, 'API port', '8080');
+            ->addOption('port', 'p', InputOption::VALUE_OPTIONAL, 'API port', '8080')
+            ->addOption('ver', null, InputOption::VALUE_OPTIONAL, 'API version', null);
     }
 
     public function execute(InputInterface $input, OutputInterface $output): int
     {
         $outputFile = data_path("docs/openapi.json");
         $this->setupServers($input);
+        $this->setupVersion($input, $outputFile);
 
         $output->writeln('Starting OpenAPI documentation generation...');
 
@@ -76,9 +80,9 @@ class DocsCommand extends Command
         $this->openApiDoc = [
             'openapi' => '3.0.0',
             'info' => [
-                'title' => 'API Documentation',
+                'title' => __('docs.title', 'common'),
                 'version' => '1.0.0',
-                'description' => 'Generated API documentation from annotations'
+                'description' => __('docs.description', 'common')
             ],
             'servers' => [],
             'paths' => [],
@@ -101,8 +105,47 @@ class DocsCommand extends Command
         $host = $input->getOption('host');
         $port = $input->getOption('port');
         $this->openApiDoc['servers'] = [
-            ['url' => "http://{$host}:{$port}", 'description' => 'Development server']
+            ['url' => "http://{$host}:{$port}", 'description' => __('docs.server_description', 'common')]
         ];
+    }
+
+    private function setupVersion(InputInterface $input, string $outputFile): void
+    {
+        $version = $input->getOption('ver');
+
+        if ($version) {
+            $this->openApiDoc['info']['version'] = $version;
+        } else {
+            $this->openApiDoc['info']['version'] = $this->getNextVersion($outputFile);
+        }
+    }
+
+    private function getNextVersion(string $outputFile): string
+    {
+        if (!file_exists($outputFile)) {
+            return '1.0.0';
+        }
+
+        try {
+            $content = file_get_contents($outputFile);
+            $data = json_decode($content, true);
+
+            if (!isset($data['info']['version'])) {
+                return '1.0.0';
+            }
+
+            $currentVersion = $data['info']['version'];
+            $versionParts = explode('.', $currentVersion);
+
+            if (count($versionParts) >= 3) {
+                $versionParts[2] = (int)$versionParts[2] + 1;
+                return implode('.', $versionParts);
+            }
+
+            return '1.0.0';
+        } catch (\Exception $e) {
+            return '1.0.0';
+        }
     }
 
     private function saveDocument(string $outputFile): void
@@ -165,7 +208,6 @@ class DocsCommand extends Command
         foreach ($attributes as $item) {
             $className = $item['class'];
 
-            // Skip classes without Docs annotation
             if (!isset($groups[$className])) {
                 continue;
             }
@@ -178,7 +220,7 @@ class DocsCommand extends Command
         }
     }
 
-        private function generateApiDoc(array $apiAnnotation, array $item, array $groups, array $routes): void
+    private function generateApiDoc(array $apiAnnotation, array $item, array $groups, array $routes): void
     {
         $routeKey = $apiAnnotation['class'];
         if (!isset($routes[$routeKey])) return;
@@ -187,36 +229,49 @@ class DocsCommand extends Command
         $apiParams = $apiAnnotation['params'];
         $routeParams = $routes[$routeKey];
         $groupInfo = $groups[$className] ?? null;
-
-        $path = $this->buildPath($routeParams, $groupInfo);
-        $methods = $this->getMethods($routeParams);
         $groupName = $groupInfo['name'] ?? 'Default';
 
+        $path = $this->buildPath($routeParams, $groupInfo);
         $this->addTag($groupName, $groupInfo);
 
-        foreach ($methods as $method) {
+        foreach ($this->getMethods($routeParams) as $method) {
             $this->generateOperation($path, $method, $apiParams, $item, $groupName, $routeKey);
         }
     }
 
-    private function buildPath(array $routeParams, ?array $groupInfo): string
+        private function buildPath(array $routeParams, ?array $groupInfo): string
     {
-        $path = $routeParams['route'] ?? $routeParams[1] ?? '';
+                $path = $routeParams['route'] ?? $routeParams[1] ?? '';
 
-        if ($groupInfo && isset($groupInfo['routeGroup'])) {
-            $routeGroupParams = $groupInfo['routeGroup'];
-            $groupRoute = $routeGroupParams['route'] ?? '';
+        $appPrefix = $this->getAppPrefix($groupInfo);
 
-            if ($groupRoute) {
-                $groupRoute = rtrim($groupRoute, '/');
-                $path = ltrim($path, '/');
-                $path = $groupRoute . '/' . $path;
-            }
+        if ($groupRoute = $groupInfo['routeGroup']['route'] ?? null) {
+            $path = rtrim($groupRoute, '/') . '/' . ltrim($path, '/');
+        }
+
+        if ($appPrefix) {
+            $path = rtrim($appPrefix, '/') . '/' . ltrim($path, '/');
         }
 
         $path = preg_replace('/\{([^:}]+):[^}]+\}/', '{$1}', $path);
 
         return '/' . ltrim($path, '/');
+    }
+
+    private function getAppPrefix(?array $groupInfo): ?string
+    {
+        if (!$groupInfo || !isset($groupInfo['routeGroup']['app'])) {
+            return null;
+        }
+
+        $appName = $groupInfo['routeGroup']['app'];
+
+        try {
+            $routeApp = App::route()->get($appName);
+            return $routeApp->pattern;
+        } catch (\Exception $e) {
+            return null;
+        }
     }
 
     private function getMethods(array $routeParams): array
@@ -314,19 +369,59 @@ class DocsCommand extends Command
 
         $responses = [
             '200' => [
-                'description' => 'Success',
+                'description' => __('docs.success', 'common'),
                 'content' => [
                     $contentType => [
                         'schema' => $this->buildResponseSchema($item, $routeKey, $resultType, $apiParams)
                     ]
                 ]
             ],
-            '400' => ['description' => 'Bad Request'],
-            '500' => ['description' => 'Internal Server Error']
+            '500' => $this->buildErrorResponse($resultType, $contentType)
         ];
 
         $this->addCustomStatusResponses($responses, $item, $routeKey, $contentType, $apiParams);
         return $responses;
+    }
+
+        private function buildErrorResponse(ResultTypeEnum $resultType, string $contentType): array
+    {
+        $description = __('docs.internal_server_error', 'common');
+
+        if ($resultType === ResultTypeEnum::MESSAGE) {
+            $schema = [
+                'type' => 'object',
+                'properties' => [
+                    'code' => [
+                        'type' => 'integer',
+                        'description' => __('docs.http_status_code', 'common'),
+                        'example' => 500
+                    ],
+                    'message' => [
+                        'type' => 'string',
+                        'description' => __('docs.error_reason', 'common'),
+                        'example' => __('docs.error_message', 'common')
+                    ]
+                ],
+                'required' => ['code', 'message']
+            ];
+        } else {
+            $schema = [
+                'type' => 'object',
+                'properties' => [
+                    'error' => [
+                        'type' => 'string',
+                        'example' => __('docs.internal_server_error', 'common')
+                    ]
+                ]
+            ];
+        }
+
+        return [
+            'description' => $description,
+            'content' => [
+                $contentType => ['schema' => $schema]
+            ]
+        ];
     }
 
     private function buildResponseSchema(array $item, string $routeKey, ResultTypeEnum $resultType, array $apiParams = []): array
@@ -338,10 +433,9 @@ class DocsCommand extends Command
 
     private function buildDefaultResponseSchema(array $item, string $routeKey, array $apiParams = []): array
     {
-        $resultAnnotations = $this->filterAnnotations($item, Result::class, $routeKey);
+                $resultAnnotations = $this->filterAnnotations($item, Result::class, $routeKey);
         $schema = empty($resultAnnotations) ? ['type' => 'object'] : $this->buildSchema($resultAnnotations);
 
-        // 添加 resultExample 示例
         if (isset($apiParams['resultExample']) && $apiParams['resultExample'] !== null) {
             $schema['example'] = $apiParams['resultExample'];
         }
@@ -354,10 +448,8 @@ class DocsCommand extends Command
         $schema = $this->getMessageBaseSchema();
 
         $this->enhanceMessageSchema($schema, $item, $routeKey);
-        $this->enhanceDataSchema($schema, $item, $routeKey);
-        $this->enhanceMetaSchema($schema, $item, $routeKey);
+        $this->enhanceSchemaFields($schema, $item, $routeKey);
 
-        // 添加 resultExample 示例
         if (isset($apiParams['resultExample']) && $apiParams['resultExample'] !== null) {
             $schema['example'] = $apiParams['resultExample'];
         }
@@ -372,21 +464,21 @@ class DocsCommand extends Command
             'properties' => [
                 'code' => [
                     'type' => 'integer',
-                    'description' => 'HTTP状态码',
+                    'description' => __('docs.http_status_code', 'common'),
                     'example' => 200
                 ],
                 'message' => [
                     'type' => 'string',
-                    'description' => '响应消息',
+                    'description' => __('docs.response_message', 'common'),
                     'example' => 'ok'
                 ],
                 'data' => [
                     'type' => 'object',
-                    'description' => '响应数据'
+                    'description' => __('docs.response_data', 'common')
                 ],
                 'meta' => [
                     'type' => 'object',
-                    'description' => '元数据'
+                    'description' => __('docs.metadata', 'common')
                 ]
             ],
             'required' => ['code', 'message']
@@ -403,6 +495,12 @@ class DocsCommand extends Command
                 $schema['properties']['message']['example'] = $params['example'];
             }
         }
+    }
+
+    private function enhanceSchemaFields(array &$schema, array $item, string $routeKey): void
+    {
+        $this->enhanceDataSchema($schema, $item, $routeKey);
+        $this->enhanceMetaSchema($schema, $item, $routeKey);
     }
 
     private function enhanceDataSchema(array &$schema, array $item, string $routeKey): void
@@ -428,13 +526,12 @@ class DocsCommand extends Command
 
     private function addCustomStatusResponses(array &$responses, array $item, string $routeKey, string $contentType, array $apiParams = []): void
     {
-        $statusAnnotations = $this->filterAnnotations($item, ResultStatus::class, $routeKey);
+                $statusAnnotations = $this->filterAnnotations($item, ResultStatus::class, $routeKey);
 
         foreach ($statusAnnotations as $statusAnnotation) {
             $params = $statusAnnotation['params'];
             $resultType = $apiParams['resultType'] ?? ResultTypeEnum::MESSAGE;
 
-            // 根据 resultType 生成不同的 schema
             if ($resultType === ResultTypeEnum::MESSAGE) {
                 $schema = $this->buildCustomStatusMessageSchema($item, $routeKey, $params);
             } else {
@@ -458,12 +555,10 @@ class DocsCommand extends Command
 
     private function buildCustomStatusMessageSchema(array $item, string $routeKey, array $statusParams): array
     {
-        $schema = $this->getMessageBaseSchema();
+                $schema = $this->getMessageBaseSchema();
 
-        // 设置状态码和消息
         $schema['properties']['code']['example'] = $statusParams['code'];
         if (isset($statusParams['example']) && $statusParams['example'] !== null) {
-            // 如果 example 是完整的响应结构，直接使用
             if (is_array($statusParams['example']) &&
                 isset($statusParams['example']['code']) &&
                 isset($statusParams['example']['message'])) {
@@ -475,9 +570,7 @@ class DocsCommand extends Command
             $schema['properties']['message']['example'] = $statusParams['name'];
         }
 
-        // 增强 data 和 meta 字段
-        $this->enhanceDataSchema($schema, $item, $routeKey);
-        $this->enhanceMetaSchema($schema, $item, $routeKey);
+        $this->enhanceSchemaFields($schema, $item, $routeKey);
 
         return $schema;
     }
@@ -556,31 +649,8 @@ class DocsCommand extends Command
         $properties = [];
 
         foreach ($children as $child) {
-            // 处理 Payload 对象
-            if (is_object($child) && method_exists($child, 'getField')) {
-                $childData = $child->getField();
-            }
-            // 处理数组格式的子字段
-            elseif (is_array($child)) {
-                $childData = $child;
-            }
-            // 处理直接的 Payload 对象属性
-            elseif (is_object($child)) {
-                $childData = [
-                    'field' => $child->field ?? '',
-                    'type' => $child->type ?? FieldEnum::STRING,
-                    'name' => $child->name ?? '',
-                    'required' => $child->required ?? false,
-                    'desc' => $child->desc ?? '',
-                    'example' => $child->example ?? null,
-                    'children' => $child->children ?? [],
-                ];
-            }
-            else {
-                continue;
-            }
-
-            if (!empty($childData['field'])) {
+            $childData = $this->extractChildData($child);
+            if ($childData && !empty($childData['field'])) {
                 $properties[$childData['field']] = $this->buildFieldSchema($childData);
             }
         }
@@ -593,31 +663,38 @@ class DocsCommand extends Command
         $required = [];
 
         foreach ($children as $child) {
-            // 处理 Payload 对象
-            if (is_object($child) && method_exists($child, 'getField')) {
-                $childData = $child->getField();
-            }
-            // 处理数组格式的子字段
-            elseif (is_array($child)) {
-                $childData = $child;
-            }
-            // 处理直接的 Payload 对象属性
-            elseif (is_object($child)) {
-                $childData = [
-                    'field' => $child->field ?? '',
-                    'required' => $child->required ?? false,
-                ];
-            }
-            else {
-                continue;
-            }
-
-            if (!empty($childData['field']) && ($childData['required'] ?? false)) {
+            $childData = $this->extractChildData($child);
+            if ($childData && !empty($childData['field']) && ($childData['required'] ?? false)) {
                 $required[] = $childData['field'];
             }
         }
 
         return $required;
+    }
+
+        private function extractChildData($child): ?array
+    {
+        if (is_object($child) && method_exists($child, 'getField')) {
+            return $child->getField();
+        }
+
+        if (is_array($child)) {
+            return $child;
+        }
+
+        if (is_object($child)) {
+            return [
+                'field' => $child->field ?? '',
+                'type' => $child->type ?? FieldEnum::STRING,
+                'name' => $child->name ?? '',
+                'required' => $child->required ?? false,
+                'desc' => $child->desc ?? '',
+                'example' => $child->example ?? null,
+                'children' => $child->children ?? [],
+            ];
+        }
+
+        return null;
     }
 
     private function filterAnnotations(array $item, string $className, string $routeKey): array

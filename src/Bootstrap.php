@@ -60,6 +60,7 @@ class Bootstrap
     {
         date_default_timezone_set(App::$timezone);
         Carbon::setLocale(App::$lang);
+        App::di()->set('lang', App::$lang);
     }
 
     /**
