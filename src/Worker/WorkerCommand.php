@@ -85,8 +85,9 @@ class WorkerCommand extends BaseCommand
 
     private function displayBanner(int $port, int $maxRequests, int $workers, array $phpConfig): void
     {
+        App::$host = 'http://0.0.0.0:' . $port;
         $data = [
-            'Port' => $port,
+            'Host' => App::$host,
             'Workers' => $workers > 0 ? $workers : 'auto',
             'Max requests' => $maxRequests > 0 ? number_format($maxRequests) : 'unlimited',
         ];
@@ -94,7 +95,6 @@ class WorkerCommand extends BaseCommand
         foreach ($phpConfig as $key => $value) {
             $extra[$key] = $value;
         }
-        App::$host = '0.0.0.0:' . $port;
         App::banner($data, $extra);
     }
 
