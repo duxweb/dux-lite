@@ -36,8 +36,6 @@ class DocsCommand extends Command
         ['class' => Header::class, 'in' => 'header']
     ];
 
-
-
     public function __construct()
     {
         parent::__construct();
@@ -154,7 +152,7 @@ class DocsCommand extends Command
         FileSystem::write($outputFile, $jsonContent);
     }
 
-        private function parseAnnotations(array $attributes): void
+    private function parseAnnotations(array $attributes): void
     {
         [$groups, $routes] = $this->collectGroupsAndRoutes($attributes);
         $this->processApiAnnotations($attributes, $groups, $routes);
@@ -346,18 +344,15 @@ class DocsCommand extends Command
         $payloadAnnotations = $this->filterAnnotations($item, Payload::class, $routeKey);
         if (empty($payloadAnnotations)) return null;
 
-        $payloadType = $apiParams['payloadType'] ?? PayloadTypeEnum::JSON;
         $schema = $this->buildSchema($payloadAnnotations);
-
-        if (isset($apiParams['payloadExample']) && $apiParams['payloadExample'] !== null) {
+        if (isset($apiParams['payloadExample'])) {
             $schema['example'] = $apiParams['payloadExample'];
         }
 
+        $payloadType = $apiParams['payloadType'] ?? PayloadTypeEnum::JSON;
         return [
             'required' => true,
-            'content' => [
-                $payloadType->mime() => ['schema' => $schema]
-            ]
+            'content' => [$payloadType->mime() => ['schema' => $schema]]
         ];
     }
 
@@ -383,12 +378,12 @@ class DocsCommand extends Command
         return $responses;
     }
 
-        private function buildErrorResponse(ResultTypeEnum $resultType, string $contentType): array
+    private function buildErrorResponse(ResultTypeEnum $resultType, string $contentType): array
     {
         $description = __('docs.internal_server_error', 'common');
 
-        if ($resultType === ResultTypeEnum::MESSAGE) {
-            $schema = [
+        $schema = $resultType === ResultTypeEnum::MESSAGE
+            ? [
                 'type' => 'object',
                 'properties' => [
                     'code' => [
@@ -403,9 +398,8 @@ class DocsCommand extends Command
                     ]
                 ],
                 'required' => ['code', 'message']
-            ];
-        } else {
-            $schema = [
+            ]
+            : [
                 'type' => 'object',
                 'properties' => [
                     'error' => [
@@ -414,13 +408,10 @@ class DocsCommand extends Command
                     ]
                 ]
             ];
-        }
 
         return [
             'description' => $description,
-            'content' => [
-                $contentType => ['schema' => $schema]
-            ]
+            'content' => [$contentType => ['schema' => $schema]]
         ];
     }
 
@@ -433,10 +424,10 @@ class DocsCommand extends Command
 
     private function buildDefaultResponseSchema(array $item, string $routeKey, array $apiParams = []): array
     {
-                $resultAnnotations = $this->filterAnnotations($item, Result::class, $routeKey);
+        $resultAnnotations = $this->filterAnnotations($item, Result::class, $routeKey);
         $schema = empty($resultAnnotations) ? ['type' => 'object'] : $this->buildSchema($resultAnnotations);
 
-        if (isset($apiParams['resultExample']) && $apiParams['resultExample'] !== null) {
+        if (isset($apiParams['resultExample'])) {
             $schema['example'] = $apiParams['resultExample'];
         }
 
@@ -450,7 +441,7 @@ class DocsCommand extends Command
         $this->enhanceMessageSchema($schema, $item, $routeKey);
         $this->enhanceSchemaFields($schema, $item, $routeKey);
 
-        if (isset($apiParams['resultExample']) && $apiParams['resultExample'] !== null) {
+        if (isset($apiParams['resultExample'])) {
             $schema['example'] = $apiParams['resultExample'];
         }
 
@@ -491,7 +482,7 @@ class DocsCommand extends Command
         if (!empty($messageAnnotations)) {
             $params = reset($messageAnnotations)['params'];
             $schema['properties']['message']['description'] = $params['desc'] ?: $params['name'];
-            if (isset($params['example']) && $params['example'] !== null) {
+            if (isset($params['example'])) {
                 $schema['properties']['message']['example'] = $params['example'];
             }
         }
@@ -507,11 +498,49 @@ class DocsCommand extends Command
     {
         $dataAnnotations = $this->filterAnnotations($item, ResultData::class, $routeKey);
         if (!empty($dataAnnotations)) {
-            $schema['properties']['data'] = $this->buildSchema($dataAnnotations);
+            $this->buildDataSchemaWithRoot($schema, $dataAnnotations);
         } else {
             $resultAnnotations = $this->filterAnnotations($item, Result::class, $routeKey);
             if (!empty($resultAnnotations)) {
                 $schema['properties']['data'] = $this->buildSchema($resultAnnotations);
+            }
+        }
+    }
+
+    private function buildDataSchemaWithRoot(array &$schema, array $dataAnnotations): void
+    {
+        $normalAnnotations = [];
+
+        foreach ($dataAnnotations as $annotation) {
+            $params = $annotation['params'];
+            if ($params['root'] ?? false) {
+                if ($params['field'] === 'data') {
+                    $schema['properties']['data'] = $this->buildFieldSchema($params);
+                } else {
+                    $schema['properties'][$params['field']] = $this->buildFieldSchema($params);
+                }
+            } else {
+                $normalAnnotations[] = $annotation;
+            }
+        }
+
+        if (!empty($normalAnnotations)) {
+            if (!isset($schema['properties']['data'])) {
+                $schema['properties']['data'] = $this->buildSchema($normalAnnotations);
+            } else {
+                $normalSchema = $this->buildSchema($normalAnnotations);
+                if (isset($normalSchema['properties'])) {
+                    $schema['properties']['data']['properties'] = array_merge(
+                        $schema['properties']['data']['properties'] ?? [],
+                        $normalSchema['properties']
+                    );
+
+                    if (isset($normalSchema['required'])) {
+                        $schema['properties']['data']['required'] = array_unique(
+                            array_merge($schema['properties']['data']['required'] ?? [], $normalSchema['required'])
+                        );
+                    }
+                }
             }
         }
     }
@@ -526,42 +555,37 @@ class DocsCommand extends Command
 
     private function addCustomStatusResponses(array &$responses, array $item, string $routeKey, string $contentType, array $apiParams = []): void
     {
-                $statusAnnotations = $this->filterAnnotations($item, ResultStatus::class, $routeKey);
+        $statusAnnotations = $this->filterAnnotations($item, ResultStatus::class, $routeKey);
+        $resultType = $apiParams['resultType'] ?? ResultTypeEnum::MESSAGE;
 
         foreach ($statusAnnotations as $statusAnnotation) {
             $params = $statusAnnotation['params'];
-            $resultType = $apiParams['resultType'] ?? ResultTypeEnum::MESSAGE;
 
-            if ($resultType === ResultTypeEnum::MESSAGE) {
-                $schema = $this->buildCustomStatusMessageSchema($item, $routeKey, $params);
-            } else {
-                $schema = [
+            $schema = $resultType === ResultTypeEnum::MESSAGE
+                ? $this->buildCustomStatusMessageSchema($item, $routeKey, $params)
+                : [
                     'type' => 'object',
                     'properties' => [
                         'code' => ['type' => 'integer', 'example' => $params['code']],
                         'message' => ['type' => 'string', 'example' => $params['example'] ?: $params['name']]
                     ]
                 ];
-            }
 
             $responses[(string)$params['code']] = [
                 'description' => $params['desc'] ?: $params['name'],
-                'content' => [
-                    $contentType => ['schema' => $schema]
-                ]
+                'content' => [$contentType => ['schema' => $schema]]
             ];
         }
     }
 
     private function buildCustomStatusMessageSchema(array $item, string $routeKey, array $statusParams): array
     {
-                $schema = $this->getMessageBaseSchema();
-
+        $schema = $this->getMessageBaseSchema();
         $schema['properties']['code']['example'] = $statusParams['code'];
-        if (isset($statusParams['example']) && $statusParams['example'] !== null) {
+
+        if (isset($statusParams['example'])) {
             if (is_array($statusParams['example']) &&
-                isset($statusParams['example']['code']) &&
-                isset($statusParams['example']['message'])) {
+                isset($statusParams['example']['code'], $statusParams['example']['message'])) {
                 $schema['example'] = $statusParams['example'];
             } else {
                 $schema['properties']['message']['example'] = $statusParams['example'];
@@ -571,7 +595,6 @@ class DocsCommand extends Command
         }
 
         $this->enhanceSchemaFields($schema, $item, $routeKey);
-
         return $schema;
     }
 
@@ -583,7 +606,6 @@ class DocsCommand extends Command
         foreach ($annotations as $annotation) {
             $params = $annotation['params'];
             $schema['properties'][$params['field']] = $this->buildFieldSchema($params);
-
             if ($params['required'] ?? false) {
                 $required[] = $params['field'];
             }
@@ -592,7 +614,6 @@ class DocsCommand extends Command
         if (!empty($required)) {
             $schema['required'] = $required;
         }
-
         return $schema;
     }
 
@@ -604,15 +625,11 @@ class DocsCommand extends Command
             'description' => $params['desc'] ?: $params['name']
         ];
 
-        if (isset($params['example']) && $params['example'] !== null) {
+        if (isset($params['example'])) {
             $schema['example'] = $params['example'];
         }
 
-        if (!empty($params['children'])) {
-            $schema = $this->addChildrenToSchema($schema, $params);
-        }
-
-        return $schema;
+        return !empty($params['children']) ? $this->addChildrenToSchema($schema, $params) : $schema;
     }
 
     private function addChildrenToSchema(array $schema, array $params): array
@@ -631,13 +648,11 @@ class DocsCommand extends Command
             if (!empty($requiredFields)) {
                 $schema['required'] = $requiredFields;
             }
-        } else {
-            if (!empty($childrenProperties)) {
-                $schema['type'] = 'object';
-                $schema['properties'] = $childrenProperties;
-                if (!empty($requiredFields)) {
-                    $schema['required'] = $requiredFields;
-                }
+        } elseif (!empty($childrenProperties)) {
+            $schema['type'] = 'object';
+            $schema['properties'] = $childrenProperties;
+            if (!empty($requiredFields)) {
+                $schema['required'] = $requiredFields;
             }
         }
 
@@ -647,32 +662,28 @@ class DocsCommand extends Command
     private function buildChildrenProperties(array $children): array
     {
         $properties = [];
-
         foreach ($children as $child) {
             $childData = $this->extractChildData($child);
             if ($childData && !empty($childData['field'])) {
                 $properties[$childData['field']] = $this->buildFieldSchema($childData);
             }
         }
-
         return $properties;
     }
 
     private function getRequiredChildrenFields(array $children): array
     {
         $required = [];
-
         foreach ($children as $child) {
             $childData = $this->extractChildData($child);
             if ($childData && !empty($childData['field']) && ($childData['required'] ?? false)) {
                 $required[] = $childData['field'];
             }
         }
-
         return $required;
     }
 
-        private function extractChildData($child): ?array
+    private function extractChildData($child): ?array
     {
         if (is_object($child) && method_exists($child, 'getField')) {
             return $child->getField();
@@ -691,6 +702,7 @@ class DocsCommand extends Command
                 'desc' => $child->desc ?? '',
                 'example' => $child->example ?? null,
                 'children' => $child->children ?? [],
+                'root' => $child->root ?? false,
             ];
         }
 

@@ -26,6 +26,7 @@ class ResultData
         public string $desc = '',
         public mixed $example = null,
         public array $children = [],
+        public bool $root = false,
     )
     {
     }
@@ -44,6 +45,7 @@ class ResultData
             'desc' => $this->desc,
             'example' => $this->example,
             'children' => $this->children,
+            'root' => $this->root,
         ];
     }
 }
