@@ -19,6 +19,7 @@ use Core\Storage\Contracts\StorageInterface;
 use Core\Storage\Storage;
 use Core\Translation\TomlFileLoader;
 use Core\Views\Render;
+use Core\Worker\Worker;
 use DI\Container;
 use Dotenv\Dotenv;
 use Illuminate\Database\Capsule\Manager;
@@ -115,46 +116,7 @@ class App
         self::$bootstrap->loadRoute();
         Plugin::boot(self::$bootstrap);
 
-        $handler = static function (): void {
-            try {
-                while (ob_get_level() > 0) {
-                    ob_end_clean();
-                }
-
-                header('Access-Control-Allow-Origin: *');
-                header('Access-Control-Allow-Methods: *');
-                header('Access-Control-Allow-Headers: *');
-                header('Access-Control-Allow-Credentials: true');
-
-                self::$bootstrap->runWeb();
-
-            } catch (\Throwable $e) {
-                error_log("Worker request error: " . $e->getMessage());
-                error_log("Stack trace: " . $e->getTraceAsString());
-
-                http_response_code(500);
-                header('Content-Type: application/json');
-
-                echo json_encode([
-                    'error' => 'Internal Server Error',
-                    'message' => self::$debug ? $e->getMessage() : 'Something went wrong'
-                ]);
-            }
-        };
-
-        for ($nbRequests = 0; !$maxRequests || $nbRequests < $maxRequests; ++$nbRequests) {
-            $keepRunning = \frankenphp_handle_request($handler);
-
-            if ($nbRequests % 100 === 0) {
-                gc_collect_cycles();
-            }
-
-            if (!$keepRunning) {
-                break;
-            }
-        }
-
-        // Worker 完成
+        Worker::run($maxRequests);
     }
 
     public static function web(): \Slim\App
