@@ -101,6 +101,62 @@ class App
         self::$bootstrap->runWeb();
     }
 
+    /**
+     * 运行 FrankenPHP Worker 模式
+     * @return void
+     */
+    public static function runWorker(int $maxRequests = 0): void
+    {
+        if (!function_exists('frankenphp_handle_request')) {
+            throw new \RuntimeException('FrankenPHP worker mode requires FrankenPHP environment');
+        }
+
+        self::$bootstrap->loadApp();
+        self::$bootstrap->loadRoute();
+        Plugin::boot(self::$bootstrap);
+
+        $handler = static function (): void {
+            try {
+                while (ob_get_level() > 0) {
+                    ob_end_clean();
+                }
+
+                header('Access-Control-Allow-Origin: *');
+                header('Access-Control-Allow-Methods: *');
+                header('Access-Control-Allow-Headers: *');
+                header('Access-Control-Allow-Credentials: true');
+
+                self::$bootstrap->runWeb();
+
+            } catch (\Throwable $e) {
+                error_log("Worker request error: " . $e->getMessage());
+                error_log("Stack trace: " . $e->getTraceAsString());
+
+                http_response_code(500);
+                header('Content-Type: application/json');
+
+                echo json_encode([
+                    'error' => 'Internal Server Error',
+                    'message' => self::$debug ? $e->getMessage() : 'Something went wrong'
+                ]);
+            }
+        };
+
+        for ($nbRequests = 0; !$maxRequests || $nbRequests < $maxRequests; ++$nbRequests) {
+            $keepRunning = \frankenphp_handle_request($handler);
+
+            if ($nbRequests % 100 === 0) {
+                gc_collect_cycles();
+            }
+
+            if (!$keepRunning) {
+                break;
+            }
+        }
+
+        // Worker 完成
+    }
+
     public static function web(): \Slim\App
     {
         return self::$bootstrap->web;
@@ -372,9 +428,13 @@ class App
 
     public static function banner(array $data = [], array $extra = [])
     {
-        $logo = self::$logo ?: null;
+        $logo = self::$logo ?: <<<HTML
+   ___              __    _  __
+  / _ \ __ ____ __ / /   (_)/ /_ ___
+ / // // // /\ \ // /__ / // __// -_)
+/____/ \_,_//_\_\/____//_/ \__/ \__/
+HTML;
         $time = date('Y-m-d H:i:s');
-
 
         $banner = $logo ? <<<HTML
         <div class="mb-1">

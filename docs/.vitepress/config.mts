@@ -45,7 +45,8 @@ export default defineConfig({
             { text: '最佳实践', link: '/guide/best-practices' },
             { text: '性能优化', link: '/guide/performance' },
             { text: '调试技巧', link: '/guide/debugging' },
-            { text: '部署指南', link: '/guide/deployment' }
+            { text: '部署指南', link: '/guide/deployment' },
+            { text: 'Worker 模式', link: '/guide/worker' }
           ]
         }
       ],

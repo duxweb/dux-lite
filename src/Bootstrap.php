@@ -24,6 +24,7 @@ use Core\Plugin\Plugin;
 use Core\Queue\QueueCommand;
 use Core\Route\RouteCommand;
 use Core\Scheduler\SchedulerCommand;
+use Core\Worker\WorkerCommand;
 use DI\DependencyException;
 use DI\NotFoundException;
 use Latte\Engine;
@@ -76,7 +77,10 @@ class Bootstrap
 
         if (!App::$debug) {
             $routeCollector = $this->web->getRouteCollector();
-            $routeCollector->setCacheFile(data_path("/cache/route.cache"));
+            if (!is_dir(data_path("cache"))) {
+                mkdir(data_path("cache"), 0777, true);
+            }
+            $routeCollector->setCacheFile(data_path("cache/route.cache"));
         }
     }
 
@@ -209,6 +213,7 @@ class Bootstrap
         $commands[] = QueueCommand::class;
         $commands[] = SchedulerCommand::class;
         $commands[] = DocsCommand::class;
+        $commands[] = WorkerCommand::class;
 
         $commands = [...$commands, ...Command::registerAttribute()];
 
