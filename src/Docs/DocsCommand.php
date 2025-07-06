@@ -292,10 +292,16 @@ class DocsCommand extends Command
         if (empty($payloadAnnotations)) return null;
 
         $payloadType = $apiParams['payloadType'] ?? PayloadTypeEnum::JSON;
+        $schema = $this->buildSchema($payloadAnnotations);
+
+        if (isset($apiParams['payloadExample']) && $apiParams['payloadExample'] !== null) {
+            $schema['example'] = $apiParams['payloadExample'];
+        }
+
         return [
             'required' => true,
             'content' => [
-                $payloadType->mime() => ['schema' => $this->buildSchema($payloadAnnotations)]
+                $payloadType->mime() => ['schema' => $schema]
             ]
         ];
     }
@@ -311,7 +317,7 @@ class DocsCommand extends Command
                 'description' => 'Success',
                 'content' => [
                     $contentType => [
-                        'schema' => $this->buildResponseSchema($item, $routeKey, $resultType)
+                        'schema' => $this->buildResponseSchema($item, $routeKey, $resultType, $apiParams)
                     ]
                 ]
             ],
@@ -319,30 +325,42 @@ class DocsCommand extends Command
             '500' => ['description' => 'Internal Server Error']
         ];
 
-        $this->addCustomStatusResponses($responses, $item, $routeKey, $contentType);
+        $this->addCustomStatusResponses($responses, $item, $routeKey, $contentType, $apiParams);
         return $responses;
     }
 
-    private function buildResponseSchema(array $item, string $routeKey, ResultTypeEnum $resultType): array
+    private function buildResponseSchema(array $item, string $routeKey, ResultTypeEnum $resultType, array $apiParams = []): array
     {
         return $resultType === ResultTypeEnum::MESSAGE
-            ? $this->buildMessageResponseSchema($item, $routeKey)
-            : $this->buildDefaultResponseSchema($item, $routeKey);
+            ? $this->buildMessageResponseSchema($item, $routeKey, $apiParams)
+            : $this->buildDefaultResponseSchema($item, $routeKey, $apiParams);
     }
 
-    private function buildDefaultResponseSchema(array $item, string $routeKey): array
+    private function buildDefaultResponseSchema(array $item, string $routeKey, array $apiParams = []): array
     {
         $resultAnnotations = $this->filterAnnotations($item, Result::class, $routeKey);
-        return empty($resultAnnotations) ? ['type' => 'object'] : $this->buildSchema($resultAnnotations);
+        $schema = empty($resultAnnotations) ? ['type' => 'object'] : $this->buildSchema($resultAnnotations);
+
+        // 添加 resultExample 示例
+        if (isset($apiParams['resultExample']) && $apiParams['resultExample'] !== null) {
+            $schema['example'] = $apiParams['resultExample'];
+        }
+
+        return $schema;
     }
 
-    private function buildMessageResponseSchema(array $item, string $routeKey): array
+    private function buildMessageResponseSchema(array $item, string $routeKey, array $apiParams = []): array
     {
         $schema = $this->getMessageBaseSchema();
 
         $this->enhanceMessageSchema($schema, $item, $routeKey);
         $this->enhanceDataSchema($schema, $item, $routeKey);
         $this->enhanceMetaSchema($schema, $item, $routeKey);
+
+        // 添加 resultExample 示例
+        if (isset($apiParams['resultExample']) && $apiParams['resultExample'] !== null) {
+            $schema['example'] = $apiParams['resultExample'];
+        }
 
         return $schema;
     }
@@ -408,27 +426,60 @@ class DocsCommand extends Command
         }
     }
 
-    private function addCustomStatusResponses(array &$responses, array $item, string $routeKey, string $contentType): void
+    private function addCustomStatusResponses(array &$responses, array $item, string $routeKey, string $contentType, array $apiParams = []): void
     {
         $statusAnnotations = $this->filterAnnotations($item, ResultStatus::class, $routeKey);
 
         foreach ($statusAnnotations as $statusAnnotation) {
             $params = $statusAnnotation['params'];
+            $resultType = $apiParams['resultType'] ?? ResultTypeEnum::MESSAGE;
+
+            // 根据 resultType 生成不同的 schema
+            if ($resultType === ResultTypeEnum::MESSAGE) {
+                $schema = $this->buildCustomStatusMessageSchema($item, $routeKey, $params);
+            } else {
+                $schema = [
+                    'type' => 'object',
+                    'properties' => [
+                        'code' => ['type' => 'integer', 'example' => $params['code']],
+                        'message' => ['type' => 'string', 'example' => $params['example'] ?: $params['name']]
+                    ]
+                ];
+            }
+
             $responses[(string)$params['code']] = [
                 'description' => $params['desc'] ?: $params['name'],
                 'content' => [
-                    $contentType => [
-                        'schema' => [
-                            'type' => 'object',
-                            'properties' => [
-                                'code' => ['type' => 'integer', 'example' => $params['code']],
-                                'message' => ['type' => 'string', 'example' => $params['example'] ?: $params['name']]
-                            ]
-                        ]
-                    ]
+                    $contentType => ['schema' => $schema]
                 ]
             ];
         }
+    }
+
+    private function buildCustomStatusMessageSchema(array $item, string $routeKey, array $statusParams): array
+    {
+        $schema = $this->getMessageBaseSchema();
+
+        // 设置状态码和消息
+        $schema['properties']['code']['example'] = $statusParams['code'];
+        if (isset($statusParams['example']) && $statusParams['example'] !== null) {
+            // 如果 example 是完整的响应结构，直接使用
+            if (is_array($statusParams['example']) &&
+                isset($statusParams['example']['code']) &&
+                isset($statusParams['example']['message'])) {
+                $schema['example'] = $statusParams['example'];
+            } else {
+                $schema['properties']['message']['example'] = $statusParams['example'];
+            }
+        } else {
+            $schema['properties']['message']['example'] = $statusParams['name'];
+        }
+
+        // 增强 data 和 meta 字段
+        $this->enhanceDataSchema($schema, $item, $routeKey);
+        $this->enhanceMetaSchema($schema, $item, $routeKey);
+
+        return $schema;
     }
 
     private function buildSchema(array $annotations): array
@@ -456,6 +507,7 @@ class DocsCommand extends Command
     {
         $schema = [
             'type' => $params['type']->value,
+            'title' => $params['name'],
             'description' => $params['desc'] ?: $params['name']
         ];
 
@@ -473,11 +525,27 @@ class DocsCommand extends Command
     private function addChildrenToSchema(array $schema, array $params): array
     {
         $childrenProperties = $this->buildChildrenProperties($params['children']);
+        $requiredFields = $this->getRequiredChildrenFields($params['children']);
 
         if ($params['type'] === FieldEnum::ARRAY) {
-            $schema['items'] = ['type' => 'object', 'properties' => $childrenProperties];
+            $itemSchema = ['type' => 'object', 'properties' => $childrenProperties];
+            if (!empty($requiredFields)) {
+                $itemSchema['required'] = $requiredFields;
+            }
+            $schema['items'] = $itemSchema;
         } elseif ($params['type'] === FieldEnum::OBJECT) {
             $schema['properties'] = $childrenProperties;
+            if (!empty($requiredFields)) {
+                $schema['required'] = $requiredFields;
+            }
+        } else {
+            if (!empty($childrenProperties)) {
+                $schema['type'] = 'object';
+                $schema['properties'] = $childrenProperties;
+                if (!empty($requiredFields)) {
+                    $schema['required'] = $requiredFields;
+                }
+            }
         }
 
         return $schema;
@@ -488,13 +556,68 @@ class DocsCommand extends Command
         $properties = [];
 
         foreach ($children as $child) {
-            $childData = is_object($child) && method_exists($child, 'getField')
-                ? $child->getField()
-                : $child;
-            $properties[$childData['field']] = $this->buildFieldSchema($childData);
+            // 处理 Payload 对象
+            if (is_object($child) && method_exists($child, 'getField')) {
+                $childData = $child->getField();
+            }
+            // 处理数组格式的子字段
+            elseif (is_array($child)) {
+                $childData = $child;
+            }
+            // 处理直接的 Payload 对象属性
+            elseif (is_object($child)) {
+                $childData = [
+                    'field' => $child->field ?? '',
+                    'type' => $child->type ?? FieldEnum::STRING,
+                    'name' => $child->name ?? '',
+                    'required' => $child->required ?? false,
+                    'desc' => $child->desc ?? '',
+                    'example' => $child->example ?? null,
+                    'children' => $child->children ?? [],
+                ];
+            }
+            else {
+                continue;
+            }
+
+            if (!empty($childData['field'])) {
+                $properties[$childData['field']] = $this->buildFieldSchema($childData);
+            }
         }
 
         return $properties;
+    }
+
+    private function getRequiredChildrenFields(array $children): array
+    {
+        $required = [];
+
+        foreach ($children as $child) {
+            // 处理 Payload 对象
+            if (is_object($child) && method_exists($child, 'getField')) {
+                $childData = $child->getField();
+            }
+            // 处理数组格式的子字段
+            elseif (is_array($child)) {
+                $childData = $child;
+            }
+            // 处理直接的 Payload 对象属性
+            elseif (is_object($child)) {
+                $childData = [
+                    'field' => $child->field ?? '',
+                    'required' => $child->required ?? false,
+                ];
+            }
+            else {
+                continue;
+            }
+
+            if (!empty($childData['field']) && ($childData['required'] ?? false)) {
+                $required[] = $childData['field'];
+            }
+        }
+
+        return $required;
     }
 
     private function filterAnnotations(array $item, string $className, string $routeKey): array
