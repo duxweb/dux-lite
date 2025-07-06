@@ -73,6 +73,8 @@ class WorkerCommand extends BaseCommand
         ]);
 
         $process = new Process($cmd, $workingDir, $env);
+        $process->setTimeout(null);
+        $process->setIdleTimeout(null);
         $process->setTty(Process::isTtySupported());
         $process->run(function ($type, $buffer) {
             echo $buffer;
