@@ -12,6 +12,7 @@ enum FieldEnum: string
     case BOOL = 'boolean';
     case ARRAY = 'array';
     case OBJECT = 'object';
+    case FILE = 'file';
     case NULL = 'null';
 
 }
