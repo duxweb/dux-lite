@@ -8,7 +8,7 @@ use Core\Docs\Enum\PayloadTypeEnum;
 use Core\Docs\Enum\ResultMimeEnum;
 use Core\Docs\Enum\ResultTypeEnum;
 
-#[Attribute(Attribute::TARGET_CLASS)]
+#[Attribute(Attribute::TARGET_METHOD)]
 class Api {
 
     /**

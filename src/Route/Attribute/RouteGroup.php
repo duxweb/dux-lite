@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace Core\Route\Attribute;
 
-use Attribute;
+use \Attribute;
 
 #[Attribute(Attribute::TARGET_CLASS | Attribute::IS_REPEATABLE)]
 class RouteGroup {
@@ -11,7 +11,9 @@ class RouteGroup {
     /**
      * @param string $app 路由注册名
      * @param string $route 路由前缀
+     * @param string $name 路由名称
      * @param array $middleware 中间件
+     * @param bool $auth 是否需要登录
      */
     public function __construct(
         public string $app,

@@ -70,7 +70,6 @@ class Register
 
                 if (!$appName) {
                     continue;
-                    throw new \Exception("class [" . $groupClass . "] route attribute parameter missing \"app\" ");
                 }
 
                 if (!$groupName) {
@@ -108,7 +107,6 @@ class Register
                 } else {
                     if (!$appName) {
                         continue;
-                        throw new \Exception("class [" . $class . "] route attribute parameter missing \"app\" ");
                     }
 
                     $this->get($appName)->map(

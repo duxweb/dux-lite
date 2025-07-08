@@ -16,6 +16,7 @@ class Route
 
     /**
      * @param string $pattern
+     * @param string|null $name
      * @param object ...$middleware
      */
     public function __construct(public string $pattern = "", public ?string $name = "", object ...$middleware)
@@ -189,10 +190,10 @@ class Route
 
     /**
      * map
-     * @param array $methods [GET, POST, PUT, DELETE, OPTIONS, PATCH]
+     * @param string|array $methods [GET, POST, PUT, DELETE, OPTIONS, PATCH]
      * @param string $pattern
      * @param string|callable $callable function(Request $request, Response $response)
-     * @param string $name
+     * @param string|null $name
      * @param array $middleware
      * @param int $priority
      * @return void
