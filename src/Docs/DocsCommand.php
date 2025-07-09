@@ -36,6 +36,10 @@ class DocsCommand extends Command
         ['class' => Header::class, 'in' => 'header']
     ];
 
+    private const INTEGER_PARAM_NAMES = [
+        'id', 'user_id', 'post_id', 'page', 'limit', 'count', 'num', 'number'
+    ];
+
     public function __construct()
     {
         parent::__construct();
@@ -241,7 +245,7 @@ class DocsCommand extends Command
     {
                 $path = $routeParams['route'] ?? $routeParams[1] ?? '';
 
-        $appPrefix = $this->getAppPrefix($groupInfo);
+        $appPrefix = $this->getAppPrefix($groupInfo, $routeParams);
 
         if ($groupRoute = $groupInfo['routeGroup']['route'] ?? null) {
             $path = rtrim($groupRoute, '/') . '/' . ltrim($path, '/');
@@ -256,13 +260,20 @@ class DocsCommand extends Command
         return '/' . ltrim($path, '/');
     }
 
-    private function getAppPrefix(?array $groupInfo): ?string
+    private function getAppPrefix(?array $groupInfo, array $routeParams = []): ?string
     {
-        if (!$groupInfo || !isset($groupInfo['routeGroup']['app'])) {
+        // 首先检查 RouteGroup 中的 app 参数
+        if ($groupInfo && isset($groupInfo['routeGroup']['app'])) {
+            $appName = $groupInfo['routeGroup']['app'];
+        } 
+        // 如果没有 RouteGroup 的 app，检查 Route 中的 app 参数
+        elseif (isset($routeParams['app'])) {
+            $appName = $routeParams['app'];
+        } 
+        // 如果都没有，返回 null
+        else {
             return null;
         }
-
-        $appName = $groupInfo['routeGroup']['app'];
 
         try {
             $routeApp = App::route()->get($appName);
@@ -295,7 +306,7 @@ class DocsCommand extends Command
             'summary' => $apiParams['name'] ?? '',
             'description' => $apiParams['desc'] ?? '',
             'operationId' => $this->generateOperationId($path, $method, $routeKey),
-            'parameters' => $this->buildParameters($item, $routeKey),
+            'parameters' => $this->buildParameters($item, $routeKey, $path),
             'responses' => $this->buildResponses($item, $apiParams, $routeKey)
         ];
 
@@ -306,15 +317,74 @@ class DocsCommand extends Command
         $this->openApiDoc['paths'][$path][strtolower($method)] = $operation;
     }
 
-    private function buildParameters(array $item, string $routeKey): array
+    private function buildParameters(array $item, string $routeKey, string $path): array
     {
         $parameters = [];
 
+        // 添加从注解中提取的参数
         foreach (self::PARAMETER_CONFIGS as $config) {
             $parameters = array_merge($parameters, $this->buildParametersByType($item, $routeKey, $config));
         }
 
+        // 添加自动从路径中提取的路径参数
+        return array_merge($parameters, $this->extractPathParameters($path, $item, $routeKey));
+    }
+
+    private function extractPathParameters(string $path, array $item, string $routeKey): array
+    {
+        // 提取路径中的所有参数 {param} 或 {param:constraint}
+        if (!preg_match_all('/\{([^:}]+)(?::([^}]+))?\}/', $path, $matches, PREG_SET_ORDER)) {
+            return [];
+        }
+        
+        // 一次性收集已存在的参数，避免重复循环
+        $existingParams = array_column(
+            array_filter($item['annotations'], fn($a) => 
+                $a['name'] === \Core\Docs\Attribute\Params::class && $a['class'] === $routeKey
+            ), 'params'
+        );
+        $existingParamFields = array_column($existingParams, 'field');
+        
+        $parameters = [];
+        foreach ($matches as $match) {
+            $paramName = $match[1];
+            $constraint = $match[2] ?? null;
+            
+            if (!in_array($paramName, $existingParamFields)) {
+                $parameters[] = $this->createPathParameter($paramName, $constraint);
+            }
+        }
+        
         return $parameters;
+    }
+
+    private function createPathParameter(string $paramName, ?string $constraint): array
+    {
+        return [
+            'name' => $paramName,
+            'in' => 'path',
+            'summary' => ucfirst($paramName),
+            'description' => ucfirst($paramName) . ' parameter',
+            'required' => true,
+            'schema' => ['type' => $this->inferParameterType($paramName, $constraint)],
+            'example' => null
+        ];
+    }
+
+    private function inferParameterType(string $paramName, ?string $constraint): string
+    {
+        // 优先根据 Slim 路由约束推断类型
+        if ($constraint) {
+            // 检查是否为数字约束 (如 [0-9]+, \d+, 等)
+            if (preg_match('/^\[0-9\]|\[0-9\]\+|\\\\d|\\\\d\+|[0-9]\+$/', $constraint)) {
+                return 'integer';
+            }
+            // 其他约束默认为字符串
+            return 'string';
+        }
+        
+        // 没有约束时，根据参数名推断（保持向后兼容）
+        return in_array(strtolower($paramName), self::INTEGER_PARAM_NAMES) ? 'integer' : 'string';
     }
 
     private function buildParametersByType(array $item, string $routeKey, array $config): array
