@@ -241,14 +241,18 @@ class DocsCommand extends Command
         }
     }
 
-        private function buildPath(array $routeParams, ?array $groupInfo): string
+    private function buildPath(array $routeParams, ?array $groupInfo): string
     {
-                $path = $routeParams['route'] ?? $routeParams[1] ?? '';
+        $path = $routeParams['route'] ?? $routeParams[1] ?? '';
 
         $appPrefix = $this->getAppPrefix($groupInfo, $routeParams);
 
         if ($groupRoute = $groupInfo['routeGroup']['route'] ?? null) {
-            $path = rtrim($groupRoute, '/') . '/' . ltrim($path, '/');
+            if (empty($path)) {
+                $path = $groupRoute;
+            } else {
+                $path = rtrim($groupRoute, '/') . '/' . ltrim($path, '/');
+            }
         }
 
         if ($appPrefix) {
@@ -265,12 +269,10 @@ class DocsCommand extends Command
         // 首先检查 RouteGroup 中的 app 参数
         if ($groupInfo && isset($groupInfo['routeGroup']['app'])) {
             $appName = $groupInfo['routeGroup']['app'];
-        } 
-        // 如果没有 RouteGroup 的 app，检查 Route 中的 app 参数
+        } // 如果没有 RouteGroup 的 app，检查 Route 中的 app 参数
         elseif (isset($routeParams['app'])) {
             $appName = $routeParams['app'];
-        } 
-        // 如果都没有，返回 null
+        } // 如果都没有，返回 null
         else {
             return null;
         }
@@ -336,25 +338,24 @@ class DocsCommand extends Command
         if (!preg_match_all('/\{([^:}]+)(?::([^}]+))?\}/', $path, $matches, PREG_SET_ORDER)) {
             return [];
         }
-        
+
         // 一次性收集已存在的参数，避免重复循环
         $existingParams = array_column(
-            array_filter($item['annotations'], fn($a) => 
-                $a['name'] === \Core\Docs\Attribute\Params::class && $a['class'] === $routeKey
+            array_filter($item['annotations'], fn($a) => $a['name'] === \Core\Docs\Attribute\Params::class && $a['class'] === $routeKey
             ), 'params'
         );
         $existingParamFields = array_column($existingParams, 'field');
-        
+
         $parameters = [];
         foreach ($matches as $match) {
             $paramName = $match[1];
             $constraint = $match[2] ?? null;
-            
+
             if (!in_array($paramName, $existingParamFields)) {
                 $parameters[] = $this->createPathParameter($paramName, $constraint);
             }
         }
-        
+
         return $parameters;
     }
 
@@ -382,7 +383,7 @@ class DocsCommand extends Command
             // 其他约束默认为字符串
             return 'string';
         }
-        
+
         // 没有约束时，根据参数名推断（保持向后兼容）
         return in_array(strtolower($paramName), self::INTEGER_PARAM_NAMES) ? 'integer' : 'string';
     }

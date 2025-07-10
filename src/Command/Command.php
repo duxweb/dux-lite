@@ -25,7 +25,7 @@ class Command {
         $commands = [];
         foreach ($attributes as $item) {
             foreach ($item["annotations"] as $annotation) {
-                if ($annotation["name"] != Command::class) {
+                if ($annotation["name"] != \Core\Command\Attribute\Command::class) {
                     continue;
                 }
                 $commands[] = $annotation["class"];
