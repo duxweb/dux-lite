@@ -1,13 +1,22 @@
 import { defineConfig } from 'vitepress'
 import { MermaidMarkdown, MermaidPlugin, withMermaid } from "vitepress-plugin-mermaid";
 
+// 自动检测 base 路径
+const getBase = () => {
+  // GitHub Pages 通过环境变量检测
+  if (process.env.GITHUB_ACTIONS) {
+    return '/dux-lite/'
+  }
+  // 其他平台或本地开发
+  return '/'
+}
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
   title: "DuxLite v2",
   description: "基于 SlimPHP 的轻量级 PHP Web 框架",
   lang: 'zh-CN',
-  base: '/dux-lite/',
+  base: getBase(),
   lastUpdated: true,
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
