@@ -3,11 +3,9 @@ import { MermaidMarkdown, MermaidPlugin, withMermaid } from "vitepress-plugin-me
 
 // 自动检测 base 路径
 const getBase = () => {
-  // GitHub Pages 通过环境变量检测
   if (process.env.GITHUB_ACTIONS) {
     return '/dux-lite/'
   }
-  // 其他平台或本地开发
   return '/'
 }
 
