@@ -59,9 +59,15 @@ class Bootstrap
      */
     public function registerConfig(): void
     {
-        date_default_timezone_set(App::$timezone);
-        Carbon::setLocale(App::$lang);
-        App::di()->set('lang', App::$lang);
+
+        $lang = App::config("use")->get("app.lang", App::$lang);
+        $timezone = App::config("use")->get("app.timezone", App::$timezone);
+        App::$lang = $lang;
+        App::$timezone = $timezone;
+
+        date_default_timezone_set($timezone);
+        Carbon::setLocale($lang);
+        App::di()->set('lang', $lang);
     }
 
     /**
