@@ -37,6 +37,10 @@ class AuthMiddleware
         $secret = \Core\App::config("use")->get("app.secret");
         $app = $this->app;
         $callback = $this->callback;
+
+        // 在外部检测 token 来源，然后传递给 after 处理器
+        $tokenFromCookie = $this->isTokenFromCookie($request);
+
         $jwt = new \JimTools\JwtAuth\Middleware\JwtAuthentication(
             new Options(
                 isSecure: false,
@@ -48,12 +52,19 @@ class AuthMiddleware
                         return $request->withAttribute('auth', $token)->withAttribute('app', $this->app);
                     }
                 },
-                after: new class($secret, $app, $callback) implements AfterHandlerInterface {
-                    public function __construct(public string $secret, public string $app, public \Closure|null $callback = null) {}
+                after: new class($secret, $app, $callback, $tokenFromCookie) implements AfterHandlerInterface {
+                    public function __construct(
+                        public string $secret,
+                        public string $app,
+                        public \Closure|null $callback = null,
+                        public bool $tokenFromCookie = false
+                    ) {}
+
                     public function __invoke(Response $response, array $arguments): Response
                     {
                         $tokenStr = $arguments["token"];
                         $token = $arguments["decoded"];
+
                         if ($this->app != $token["sub"]) {
                             throw new \Core\Handlers\ExceptionBusiness("Authorization app error", 401);
                         }
@@ -62,16 +73,40 @@ class AuthMiddleware
                         $renewalTime = $token["iat"] + round($expire / 3);
                         $time = time();
                         $auth = null;
+
                         if ($renewalTime <= $time) {
                             $token["exp"] = $time + $expire;
                             $auth = JWT::encode($token, $this->secret, 'HS256');
-                            return $response->withHeader("Authorization", "Bearer $auth");
+
+                            // 根据外部检测的 token 来源选择续期方式
+                            if ($this->tokenFromCookie) {
+                                // 如果是 cookie 登录，设置 cookie 续期
+                                $response = $this->setCookieToken($response, $auth);
+                            } else {
+                                // 如果是 header 登录，使用 header 续期
+                                $response = $response->withHeader("Authorization", "Bearer $auth");
+                            }
                         }
 
                         if ($this->callback !== null) {
                             ($this->callback)($tokenStr, $auth);
                         }
                         return $response;
+                    }
+
+                    /**
+                     * 设置 cookie token
+                     */
+                    private function setCookieToken(Response $response, string $token): Response
+                    {
+                        // 设置 cookie，有效期与 token 一致
+                        $cookieValue = "Bearer $token";
+                        $cookieHeader = sprintf(
+                            'token=%s; Path=/; HttpOnly; SameSite=Lax',
+                            urlencode($cookieValue)
+                        );
+
+                        return $response->withAddedHeader('Set-Cookie', $cookieHeader);
                     }
                 },
             ),
@@ -82,5 +117,26 @@ class AuthMiddleware
         } catch (\JimTools\JwtAuth\Exceptions\AuthorizationException $e) {
             throw new ExceptionBusiness('Authorization error', 401, $e);
         }
+    }
+
+    /**
+     * 检测 token 是否来自 cookie
+     * 根据 JimTools\JwtAuth 的逻辑：优先检查 header，如果没有再检查 cookie
+     */
+    private function isTokenFromCookie(Request $request): bool
+    {
+        // 检查 Authorization header
+        $header = $request->getHeaderLine('Authorization');
+        if (!empty($header) && preg_match('/Bearer\s+(.*)$/i', $header)) {
+            return false; // token 来自 header
+        }
+
+        // 检查 cookie
+        $cookieParams = $request->getCookieParams();
+        if (isset($cookieParams['token'])) {
+            return true; // token 来自 cookie
+        }
+
+        return false; // 没有找到 token，默认为 false
     }
 }

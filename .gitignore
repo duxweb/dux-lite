@@ -3,6 +3,7 @@ logs
 data
 vendor
 uploads
+.cunzhi-memory
 
 # duxweb
 client/autoInit.js
