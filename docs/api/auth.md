@@ -19,13 +19,17 @@ public static function token(string $app, array $params = [], int $expire = 8640
 - **说明：** 生成 JWT 认证令牌
 
 ```php
-public static function decode(ServerRequestInterface $request, string $app): ?array
+public static function decode(ServerRequestInterface $request, string $app, string $source = 'auto'): ?array
 ```
 - **参数：**
   - `$request` - HTTP 请求对象
   - `$app` - 应用标识符
+  - `$source` - 令牌来源（可选，默认 'auto'）
+    - `'auto'` - 自动检测（优先 header，然后 cookie）
+    - `'header'` - 仅从 Authorization header 获取
+    - `'cookie'` - 仅从 token cookie 获取
 - **返回：** `array|null` - 解码后的载荷数组，失败返回 null
-- **说明：** 解码和验证 JWT 令牌
+- **说明：** 解码和验证 JWT 令牌，支持指定令牌来源
 
 ## AuthMiddleware 类
 

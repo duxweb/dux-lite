@@ -86,8 +86,14 @@ use Psr\Http\Message\ServerRequestInterface;
 
 public function verifyToken(ServerRequestInterface $request): ?array
 {
-    // 从请求头中解码 token
+    // 自动检测 token 来源（默认行为）
     $payload = Auth::decode($request, 'user_app');
+
+    // 或者指定从 header 获取
+    $payload = Auth::decode($request, 'user_app', 'header');
+
+    // 或者指定从 cookie 获取
+    $payload = Auth::decode($request, 'user_app', 'cookie');
 
     if ($payload) {
         $userId = $payload['id'];
@@ -104,6 +110,36 @@ public function verifyToken(ServerRequestInterface $request): ?array
 
     // 认证失败
     return null;
+}
+```
+
+#### Token 来源参数说明
+
+- **`'auto'`（默认）**：自动检测，优先从 Authorization header 获取，如果没有则从 cookie 获取
+- **`'header'`**：仅从 Authorization header 获取 token
+- **`'cookie'`**：仅从 token cookie 获取 token
+
+```php
+// 实际使用示例
+class UserController
+{
+    public function profile(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    {
+        // 根据业务需求选择合适的方式
+        if ($this->isMobileApp($request)) {
+            // 移动端通常使用 header
+            $user = Auth::decode($request, 'mobile_app', 'header');
+        } else {
+            // Web 端可能使用 cookie
+            $user = Auth::decode($request, 'web_app', 'cookie');
+        }
+
+        if (!$user) {
+            throw new ExceptionBusiness('未登录', 401);
+        }
+
+        return send($response, '获取用户信息成功', $user);
+    }
 }
 ```
 
