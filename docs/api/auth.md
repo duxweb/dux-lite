@@ -63,11 +63,19 @@ public function __invoke(ServerRequestInterface $request, RequestHandlerInterfac
 
 ### 响应头设置
 
-当令牌接近过期时，中间件会在响应头中返回新的令牌：
+当令牌接近过期时，中间件会根据登录方式智能选择续期方式：
+
+#### Header 登录续期
 
 | 响应头 | 值 | 说明 |
 |--------|----|----- |
 | `Authorization` | `Bearer <new_token>` | 刷新后的新令牌 |
+
+#### Cookie 登录续期
+
+| 响应头 | 值 | 说明 |
+|--------|----|----- |
+| `Set-Cookie` | `token=Bearer%20<new_token>; Path=/; HttpOnly; SameSite=Lax` | 刷新后的新令牌 Cookie |
 
 ## 配置要求
 
@@ -107,6 +115,26 @@ secret = "your-jwt-secret-key"
 
 ## 令牌刷新机制
 
+### 智能续期策略
+
 - **触发条件：** 令牌剩余有效期小于总有效期的 1/3 时
-- **刷新方式：** 自动生成新令牌并通过 `Authorization` 响应头返回
+- **检测逻辑：** 自动检测令牌来源（Header 或 Cookie）
+- **刷新方式：**
+  - **Header 登录：** 通过 `Authorization` 响应头返回新令牌
+  - **Cookie 登录：** 通过 `Set-Cookie` 响应头设置新令牌
 - **回调函数：** 可通过构造函数传入回调函数处理刷新事件
+
+### 令牌来源检测
+
+中间件按以下优先级检测令牌来源：
+
+1. **Authorization Header：** 检查 `Authorization: Bearer <token>` 格式
+2. **Cookie：** 检查 `token` Cookie 字段
+3. **默认处理：** 未找到令牌时默认按 Header 方式处理
+
+### 续期行为
+
+| 登录方式 | 检测条件 | 续期方式 | 客户端处理 |
+|----------|----------|----------|------------|
+| Header | 存在有效的 `Authorization` 头 | `Authorization` 响应头 | 需要读取响应头并更新存储的令牌 |
+| Cookie | 不存在 `Authorization` 头但存在 `token` Cookie | `Set-Cookie` 响应头 | 浏览器自动处理，无需手动操作 |

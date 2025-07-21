@@ -244,14 +244,69 @@ class PostController extends Resources
 
 ## Token 自动续期
 
-### 续期机制
+### 智能续期机制
 
-AuthMiddleware 包含智能的 token 续期机制：
+AuthMiddleware 包含智能的 token 续期机制，能够根据用户的登录方式自动选择合适的续期方式：
 
 - **续期条件**：当 token 剩余有效期小于总有效期的 1/3 时
 - **自动处理**：中间件自动生成新 token
-- **响应头返回**：新 token 通过 `Authorization` 响应头返回
-- **无感知续期**：客户端可透明处理续期
+- **智能续期方式**：
+  - **Header 登录**：新 token 通过 `Authorization` 响应头返回
+  - **Cookie 登录**：新 token 通过 `Set-Cookie` 响应头设置
+- **无感知续期**：客户端可透明处理续期，特别是 Cookie 登录完全自动化
+
+### 登录方式与续期方式
+
+#### Header 登录方式
+
+```php
+// 前端登录时获取 token
+const response = await fetch('/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username: 'admin', password: 'password' })
+});
+const { token } = await response.json();
+
+// 后续请求携带 token
+const apiResponse = await fetch('/api/data', {
+    headers: { 'Authorization': token }
+});
+
+// 检查续期（新 token 在响应头中）
+const newToken = apiResponse.headers.get('Authorization');
+if (newToken) {
+    localStorage.setItem('token', newToken);
+}
+```
+
+#### Cookie 登录方式
+
+```php
+// 服务器端设置 cookie
+$cookieHeader = sprintf(
+    'token=%s; Path=/; HttpOnly; SameSite=Lax; Max-Age=%d',
+    urlencode($token),
+    3600
+);
+$response = $response->withAddedHeader('Set-Cookie', $cookieHeader);
+```
+
+```javascript
+// 前端登录（服务器自动设置 cookie）
+await fetch('/login', {
+    method: 'POST',
+    credentials: 'include', // 重要：包含 cookie
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username: 'admin', password: 'password' })
+});
+
+// 后续请求（自动携带 cookie，续期也自动处理）
+const apiResponse = await fetch('/api/data', {
+    credentials: 'include'
+});
+// 无需手动处理续期，cookie 会自动更新
+```
 
 ### 续期回调处理
 
