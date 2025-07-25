@@ -20,7 +20,8 @@ class AuthMiddleware
 {
     public function __construct(
         public string $app,
-        public \Closure|null $callback = null
+        public \Closure|null $callback = null,
+        public \Closure|null $error = null,
     ) {}
 
     public function __invoke(Request $request, RequestHandler $handler): Response
@@ -37,6 +38,7 @@ class AuthMiddleware
         $secret = \Core\App::config("use")->get("app.secret");
         $app = $this->app;
         $callback = $this->callback;
+        $error = $this->error;
 
         // 在外部检测 token 来源，然后传递给 after 处理器
         $tokenFromCookie = $this->isTokenFromCookie($request);
@@ -115,7 +117,11 @@ class AuthMiddleware
         try {
             return $jwt->process($request, $handler);
         } catch (\JimTools\JwtAuth\Exceptions\AuthorizationException $e) {
-            throw new ExceptionBusiness('Authorization error', 401, $e);
+            if ($error instanceof \Closure) {
+                return $error($e);
+            } else {
+                throw new ExceptionBusiness('Authorization error', 401, $e);
+            }
         }
     }
 
