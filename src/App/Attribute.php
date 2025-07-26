@@ -79,17 +79,24 @@ class Attribute {
     }
 
     static function getCache(array $apps): array {
-        $cache = file_get_contents(data_path("/cache/attributes.cache"));
+        $cachePath = data_path("/cache/attributes.cache");
+        if (!file_exists($cachePath)) {
+            $data = self::load($apps);
+            self::setCache($data);
+            return $data;
+        }
+
+        $cache = file_get_contents($cachePath);
         if (!$cache) {
             $data = self::load($apps);
             self::setCache($data);
             return $data;
         }
 
-        return include data_path("/cache/attributes.cache");
+        return unserialize($cache);
     }
 
     static function setCache(array $data): void {
-        file_put_contents(data_path("/cache/attributes.cache"), "<?php\nreturn " . var_export($data, true) . ";");
+        file_put_contents(data_path("/cache/attributes.cache"), serialize($data));
     }
 }
