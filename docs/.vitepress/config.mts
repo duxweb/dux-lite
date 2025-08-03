@@ -28,32 +28,39 @@ export default defineConfig({
     sidebar: {
       '/guide/': [
         {
-          text: '开始使用',
+          text: '快速入门',
           items: [
-            { text: '框架概况', link: '/guide/overview' },
-            { text: '快速开始', link: '/guide/getting-started' },
-            { text: '安装配置', link: '/guide/installation' },
-            { text: '目录结构', link: '/guide/directory-structure' },
-            { text: '配置文件', link: '/guide/configuration' }
+            { text: '框架概述', link: '/guide/overview' },
+            { text: '快速开始', link: '/guide/quick-start' },
+            { text: '目录结构', link: '/guide/directory-structure' }
           ]
         },
         {
-          text: '基础概念',
+          text: '核心概念',
           items: [
             { text: '应用生命周期', link: '/guide/lifecycle' },
+            { text: '配置系统', link: '/guide/configuration' },
             { text: '依赖注入', link: '/guide/dependency-injection' },
-            { text: '中间件', link: '/guide/middleware' },
-            { text: '异常处理', link: '/guide/error-handling' }
+            { text: '中间件机制', link: '/guide/middleware' }
           ]
         },
         {
-          text: '开发指南',
+          text: '部署运维',
           items: [
-            { text: '最佳实践', link: '/guide/best-practices' },
+            { text: '环境配置', link: '/guide/environment' },
             { text: '性能优化', link: '/guide/performance' },
-            { text: '调试技巧', link: '/guide/debugging' },
-            { text: '部署指南', link: '/guide/deployment' },
+            { text: '生产部署', link: '/guide/deployment' },
             { text: 'Worker 模式', link: '/guide/worker' }
+          ]
+        },
+        {
+          text: '开发实践',
+          items: [
+            { text: '编码规范', link: '/guide/coding-standards' },
+            { text: 'API 开发', link: '/guide/api-development' },
+            { text: 'CRUD 开发', link: '/guide/crud-development' },
+            { text: '调试技巧', link: '/guide/debugging' },
+            { text: '常见问题', link: '/guide/faq' }
           ]
         }
       ],

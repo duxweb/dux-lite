@@ -48,9 +48,9 @@ App::create(
 ```php
 public static function init()
 {
-    // 1. 加载 .env 环境变量
+    // 1. 加载环境变量（可选）
     $dotenv = Dotenv::createImmutable(self::$basePath);
-    $dotenv->safeLoad();
+    $dotenv->safeLoad(); // 安全加载，不会覆盖现有变量
 
     // 2. 初始化依赖注入容器
     self::$di = new Container();
@@ -197,9 +197,6 @@ class App extends AppExtend
     {
         // ✅ 注册路由应用
         App::route()->set("web", new Route());
-
-        // ✅ 注册权限应用
-        App::permission()->set("web", new Permission());
 
         // ✅ 基础服务初始化
         App::di()->set('myService', function() {

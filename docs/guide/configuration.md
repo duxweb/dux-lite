@@ -13,31 +13,15 @@ DuxLite 使用 TOML 格式的配置文件，提供了强大且灵活的配置管
 2. `{name}.toml` - 生产环境配置
 3. 空配置 - 如果文件不存在则使用默认值
 
-### 环境变量支持
+### 配置层级
 
-框架在启动时会加载 `.env` 环境变量文件：
+配置系统采用分层设计，按优先级合并：
 
-```bash
-# .env 文件位于项目根目录
-APP_NAME=DuxLite应用
-APP_DEBUG=true
-APP_SECRET=your-32-char-secret-key-here
+1. **开发环境配置** - `config/*.dev.toml`（优先级最高）
+2. **生产环境配置** - `config/*.toml`
+3. **环境变量** - `.env` 文件（备用方案）
 
-DB_HOST=localhost
-DB_PORT=3306
-DB_DATABASE=duxlite
-DB_USERNAME=root
-DB_PASSWORD=your_password
-
-REDIS_HOST=localhost
-REDIS_PORT=6379
-REDIS_PASSWORD=
-```
-
-**环境变量加载规则：**
-- 使用 `Dotenv::createImmutable()` 方法加载
-- 调用 `safeLoad()` 方法安全加载，不会覆盖已存在的环境变量
-- 在应用初始化时自动加载到 `$_ENV` 和 `$_SERVER` 中
+> 建议优先使用 TOML 配置文件，`.env` 仅在特殊情况下作为备用方案使用。
 
 ### 占位符语法支持
 
