@@ -4,6 +4,7 @@ data
 vendor
 uploads
 .cunzhi-memory
+node_modules
 
 # duxweb
 client/autoInit.js

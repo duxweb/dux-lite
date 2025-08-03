@@ -15,10 +15,6 @@ DuxLite 使用 TOML 格式的配置文件，提供了强大且灵活的配置管
 
 ### 环境变量支持
 
-::: tip 重要说明
-当前版本的 DuxLite 只加载 `.env` 文件，但没有集成到配置系统中。
-:::
-
 框架在启动时会加载 `.env` 环境变量文件：
 
 ```bash
@@ -43,37 +39,58 @@ REDIS_PASSWORD=
 - 调用 `safeLoad()` 方法安全加载，不会覆盖已存在的环境变量
 - 在应用初始化时自动加载到 `$_ENV` 和 `$_SERVER` 中
 
-::: warning 当前限制
-- ❌ TOML 配置文件**不支持**环境变量插值（如 `${DB_HOST}`）
-- ❌ 框架**没有提供** `env()` 助手函数
-- ❌ 配置系统**完全基于** TOML 文件，不会自动读取环境变量
+### 占位符语法支持
+
+::: tip 新功能
+DuxLite 支持在 TOML 配置文件中使用占位符语法，可以动态替换环境变量和调用PHP函数。
 :::
 
-**使用环境变量的正确方式：**
+**支持的占位符语法：**
 
-```php
-// ✅ 在 PHP 代码中手动读取环境变量
-$dbHost = $_ENV['DB_HOST'] ?? 'localhost';
-$appSecret = $_ENV['APP_SECRET'] ?? 'default-secret';
+```toml
+[app]
+# 环境变量占位符
+secret = "%env(APP_SECRET)%"
+name = "%env(APP_NAME)%"
 
-// ❌ 在 TOML 配置文件中无法使用（不支持）
-// [app]
-// secret = "${APP_SECRET}"  # 这样写不会生效
+[database.drivers.default]
+# 环境变量配置
+host = "%env(DB_HOST)%"
+username = "%env(DB_USERNAME)%"
+password = "%env(DB_PASSWORD)%"
+database = "%env(DB_DATABASE)%"
+
+[storage.drivers.local]
+# 函数调用占位符
+root = "%public_path(uploads)%"
+# 混合文本和占位符
+log_file = "logs/app_%date(Y-m-d)%.log"
+
+[cache]
+# 时间戳占位符
+prefix = "cache_%time()%_"
 ```
 
-如果需要使用环境变量，建议在模块的 `App.php` 中读取并动态配置：
+**占位符类型说明：**
 
-```php
-// app/Web/App.php
-public function init(Bootstrap $bootstrap): void
-{
-    // 从环境变量读取配置
-    $dbHost = $_ENV['DB_HOST'] ?? 'localhost';
+1. **环境变量** - `%env(变量名)%`
+   ```toml
+   secret = "%env(APP_SECRET)%"
+   debug = "%env(APP_DEBUG)%"
+   ```
 
-    // 然后在代码中使用这些值进行配置
-    // 注意：无法直接修改已加载的 TOML 配置
-}
-```
+2. **PHP函数调用** - `%函数名(参数)%`
+   ```toml
+   timestamp = "%time()%"
+   date = "%date(Y-m-d H:i:s)%"
+   path = "%base_path(storage)%"
+   ```
+
+3. **混合文本** - 可以在文本中嵌入多个占位符
+   ```toml
+   log_file = "%storage_path(logs)%/app_%date(Y-m-d)%.log"
+   cache_key = "%env(APP_NAME)%_%time()%"
+   ```
 
 ## 应用配置 (`use.toml`)
 
@@ -126,8 +143,6 @@ type = "semaphore"
 registers = [
     "App\\Web\\App",
     "App\\Admin\\App",
-    "App\\Api\\App",
-    "App\\Common\\App"
 ]
 ```
 
@@ -144,25 +159,14 @@ registers = [
 # 数据库连接配置
 [db.drivers.default]
 driver = "mysql"
-host = "localhost"
-port = 3306
-database = "duxlite"
-username = "root"
-password = "your_password"
+host = "%env(DB_HOST)%"
+port = "%env(DB_PORT)%"
+database = "%env(DB_DATABASE)%"
+username = "%env(DB_USERNAME)%"
+password = "%env(DB_PASSWORD)%"
 charset = "utf8mb4"
 collation = "utf8mb4_unicode_ci"
 prefix = ""
-
-# 多数据库支持
-[db.drivers.business]
-driver = "mysql"
-host = "localhost"
-port = 3306
-database = "business_db"
-username = "business_user"
-password = "business_password"
-charset = "utf8mb4"
-prefix = "biz_"
 
 # Redis 配置（支持多个连接）
 [redis.drivers.default]
@@ -223,7 +227,7 @@ driver = "default"
 
 ## 存储配置 (`storage.toml`)
 
-文件存储服务配置。
+文件存储服务配置，调用 `App::storage()` 方法获取存储服务实例
 
 ```toml
 # 默认存储类型
@@ -293,18 +297,28 @@ $cacheConfig = App::config('use')->get('cache', []);
 $cacheType = $cacheConfig['type'] ?? 'file';
 ```
 
-### 环境变量访问
+### 使用占位符功能
 
 ```php
-// ✅ 在 PHP 代码中访问环境变量
+// 使用占位符的配置文件会自动解析
+$config = App::config('use');
+$appName = $config->get('app.name'); // 已解析 %env(APP_NAME)%
+$secret = $config->get('app.secret'); // 已解析 %env(APP_SECRET)%
+
+// 数据库配置也会自动解析占位符
+$dbConfig = App::config('database');
+$host = $dbConfig->get('db.drivers.default.host'); // 已解析 %env(DB_HOST)%
+```
+
+### 传统环境变量访问
+
+```php
+// ✅ 在 PHP 代码中直接访问环境变量
 $dbHost = $_ENV['DB_HOST'] ?? 'localhost';
 $appSecret = $_ENV['APP_SECRET'] ?? 'default-secret';
 
 // ✅ 也可以使用 getenv() 函数
 $dbPassword = getenv('DB_PASSWORD') ?: 'default-password';
-
-// ❌ 无法在 TOML 配置文件中直接使用环境变量
-// 配置系统不支持环境变量插值
 ```
 
 ### 服务配置获取
@@ -349,11 +363,18 @@ config/
 ```toml
 # config/use.toml - 生产环境
 [app]
-debug = false
-secret = "randomly-generated-32-char-key"
+debug = "%env(APP_DEBUG)%"
+secret = "%env(APP_SECRET)%"
 
-# 敏感信息使用环境变量
-# 在 .env 文件中设置，不要提交到版本控制
+# 推荐：敏感信息使用环境变量占位符
+# 在 .env 文件中设置实际值，不要提交到版本控制
+```
+
+```bash
+# .env 文件
+APP_DEBUG=false
+APP_SECRET=randomly-generated-32-char-secret-key
+DB_PASSWORD=your-secure-database-password
 ```
 
 ### 3. 缓存优化
@@ -385,15 +406,6 @@ config/*.dev.toml
 
 ## 故障排除
 
-### 配置文件语法错误
-
-```bash
-# 检查 TOML 语法
-php -r "
-$config = \Noodlehaus\Config::load('config/use.toml', new \Core\Config\TomlLoader());
-var_dump($config->all());
-"
-```
 
 ### 配置不生效
 

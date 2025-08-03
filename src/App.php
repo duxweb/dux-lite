@@ -306,10 +306,10 @@ class App
         return self::$di->get("logger." . $app);
     }
 
-    public static function config(string $name): Config
+    public static function config(string $name, bool $fun = true): Config
     {
-        if (self::$di->has("config." . $name)) {
-            return self::$di->get("config." . $name);
+        if (self::$di->has("config." . $name . "." . $fun)) {
+            return self::$di->get("config." . $name . "." . $fun);
         }
 
         $file = App::$configPath . "/$name.dev.toml";
@@ -322,8 +322,9 @@ class App
             $file = '';
             $string = true;
         }
-        $config = new Config($file, new TomlLoader(), $string);
-        self::$di->set("config." . $name, $config);
+        $config = new Config($file, new TomlLoader($fun), $string);
+        self::$di->set("config." . $name . "." . $fun, $config);
+
         return $config;
     }
 

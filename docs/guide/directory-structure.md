@@ -14,12 +14,6 @@ my-app/
 │   ├── Web/                 # Web 应用模块
 │   │   ├── App.php          # Web 应用注册类
 │   │   └── Controllers/     # 控制器
-│   ├── Api/                 # API 模块
-│   │   ├── App.php          # API 应用注册类
-│   │   └── Controllers/     # API 控制器
-│   └── Common/              # 公共组件
-│       ├── Models/          # 数据模型
-│       └── Services/        # 业务服务
 ├── config/                   # 配置文件
 │   ├── use.toml             # 应用配置
 │   ├── app.toml             # 模块注册
@@ -62,8 +56,7 @@ App::runWeb();
 ```toml
 # config/app.toml - 模块注册配置
 registers = [
-    "App\\Web\\App",
-    "App\\Api\\App"
+    "App\\Web\\App"
 ]
 ```
 
@@ -102,7 +95,6 @@ class App extends AppExtend
 
 - `logs/` - 应用日志文件
 - `cache/` - 文件缓存数据
-- `uploads/` - 私有上传文件
 
 ## 权限设置
 
@@ -111,11 +103,7 @@ class App extends AppExtend
 ```bash
 # 基本权限设置
 chmod -R 755 data/
-chmod -R 755 public/
 chmod +x dux
-
-# Web 服务器权限
-sudo chown -R www-data:www-data data/
 ```
 
 ### Windows 权限

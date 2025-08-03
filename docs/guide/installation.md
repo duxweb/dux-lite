@@ -99,7 +99,7 @@ my-app/
 │   ├── index.php             # Web 入口文件
 │   └── .htaccess             # Apache 重写规则
 ├── app/                      # 应用代码
-│   └── Web/
+│   └── Web/                  # Web模块目录
 │       ├── App.php           # 应用注册类
 │       └── Controllers/      # 控制器目录
 ├── config/                   # 配置文件
@@ -165,9 +165,7 @@ domain = "http://localhost:8000"
 ```toml
 # 注册应用模块
 registers = [
-    "App\\Web\\App",
-    "App\\Admin\\App",
-    "App\\Api\\App"
+    "App\\Web\\App"
 ]
 ```
 

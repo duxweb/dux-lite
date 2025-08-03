@@ -323,47 +323,6 @@ registers = [
 如果模块之间有依赖关系，应该将被依赖的模块放在前面。
 :::
 
-## 生命周期事件系统
-
-框架在生命周期的关键节点会触发事件，您可以监听这些事件：
-
-### 系统事件
-
-```php
-// 在模块的 register() 方法中注册事件监听器
-public function register(Bootstrap $bootstrap): void
-{
-    App::event()->listen('app.bootstrapped', function() {
-        // 应用启动完成
-    });
-
-    App::event()->listen('route.loaded', function() {
-        // 路由加载完成
-    });
-}
-```
-
-### 模型事件
-
-```php
-// 模型生命周期事件会自动触发
-class User extends Model
-{
-    protected static function boot()
-    {
-        parent::boot();
-
-        static::creating(function ($user) {
-            // 创建前执行
-        });
-
-        static::created(function ($user) {
-            // 创建后执行
-        });
-    }
-}
-```
-
 ## 生命周期调试
 
 ### 1. 调试模块加载
