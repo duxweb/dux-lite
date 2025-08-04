@@ -3,7 +3,8 @@
     "allow": [
       "Bash(ls:*)",
       "Bash(rm:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(mkdir:*)"
     ],
     "deny": []
   }

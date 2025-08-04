@@ -147,19 +147,21 @@ public function getRoutes(): array
 class Route
 {
     public function __construct(
-        public string $method,
-        public string $path,
-        public ?string $name = null,
-        public array $middleware = []
+        public array|string $methods,
+        public string $route,
+        public string $name = '',
+        public ?string $app = null,
+        public bool $auth = true,
     ) {}
 }
 ```
 
 **属性：**
-- `$method` - HTTP 方法（GET、POST、PUT、DELETE、PATCH、OPTIONS）
-- `$path` - 路由路径
+- `$methods` - HTTP 方法，可以是数组或字符串（GET、POST、PUT、DELETE、PATCH、OPTIONS）
+- `$route` - 路由路径
 - `$name` - 路由名称（可选）
-- `$middleware` - 中间件数组（可选）
+- `$app` - 路由注册名（可选）
+- `$auth` - 是否需要认证（默认 true）
 
 ### RouteGroup 注解
 
@@ -172,7 +174,9 @@ class RouteGroup
     public function __construct(
         public string $app,
         public string $route,
-        public array $middleware = []
+        public string $name = '',
+        public array $middleware = [],
+        public bool $auth = true,
     ) {}
 }
 ```
@@ -180,7 +184,9 @@ class RouteGroup
 **属性：**
 - `$app` - 应用标识符
 - `$route` - 路由组前缀
-- `$middleware` - 中间件数组（可选）
+- `$name` - 路由名称（可选）
+- `$middleware` - 中间件类名数组（可选）
+- `$auth` - 是否需要认证（默认 true）
 
 ## 路由模式规范
 

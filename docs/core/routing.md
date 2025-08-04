@@ -665,7 +665,7 @@ use Core\Auth\AuthMiddleware;
     app: 'admin',                              // 必需：路由应用名
     route: '/admin',                           // 必需：路由前缀
     name: 'admin',                             // 可选：组名称
-    middleware: [AuthMiddleware::class],       // 可选：中间件
+    middleware: [AuthMiddleware::class],       // 可选：中间件类名
     auth: true                                 // 可选：是否需要认证
 )]
 class AdminController
