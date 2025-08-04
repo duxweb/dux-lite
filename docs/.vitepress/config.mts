@@ -68,8 +68,8 @@ export default defineConfig({
         {
           text: 'API开发',
           items: [
-            { text: '路由系统', link: '/reference/api/routing' },
-            { text: 'API控制器', link: '/reference/api/controllers' },
+            { text: '路由', link: '/reference/api/routing' },
+            { text: '控制器', link: '/reference/api/controllers' },
             { text: '中间件', link: '/reference/api/middleware' },
             { text: '响应处理', link: '/reference/api/responses' }
           ]
@@ -77,7 +77,7 @@ export default defineConfig({
         {
           text: '模板开发',
           items: [
-            { text: '路由系统', link: '/reference/template/routing' },
+            { text: '路由', link: '/reference/template/routing' },
             { text: '控制器', link: '/reference/template/controllers' },
             { text: '响应处理', link: '/reference/template/responses' },
             { text: '视图模板', link: '/reference/template/views' },
@@ -87,9 +87,8 @@ export default defineConfig({
         {
           text: 'CRUD开发',
           items: [
-            { text: '资源控制器', link: '/reference/crud/resources' },
-            { text: 'RESTful设计', link: '/reference/crud/restful' },
-            { text: '资源路由', link: '/reference/crud/resource-routes' },
+            { text: '路由', link: '/reference/crud/resource-routes' },
+            { text: '控制器', link: '/reference/crud/resources' },
             { text: '权限控制', link: '/reference/crud/permissions' }
           ]
         },

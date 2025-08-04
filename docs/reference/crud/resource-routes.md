@@ -30,13 +30,13 @@ class UserController extends Resources
 
 | HTTP方法 | 路由路径 | 控制器方法 | 路由名称 | 功能描述 |
 |----------|----------|-----------|----------|----------|
-| **GET** | `/admin/users` | `many()` | `admin.users.list` | 获取用户列表 |
-| **GET** | `/admin/users/{id}` | `one()` | `admin.users.show` | 获取单个用户 |
+| **GET** | `/admin/users` | `list()` | `admin.users.list` | 获取用户列表 |
+| **GET** | `/admin/users/{id}` | `show()` | `admin.users.show` | 获取单个用户 |
 | **POST** | `/admin/users` | `create()` | `admin.users.create` | 创建新用户 |
 | **PUT** | `/admin/users/{id}` | `edit()` | `admin.users.edit` | 完整更新用户 |
 | **PATCH** | `/admin/users/{id}` | `store()` | `admin.users.store` | 部分更新用户 |
-| **DELETE** | `/admin/users/{id}` | `del()` | `admin.users.delete` | 删除单个用户 |
-| **DELETE** | `/admin/users` | `delMany()` | `admin.users.deleteMany` | 批量删除用户 |
+| **DELETE** | `/admin/users/{id}` | `delete()` | `admin.users.delete` | 删除单个用户 |
+| **DELETE** | `/admin/users` | `deleteMany()` | `admin.users.deleteMany` | 批量删除用户 |
 
 ## 注解参数
 

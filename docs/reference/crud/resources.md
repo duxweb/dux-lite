@@ -14,7 +14,6 @@
 ### 基础用法
 
 ```php
-use Core\Resources\Action\Resources;
 use Core\Resources\Attribute\Resource;
 
 #[Resource(
@@ -138,7 +137,7 @@ class UserController extends Resources
 
 ### 数据验证
 
-使用 `validator()` 方法定义验证规则。更多验证规则和使用方法请参考：[数据验证](/reference/data/validation)
+使用 `validator()` 方法定义验证规则。更多验证规则和使用方法请参考：[数据验证](/reference/core/validation)
 
 ```php
 class UserController extends Resources
@@ -342,6 +341,97 @@ class UserController extends Resources
 }
 ```
 
+## 软删除功能
+
+### 软删除钩子
+
+使用软删除前后钩子处理软删除逻辑：
+
+```php
+class UserController extends Resources
+{
+    /**
+     * 软删除前钩子
+     */
+    public function trashBefore(mixed $model): void
+    {
+        // 检查是否可以彻底删除
+        if ($model->orders()->exists()) {
+            throw new \Core\Handlers\ExceptionBusiness('该用户还有关联订单，无法彻底删除');
+        }
+    }
+
+    /**
+     * 软删除后钩子
+     */
+    public function trashAfter(mixed $model): void
+    {
+        // 记录彻底删除日志
+        \Core\App::log()->info('用户已被彻底删除', [
+            'user_id' => $model->id
+        ]);
+    }
+
+    /**
+     * 恢复前钩子
+     */
+    public function restoreBefore(mixed $model): void
+    {
+        // 检查是否可以恢复
+        if (User::where('email', $model->email)->where('id', '!=', $model->id)->exists()) {
+            throw new \Core\Handlers\ExceptionBusiness('邮箱已被其他用户使用，无法恢复');
+        }
+    }
+
+    /**
+     * 恢复后钩子
+     */
+    public function restoreAfter(mixed $model): void
+    {
+        // 发送恢复通知
+        \Core\App::log()->info('用户已被恢复', [
+            'user_id' => $model->id
+        ]);
+    }
+}
+```
+
+## 批量删除功能
+
+### 批量删除钩子
+
+使用批量删除前后钩子处理批量删除逻辑：
+
+```php
+class UserController extends Resources
+{
+    /**
+     * 批量删除前钩子
+     */
+    public function delManyBefore(array $models): void
+    {
+        // 检查是否可以批量删除
+        foreach ($models as $model) {
+            if ($model->posts()->exists()) {
+                throw new \Core\Handlers\ExceptionBusiness("用户 {$model->name} 还有关联文章，无法删除");
+            }
+        }
+    }
+
+    /**
+     * 批量删除后钩子
+     */
+    public function delManyAfter(array $models): void
+    {
+        // 记录批量删除日志
+        $userIds = array_map(fn($model) => $model->id, $models);
+        \Core\App::log()->info('用户批量删除成功', [
+            'user_ids' => $userIds
+        ]);
+    }
+}
+```
+
 ## 扩展方法
 
 ### 自定义操作
@@ -467,7 +557,6 @@ class UserController extends Resources
 ## 完整示例
 
 ```php
-use Core\Resources\Action\Resources;
 use Core\Resources\Attribute\Resource;
 use Core\Resources\Attribute\Action;
 
