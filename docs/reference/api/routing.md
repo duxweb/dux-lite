@@ -65,13 +65,13 @@ use Core\Route\Attribute\Route;
 
 class ApiController
 {
-    #[Route('GET', '/api/hello')]
+    #[Route(methods: 'GET', route: '/api/hello')]
     public function hello($request, $response, $args)
     {
         return send($response, 'Hello World');
     }
 
-    #[Route('POST', '/api/users')]
+    #[Route(methods: 'POST', route: '/api/users')]
     public function createUser($request, $response, $args)
     {
         $data = $request->getParsedBody();
@@ -79,7 +79,7 @@ class ApiController
     }
 
     // 多个 HTTP 方法
-    #[Route(['GET', 'POST'], '/api/flexible')]
+    #[Route(methods: ['GET', 'POST'], route: '/api/flexible')]
     public function flexibleMethod($request, $response, $args)
     {
         $method = $request->getMethod();
@@ -93,14 +93,14 @@ class ApiController
 ```php
 class ApiController
 {
-    #[Route('GET', '/api/users/{id}')]
+    #[Route(methods: 'GET', route: '/api/users/{id}')]
     public function getUser($request, $response, $args)
     {
         $userId = $args['id'];
         return send($response, '用户详情', ['id' => $userId]);
     }
 
-    #[Route('GET', '/api/posts/{id}/comments/{comment_id}')]
+    #[Route(methods: 'GET', route: '/api/posts/{id}/comments/{comment_id}')]
     public function getComment($request, $response, $args)
     {
         return send($response, '评论详情', [
@@ -116,13 +116,13 @@ class ApiController
 ```php
 class ApiController
 {
-    #[Route('GET', '/api/users/{id}', 'api.users.show')]
+    #[Route(methods: 'GET', route: '/api/users/{id}', name: 'api.users.show')]
     public function getUser($request, $response, $args)
     {
         return send($response, '用户详情');
     }
 
-    #[Route('POST', '/api/users', 'api.users.store')]
+    #[Route(methods: 'POST', route: '/api/users', name: 'api.users.store')]
     public function createUser($request, $response, $args)
     {
         return send($response, '用户创建成功');
@@ -136,14 +136,14 @@ class ApiController
 class ApiController
 {
     // 需要认证（默认）
-    #[Route('GET', '/api/profile')]
+    #[Route(methods: 'GET', route: '/api/profile')]
     public function getProfile($request, $response, $args)
     {
         return send($response, '用户资料');
     }
 
     // 无需认证
-    #[Route('GET', '/api/public', '', null, false)]
+    #[Route(methods: 'GET', route: '/api/public', name: '', middleware: null, auth: false)]
     public function publicApi($request, $response, $args)
     {
         return send($response, '公开接口');
@@ -175,7 +175,7 @@ use Core\Route\Attribute\RouteGroup;
 )]
 class ApiV1Controller
 {
-    #[Route('GET', '/users')]
+    #[Route(methods: 'GET', route: '/users')]
     public function getUsers($request, $response, $args)
     {
         // 实际路径：GET /api/v1/users
@@ -183,7 +183,7 @@ class ApiV1Controller
         return send($response, '用户列表');
     }
 
-    #[Route('GET', '/posts')]
+    #[Route(methods: 'GET', route: '/posts')]
     public function getPosts($request, $response, $args)
     {
         // 实际路径：GET /api/v1/posts
@@ -207,14 +207,14 @@ use Core\Permission\PermissionMiddleware;
 )]
 class AdminController
 {
-    #[Route('GET', '/users')]
+    #[Route(methods: 'GET', route: '/users')]
     public function getUsers($request, $response, $args)
     {
         // 自动应用 AuthMiddleware 和 PermissionMiddleware 中间件
         return send($response, '管理员用户列表');
     }
 
-    #[Route('PUT', '/settings')]
+    #[Route(methods: 'PUT', route: '/settings')]
     public function updateSettings($request, $response, $args)
     {
         // 自动应用 AuthMiddleware 和 PermissionMiddleware 中间件
@@ -234,14 +234,14 @@ class AdminController
 )]
 class PublicController
 {
-    #[Route('GET', '/info')]
+    #[Route(methods: 'GET', route: '/info')]
     public function getInfo($request, $response, $args)
     {
         // 无需认证
         return send($response, '公开信息');
     }
 
-    #[Route('GET', '/profile', null, true)]  // 覆盖组设置，需要认证
+    #[Route(methods: 'GET', route: '/profile', name: null, auth: true)]  // 覆盖组设置，需要认证
     public function getProfile($request, $response, $args)
     {
         // 需要认证
@@ -276,7 +276,7 @@ use Core\Auth\AuthMiddleware;
 )]
 class AuthController
 {
-    #[Route('GET', '/profile')]
+    #[Route(methods: 'GET', route: '/profile')]
     public function getProfile($request, $response, $args)
     {
         // 自动应用 auth 中间件
@@ -295,7 +295,7 @@ use App\Middleware\ThrottleMiddleware;
 )]
 class AdminController
 {
-    #[Route('GET', '/users')]
+    #[Route(methods: 'GET', route: '/users')]
     public function getUsers($request, $response, $args)
     {
         // 自动应用 auth, admin, throttle 中间件
@@ -311,7 +311,7 @@ class AdminController
 ```php
 class ApiController
 {
-    #[Route('GET', '/api/users/{id}', 'api.users.show')]
+    #[Route(methods: 'GET', route: '/api/users/{id}', name: 'api.users.show')]
     public function getUser($request, $response, $args)
     {
         return send($response, '用户详情');
@@ -353,7 +353,7 @@ class UserController
 ```php
 class ApiController
 {
-    #[Route('GET', '/api/search')]
+    #[Route(methods: 'GET', route: '/api/search')]
     public function search($request, $response, $args)
     {
         // 查询参数
@@ -363,7 +363,7 @@ class ApiController
         return send($response, '搜索结果', ['keyword' => $keyword]);
     }
 
-    #[Route('POST', '/api/users')]
+    #[Route(methods: 'POST', route: '/api/users')]
     public function createUser($request, $response, $args)
     {
         // POST 数据
@@ -372,7 +372,7 @@ class ApiController
         return send($response, '用户创建成功', $data);
     }
 
-    #[Route('POST', '/api/upload')]
+    #[Route(methods: 'POST', route: '/api/upload')]
     public function upload($request, $response, $args)
     {
         // 上传文件
@@ -429,7 +429,7 @@ use Core\Handlers\ExceptionValidator;
 class UserApiController
 {
     // 获取用户列表
-    #[Route('GET', '/users')]
+    #[Route(methods: 'GET', route: '/users')]
     public function index($request, $response, $args)
     {
         $users = User::all();
@@ -437,7 +437,7 @@ class UserApiController
     }
 
     // 获取单个用户
-    #[Route('GET', '/users/{id}')]
+    #[Route(methods: 'GET', route: '/users/{id}')]
     public function show($request, $response, $args)
     {
         $user = User::find($args['id']);
@@ -450,7 +450,7 @@ class UserApiController
     }
 
     // 创建用户
-    #[Route('POST', '/users')]
+    #[Route(methods: 'POST', route: '/users')]
     public function store($request, $response, $args)
     {
         $data = $request->getParsedBody();
@@ -475,7 +475,7 @@ class UserApiController
     }
 
     // 更新用户
-    #[Route('PUT', '/users/{id}')]
+    #[Route(methods: 'PUT', route: '/users/{id}')]
     public function update($request, $response, $args)
     {
         $user = User::find($args['id']);
@@ -491,7 +491,7 @@ class UserApiController
     }
 
     // 删除用户
-    #[Route('DELETE', '/users/{id}')]
+    #[Route(methods: 'DELETE', route: '/users/{id}')]
     public function destroy($request, $response, $args)
     {
         $user = User::find($args['id']);
@@ -525,10 +525,10 @@ class UserController {}
 // ❌ 避免：混合功能
 class MixedController
 {
-    #[Route('GET', '/api/users')]
+    #[Route(methods: 'GET', route: '/api/users')]
     public function getUsers() {}
     
-    #[Route('GET', '/api/orders')]  // 不相关
+    #[Route(methods: 'GET', route: '/api/orders')]  // 不相关
     public function getOrders() {}
 }
 ```
@@ -537,7 +537,7 @@ class MixedController
 
 ```php
 // ✅ 推荐：在方法内进行参数验证
-#[Route('GET', '/api/users/{id}')]
+#[Route(methods: 'GET', route: '/api/users/{id}')]
 public function getUser($request, $response, $args)
 {
     // 验证参数类型
@@ -587,7 +587,7 @@ use App\Middleware\ThrottleMiddleware;
 )]
 class AdminController
 {
-    #[Route('POST', '/users')]
+    #[Route(methods: 'POST', route: '/users')]
     public function createUser($request, $response, $args)
     {
         // 自动应用所有中间件
