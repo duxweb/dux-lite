@@ -71,7 +71,8 @@ export default defineConfig({
             { text: '路由', link: '/reference/api/routing' },
             { text: '控制器', link: '/reference/api/controllers' },
             { text: '中间件', link: '/reference/api/middleware' },
-            { text: '响应处理', link: '/reference/api/responses' }
+            { text: '响应处理', link: '/reference/api/responses' },
+            { text: 'OpenAPI文档', link: '/reference/api/openapi' }
           ]
         },
         {
@@ -79,7 +80,6 @@ export default defineConfig({
           items: [
             { text: '路由', link: '/reference/template/routing' },
             { text: '控制器', link: '/reference/template/controllers' },
-            { text: '响应处理', link: '/reference/template/responses' },
             { text: '视图模板', link: '/reference/template/views' },
             { text: '前端集成', link: '/reference/template/frontend' }
           ]
@@ -95,7 +95,8 @@ export default defineConfig({
         {
           text: '数据处理',
           items: [
-            { text: '数据库', link: '/reference/data/database' },
+            { text: '数据模型', link: '/reference/data/database' },
+            { text: '自动同步', link: '/reference/data/auto-migration' },
             { text: '数据验证', link: '/reference/data/validation' },
             { text: '缓存系统', link: '/reference/data/cache' }
           ]
@@ -120,7 +121,7 @@ export default defineConfig({
         {
           text: '核心架构',
           items: [
-            { text: '应用架构', link: '/reference/core/architecture' },
+            { text: '应用核心类', link: '/reference/core/app' },
             { text: '属性注解', link: '/reference/core/attributes' },
             { text: '异常处理', link: '/reference/core/exceptions' },
             { text: '辅助工具', link: '/reference/core/helpers' }

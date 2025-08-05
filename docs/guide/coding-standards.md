@@ -6,7 +6,7 @@ DuxLite 框架的核心编码约定和开发建议。
 
 ### 模型数据转换
 
-所有模型必须实现 `transform()` 方法统一数据输出：
+所有模型建议实现 `transform()` 方法统一数据输出：
 
 ```php
 class User extends Model
@@ -65,10 +65,10 @@ class UserController extends Resources
 ### 路由中间件
 
 ```php
-#[Route(methods: 'GET', pattern: '/users', middleware: ['auth'])]
+#[Route(methods: 'GET', route: '/users')]
 public function index(): ResponseInterface
 {
-    // 需要认证的路由
+    // 路由示例
 }
 ```
 

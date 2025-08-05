@@ -1,42 +1,26 @@
 # 事件系统
 
-DuxLite 提供了强大而灵活的事件系统，基于 Symfony EventDispatcher 组件，支持事件监听、分发和自定义事件。
+DuxLite 基于 Symfony EventDispatcher 提供事件系统，支持注解监听器和事件分发。
 
-## 基本概念
+## 事件的作用
 
-### 设计理念
+事件系统采用发布-订阅模式，实现代码解耦和扩展性：
 
-DuxLite 的事件系统采用发布-订阅模式：
+- **解耦业务逻辑**：将复杂的业务处理分散到不同的监听器中
+- **可扩展性**：无需修改核心代码即可添加新功能
+- **异步处理**：配合队列系统处理耗时操作
+- **生命周期钩子**：在模型和控制器的关键节点插入自定义逻辑
 
-```
-事件触发 → 事件调度器 → 匹配监听器 → 执行回调函数 → 返回结果
-```
+## 核心组件
 
-### 核心组件
+- **Event**：事件调度器 (`Core\Event\Event`)
+- **Listener**：监听器注解 (`Core\Event\Attribute\Listener`)
+- **DatabaseEvent**：数据库模型事件 (`Core\Database\DatabaseEvent`)
+- **ResourcesEvent**：资源控制器事件 (`Core\Resources\ResourcesEvent`)
 
-- **Event**：事件调度器，继承自 Symfony EventDispatcher
-- **Listener**：事件监听器注解，用于声明事件监听方法
-- **DatabaseEvent**：数据库模型事件
-- **ResourcesEvent**：资源路由事件
+## 使用方法
 
-## 基础用法
-
-### 事件触发
-
-```php
-use Core\App;
-
-// 触发简单事件
-App::event()->dispatch('user.login', $user);
-
-// 触发带事件对象的事件
-$event = new UserLoginEvent($user);
-App::event()->dispatch($event, 'user.login');
-```
-
-### 事件监听
-
-#### 1. 注解监听器（推荐）
+### 注解监听器
 
 使用 `#[Listener]` 注解声明监听器：
 
@@ -48,595 +32,217 @@ class UserEventListener
     #[Listener('user.login')]
     public function handleUserLogin($user): void
     {
-        // 记录登录日志
-        $this->logUserActivity($user, 'login');
-
-        // 更新最后登录时间
-        $user->update(['last_login_at' => now()]);
+        // 用户登录处理
     }
 
     #[Listener('user.register', priority: 10)]
     public function handleUserRegister($user): void
     {
-        // 发送欢迎邮件（高优先级）
-        $this->sendWelcomeEmail($user);
-    }
-
-    #[Listener('user.logout')]
-    public function handleUserLogout($user): void
-    {
-        // 清理用户缓存
-        $this->clearUserCache($user);
+        // 用户注册处理（priority 参数设置优先级）
     }
 }
 ```
 
-#### 2. 编程式监听器
-
-在应用模块中手动注册监听器：
+### 编程式监听器
 
 ```php
-use Core\App\AppExtend;
-use Core\Bootstrap;
+use Core\App;
 
-class UserApp extends AppExtend
-{
-    public function register(Bootstrap $bootstrap): void
-    {
-        // 使用闭包监听器
-        App::event()->addListener('user.created', function ($user) {
-            // 新用户创建后处理
-            $this->assignDefaultRole($user);
-        });
-
-        // 使用类方法监听器
-        App::event()->addListener('order.completed', [
-            new OrderNotificationService(),
-            'handleOrderCompletion'
-        ], 5); // 优先级为 5
-    }
-}
+// 添加监听器
+App::event()->addListener('user.created', function ($user) {
+    // 处理逻辑
+});
 ```
 
-### 监听器优先级
-
-监听器支持优先级设置，数字越小优先级越高：
+### 事件触发
 
 ```php
-class EventListener
-{
-    #[Listener('user.login', priority: 1)]  // 最高优先级
-    public function validateUser($user): void
-    {
-        // 用户验证（优先执行）
-    }
+use Core\App;
 
-    #[Listener('user.login', priority: 5)]  // 中等优先级
-    public function logActivity($user): void
-    {
-        // 记录活动日志
-    }
+// 触发事件
+App::event()->dispatch('user.login', $user);
 
-    #[Listener('user.login', priority: 10)] // 较低优先级
-    public function updateStats($user): void
-    {
-        // 更新统计数据（最后执行）
-    }
-}
+// 触发带多个参数的事件
+App::event()->dispatch('order.completed', $order, $user);
 ```
 
-## 内置事件系统
+## 框架提供的全局事件
 
 ### 数据库模型事件
 
-DuxLite 自动为所有模型提供生命周期事件：
+模型自动触发事件，使用 `model.类名` 格式监听：
 
 ```php
-use Core\Database\Model;
-use Core\Event\Attribute\Listener;
-
-class User extends Model
-{
-    protected static function boot()
-    {
-        parent::boot();
-
-        // 模型内部事件监听
-        static::creating(function ($user) {
-            $user->uuid = Str::uuid();
-        });
-
-        static::created(function ($user) {
-            // 用户创建后自动触发事件
-            App::event()->dispatch('user.created', $user);
-        });
-    }
-}
-
-// 外部事件监听器
 class UserModelListener
 {
     #[Listener('model.App\Models\User')]
     public function handleUserModelEvents(DatabaseEvent $event): void
     {
-        // 监听用户模型的所有事件
         $event->creating(function ($user) {
             // 创建前处理
-            $user->status = 'active';
         });
 
         $event->created(function ($user) {
             // 创建后处理
-            $this->sendWelcomeNotification($user);
         });
 
         $event->updating(function ($user) {
             // 更新前处理
-            $user->updated_by = auth()->id();
         });
 
         $event->deleting(function ($user) {
             // 删除前处理
-            $this->backupUserData($user);
         });
     }
 }
 ```
 
-### 可用的模型事件
+**可用的模型事件方法：**
 
-| 事件 | 触发时机 | 说明 |
-|------|----------|------|
-| `retrieved` | 模型查询后 | 数据从数据库检索后 |
-| `creating` | 创建前 | 模型保存到数据库前（仅新建） |
-| `created` | 创建后 | 模型保存到数据库后（仅新建） |
-| `updating` | 更新前 | 模型更新到数据库前（仅更新） |
-| `updated` | 更新后 | 模型更新到数据库后（仅更新） |
-| `saving` | 保存前 | 模型保存前（创建或更新） |
-| `saved` | 保存后 | 模型保存后（创建或更新） |
-| `deleting` | 删除前 | 模型删除前 |
-| `deleted` | 删除后 | 模型删除后 |
+- `retrieved()` - 检索后
+- `creating()` - 创建前  
+- `created()` - 创建后
+- `updating()` - 更新前
+- `updated()` - 更新后
+- `saving()` - 保存前
+- `saved()` - 保存后
+- `deleting()` - 删除前
+- `deleted()` - 删除后
+- `replicating()` - 复制时
+- `migration()` - 迁移时
 
-### 资源路由事件
+### 资源控制器事件
 
-资源控制器的生命周期事件：
+资源控制器自动触发事件，使用 `resources.控制器类名` 格式监听：
 
 ```php
-use Core\Resources\Action\Resources;
-use Core\Event\Attribute\Listener;
-
 class ProductResourceListener
 {
-    #[Listener('resource.App\Api\Controller\ProductController')]
+    #[Listener('resources.App\Api\Controller\ProductController')]
     public function handleProductResourceEvents(ResourcesEvent $event): void
     {
-        // 查询前处理
+        $event->queryOne(function ($query) {
+            // 单个查询前处理
+            return ['status' => 'active'];
+        });
+        
         $event->queryMany(function ($query) {
-            // 为列表查询添加默认条件
+            // 列表查询前处理
             return ['status' => 'active'];
         });
 
-        // 创建前验证
         $event->createBefore(function ($data) {
-            $this->validateProductData($data);
+            // 创建前验证
         });
 
-        // 创建后处理
-        $event->createAfter(function ($product, $data) {
-            // 清理缓存
-            $this->clearProductCache();
-
-            // 发送通知
-            $this->notifyProductCreated($product);
+        $event->createAfter(function ($model, $data) {
+            // 创建后处理
         });
 
-        // 数据转换
         $event->transform(function ($item) {
-            // 转换输出数据格式
-            return [
-                'id' => $item->id,
-                'name' => $item->name,
-                'price_formatted' => number_format($item->price, 2),
-                'created_at' => $item->created_at->format('Y-m-d H:i:s')
-            ];
+            // 数据转换
+            return $item->toArray();
         });
     }
 }
 ```
 
-### 可用的资源事件
+**可用的资源事件方法：**
 
-| 事件 | 触发时机 | 参数 | 说明 |
-|------|----------|------|------|
-| `queryOne` | 单个查询前 | `$query` | 修改单个资源查询条件 |
-| `queryMany` | 列表查询前 | `$query` | 修改列表查询条件 |
-| `createBefore` | 创建前 | `$data` | 创建前数据验证和处理 |
-| `createAfter` | 创建后 | `$model, $data` | 创建后业务处理 |
-| `editBefore` | 编辑前 | `$model, $data` | 编辑前数据验证 |
-| `editAfter` | 编辑后 | `$model, $data` | 编辑后业务处理 |
-| `delBefore` | 删除前 | `$model` | 删除前检查和备份 |
-| `delAfter` | 删除后 | `$model` | 删除后清理处理 |
-| `transform` | 数据转换 | `$item` | 输出数据格式转换 |
-| `validator` | 数据验证 | `$data` | 自定义验证规则 |
+- `init()` - 初始化
+- `validator()` - 数据验证  
+- `transform()` - 数据转换
+- `format()` - 数据格式化
+- `queryOne()` - 单个查询前
+- `queryMany()` - 列表查询前
+- `query()` - 通用查询前
+- `metaOne()` - 单个元数据
+- `metaMany()` - 列表元数据
+- `createBefore()` - 创建前
+- `createAfter()` - 创建后
+- `editBefore()` - 编辑前
+- `editAfter()` - 编辑后
+- `delBefore()` - 删除前
+- `delAfter()` - 删除后
+- `storeBefore()` - 存储前
+- `storeAfter()` - 存储后
+- `restoreBefore()` - 恢复前
+- `restoreAfter()` - 恢复后
+- `trashBefore()` - 回收前
+- `trashAfter()` - 回收后
 
-## 自定义事件
+## 实际应用示例
 
-### 创建事件类
+### 用户注册流程
 
 ```php
-namespace App\Events;
-
-use Symfony\Contracts\EventDispatcher\Event;
-
-class OrderCompletedEvent extends Event
+class UserRegistrationListener
 {
-    public function __construct(
-        public readonly Order $order,
-        public readonly User $user,
-        public readonly float $amount
-    ) {}
-
-    public function getOrder(): Order
+    #[Listener('user.registered')]
+    public function handleUserRegistered($user): void
     {
-        return $this->order;
+        // 发送欢迎邮件
+        $this->sendWelcomeEmail($user);
+        
+        // 分配默认角色
+        $user->assignRole('member');
+        
+        // 记录注册日志
+        $this->logUserActivity($user, 'registered');
     }
+}
 
-    public function getUser(): User
-    {
-        return $this->user;
-    }
-
-    public function getAmount(): float
-    {
-        return $this->amount;
-    }
+// 在控制器中触发
+public function register($data)
+{
+    $user = User::create($data);
+    
+    // 触发注册事件
+    App::event()->dispatch('user.registered', $user);
+    
+    return $user;
 }
 ```
 
-### 触发自定义事件
-
-```php
-use App\Events\OrderCompletedEvent;
-
-class OrderService
-{
-    public function completeOrder(Order $order): void
-    {
-        // 业务逻辑处理
-        $order->update(['status' => 'completed']);
-
-        // 触发事件
-        $event = new OrderCompletedEvent(
-            order: $order,
-            user: $order->user,
-            amount: $order->total_amount
-        );
-
-        App::event()->dispatch($event, 'order.completed');
-    }
-}
-```
-
-### 监听自定义事件
+### 订单完成处理
 
 ```php
 class OrderEventListener
 {
     #[Listener('order.completed')]
-    public function handleOrderCompleted(OrderCompletedEvent $event): void
+    public function handleOrderCompleted($order): void
     {
-        $order = $event->getOrder();
-        $user = $event->getUser();
-        $amount = $event->getAmount();
-
         // 发送确认邮件
-        $this->sendOrderConfirmation($user, $order);
-
-        // 更新积分
-        $this->updateUserPoints($user, $amount);
-
-        // 库存处理
+        $this->sendOrderConfirmation($order);
+        
+        // 更新库存
         $this->updateInventory($order);
-    }
-
-    #[Listener('order.completed', priority: 5)]
-    public function handleOrderAnalytics(OrderCompletedEvent $event): void
-    {
-        // 更新销售统计
-        $this->updateSalesStats($event->getOrder());
+        
+        // 计算积分
+        $this->calculatePoints($order->user, $order->total);
     }
 }
 ```
 
-## 事件的停止传播
-
-事件可以停止传播，阻止后续监听器执行：
+### 异步事件处理
 
 ```php
-use Symfony\Contracts\EventDispatcher\Event;
-
-class SecurityEventListener
-{
-    #[Listener('user.login', priority: 1)]
-    public function validateSecurity(Event $event, $user): void
-    {
-        if ($this->isBlacklisted($user)) {
-            // 停止事件传播
-            $event->stopPropagation();
-
-            // 抛出异常或记录日志
-            throw new SecurityException('用户已被列入黑名单');
-        }
-    }
-
-    #[Listener('user.login', priority: 10)]
-    public function logLogin($user): void
-    {
-        // 如果前面的监听器停止了传播，这里不会执行
-        $this->logActivity($user, 'login');
-    }
-}
-```
-
-## 异步事件处理
-
-结合队列系统处理耗时的事件：
-
-```php
-use Core\Queue\Queue;
-
 class AsyncEventListener
 {
-    #[Listener('user.registered')]
-    public function handleAsyncTasks($user): void
-    {
-        // 同步处理关键任务
-        $this->assignDefaultRole($user);
-
-        // 异步处理耗时任务
-        Queue::push('email', [
-            'type' => 'welcome',
-            'user_id' => $user->id
-        ]);
-
-        Queue::push('analytics', [
-            'event' => 'user_registered',
-            'user_id' => $user->id,
-            'timestamp' => time()
-        ]);
-    }
-}
-```
-
-## 系统事件
-
-### 应用生命周期事件
-
-| 事件名 | 触发时机 | 数据参数 |
-|--------|----------|----------|
-| `app.created` | 应用创建后 | `['app' => App]` |
-| `app.initialized` | 应用初始化后 | `['app' => App]` |
-| `app.booted` | 应用启动后 | `['app' => App]` |
-| `app.terminated` | 应用终止前 | `['app' => App]` |
-
-### 数据库事件
-
-| 事件名 | 触发时机 | 数据参数 |
-|--------|----------|----------|
-| `database.connected` | 数据库连接后 | `['connection' => string]` |
-| `database.query` | 执行查询后 | `['sql' => string, 'bindings' => array, 'time' => float]` |
-| `database.transaction.begin` | 事务开始 | `['connection' => string]` |
-| `database.transaction.commit` | 事务提交 | `['connection' => string]` |
-| `database.transaction.rollback` | 事务回滚 | `['connection' => string]` |
-
-### 缓存事件
-
-| 事件名 | 触发时机 | 数据参数 |
-|--------|----------|----------|
-| `cache.hit` | 缓存命中 | `['key' => string, 'value' => mixed]` |
-| `cache.miss` | 缓存未命中 | `['key' => string]` |
-| `cache.write` | 缓存写入 | `['key' => string, 'value' => mixed, 'ttl' => int]` |
-| `cache.delete` | 缓存删除 | `['key' => string]` |
-
-### 队列事件
-
-| 事件名 | 触发时机 | 数据参数 |
-|--------|----------|----------|
-| `queue.before` | 任务执行前 | `['job' => QueueMessage]` |
-| `queue.after` | 任务执行后 | `['job' => QueueMessage, 'result' => mixed]` |
-| `queue.failed` | 任务失败 | `['job' => QueueMessage, 'exception' => \Throwable]` |
-| `queue.retrying` | 任务重试 | `['job' => QueueMessage, 'attempt' => int]` |
-
-### 认证事件
-
-| 事件名 | 触发时机 | 数据参数 |
-|--------|----------|----------|
-| `auth.login` | 用户登录 | `['user' => mixed, 'token' => string]` |
-| `auth.logout` | 用户登出 | `['user' => mixed]` |
-| `auth.failed` | 认证失败 | `['credentials' => array, 'error' => string]` |
-| `auth.token.refresh` | 令牌刷新 | `['old_token' => string, 'new_token' => string]` |
-
-### HTTP 事件
-
-| 事件名 | 触发时机 | 数据参数 |
-|--------|----------|----------|
-| `http.request.received` | 收到请求 | `['request' => ServerRequestInterface]` |
-| `http.response.sending` | 发送响应前 | `['request' => ServerRequestInterface, 'response' => ResponseInterface]` |
-| `http.exception` | HTTP 异常 | `['exception' => \Throwable, 'request' => ServerRequestInterface]` |
-
-## API 参考
-
-### Event 类
-
-**命名空间：** `Core\Event\Event`
-
-```php
-public function listen(string $event, callable|string $listener, int $priority = 0): void
-```
-- **参数：**
-  - `$event` - 事件名称
-  - `$listener` - 监听器（回调函数或类名）
-  - `$priority` - 优先级（数字越大优先级越高）
-- **返回：** `void`
-- **说明：** 注册事件监听器
-
-```php
-public function dispatch(string $event, array $data = []): array
-```
-- **参数：**
-  - `$event` - 事件名称
-  - `$data` - 事件数据（可选）
-- **返回：** `array` - 所有监听器的返回值数组
-- **说明：** 分发事件
-
-```php
-public function dispatchUntil(string $event, array $data = []): mixed
-```
-- **参数：**
-  - `$event` - 事件名称
-  - `$data` - 事件数据（可选）
-- **返回：** `mixed` - 第一个非null返回值或null
-- **说明：** 分发事件直到某个监听器返回非null值
-
-```php
-public function hasListeners(string $event): bool
-```
-- **参数：** `$event` - 事件名称
-- **返回：** `bool` - 是否有监听器
-- **说明：** 检查事件是否有监听器
-
-```php
-public function getListeners(string $event): array
-```
-- **参数：** `$event` - 事件名称
-- **返回：** `array` - 监听器数组
-- **说明：** 获取事件的所有监听器
-
-### Listener 注解
-
-**命名空间：** `Core\Event\Attribute\Listener`
-
-```php
-#[\Attribute(\Attribute::TARGET_METHOD | \Attribute::IS_REPEATABLE)]
-class Listener
-{
-    public function __construct(
-        public string $event,
-        public int $priority = 0
-    ) {}
-}
-```
-
-**属性：**
-- `$event` - 事件名称
-- `$priority` - 优先级（数字越大优先级越高）
-
-## 最佳实践
-
-### 1. 事件命名规范
-
-```php
-// ✅ 推荐：使用点号分隔的命名
-'user.created'
-'order.completed'
-'payment.failed'
-'email.sent'
-
-// ✅ 推荐：包含动作和状态
-'user.login.success'
-'user.login.failed'
-'order.status.changed'
-
-// ❌ 不推荐：使用驼峰或下划线
-'userCreated'
-'user_created'
-'OrderCompleted'
-```
-
-### 2. 监听器组织
-
-```php
-// ✅ 推荐：按业务模块组织监听器
-class UserEventListener
-{
-    #[Listener('user.created')]
-    #[Listener('user.updated')]
-    #[Listener('user.deleted')]
-    public function handleUserEvents($user): void
-    {
-        // 用户相关事件处理
-    }
-}
-
-// ✅ 推荐：按功能职责分离监听器
-class EmailNotificationListener
-{
-    #[Listener('user.created')]
-    public function sendWelcomeEmail($user): void {}
-
-    #[Listener('order.completed')]
-    public function sendOrderConfirmation($order): void {}
-}
-
-class AnalyticsListener
-{
-    #[Listener('user.created')]
-    #[Listener('order.completed')]
-    public function trackEvent($data): void {}
-}
-```
-
-### 3. 错误处理
-
-```php
-class RobustEventListener
-{
-    #[Listener('user.created')]
-    public function handleUserCreated($user): void
-    {
-        try {
-            // 业务逻辑
-            $this->sendWelcomeEmail($user);
-        } catch (\Exception $e) {
-            // 记录错误但不影响其他监听器
-            error_log("邮件发送失败: " . $e->getMessage());
-
-            // 可选：使用队列重试
-            Queue::push('email_retry', [
-                'user_id' => $user->id,
-                'type' => 'welcome'
-            ]);
-        }
-    }
-}
-```
-
-### 4. 性能优化
-
-```php
-class OptimizedEventListener
-{
-    #[Listener('order.created')]
-    public function handleOrderCreated($order): void
-    {
-        // ✅ 批量处理而非单个处理
-        static $orders = [];
-        $orders[] = $order;
-
-        // 每 10 个订单批量处理一次
-        if (count($orders) >= 10) {
-            $this->batchProcessOrders($orders);
-            $orders = [];
-        }
-    }
-
     #[Listener('user.activity')]
     public function trackActivity($data): void
     {
-        // ✅ 使用异步队列处理统计
+        // 使用队列异步处理统计
         Queue::push('analytics', $data);
+    }
+    
+    #[Listener('email.send')]
+    public function sendEmailAsync($emailData): void
+    {
+        // 异步发送邮件
+        Queue::push('email', $emailData);
     }
 }
 ```
 
-DuxLite 的事件系统为应用程序提供了强大的解耦机制，通过合理使用事件和监听器，可以构建出灵活、可维护的应用架构。
+DuxLite 事件系统基于 Symfony EventDispatcher，支持注解监听器和事件分发，主要用于模型和资源控制器的生命周期处理。

@@ -41,8 +41,8 @@ return send($response, '获取成功', $users, [
 // 自定义状态码
 return send($response, '创建成功', $newUser, [], 201);
 
-// 错误响应
-return send($response, '操作失败', null, [], 400);
+// 错误情况应该抛出异常，而不是返回错误响应
+throw new \Core\Handlers\ExceptionBusiness('操作失败');
 ```
 
 #### 标准响应格式
@@ -182,9 +182,9 @@ public function getUsers(
 
 ## 错误响应
 
-### 抛出异常
+**推荐做法：直接抛出异常，不建议使用 send() 返回错误响应。**
 
-框架会自动处理异常并返回统一格式：
+框架会自动处理异常并返回统一格式的错误响应：
 
 ```php
 public function deleteUser(
@@ -255,22 +255,24 @@ public function corsResponse(
 
 ## 常用状态码
 
+**成功响应使用 send()：**
 ```php
-// 成功响应
 return send($response, '操作成功', $data, [], 200);      // OK
 return send($response, '创建成功', $data, [], 201);      // Created
 return send($response, '删除成功', null, [], 204);       // No Content
+```
 
+**错误情况直接抛出异常：**
+```php
 // 客户端错误
-return send($response, '请求错误', null, [], 400);       // Bad Request
-return send($response, '未授权', null, [], 401);         // Unauthorized
-return send($response, '禁止访问', null, [], 403);       // Forbidden
-return send($response, '资源不存在', null, [], 404);     // Not Found
-return send($response, '验证失败', $errors, [], 422);    // Unprocessable Entity
-return send($response, '请求过多', null, [], 429);       // Too Many Requests
+throw new \Core\Handlers\ExceptionBusiness('请求参数错误');     // 400 Bad Request
+throw new \Core\Handlers\ExceptionNotAuth('未授权访问');       // 401 Unauthorized  
+throw new \Core\Handlers\ExceptionBusiness('权限不足', 403);   // 403 Forbidden
+throw new \Core\Handlers\ExceptionNotFound('资源不存在');      // 404 Not Found
+throw new \Core\Handlers\ExceptionValidator($errors);         // 422 Validation Error
 
 // 服务器错误
-return send($response, '服务器错误', null, [], 500);     // Internal Server Error
+throw new \Core\Handlers\ExceptionError('系统内部错误');       // 500 Internal Server Error
 ```
 
 ## 响应示例
@@ -348,7 +350,7 @@ return send($response, '服务器错误', null, [], 500);     // Internal Server
 }
 ```
 
-**错误响应**
+**错误响应（由异常自动生成）**
 ```json
 {
   "code": 400,

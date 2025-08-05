@@ -155,14 +155,14 @@ use Psr\Http\Message\ServerRequestInterface;
 
 class HelloController
 {
-    #[Route(methods: 'GET', pattern: '/hello')]
+    #[Route(methods: 'GET', route: '/hello')]
     public function index(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
         $response->getBody()->write('Hello, DuxLite!');
         return $response;
     }
 
-    #[Route(methods: 'GET', pattern: '/hello/{name}')]
+    #[Route(methods: 'GET', route: '/hello/{name}')]
     public function greet(ServerRequestInterface $request, ResponseInterface $response, string $name): ResponseInterface
     {
         $response->getBody()->write("Hello, {$name}!");

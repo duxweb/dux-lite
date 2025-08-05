@@ -281,83 +281,44 @@ throw new \Core\Handlers\ExceptionBusiness('权限不足', 403);
 ## HTTP 方法示例
 
 ```php
-#[RouteGroup(
-    app: 'api',
-    route: '/posts'
-)]
+#[RouteGroup(app: 'api', route: '/posts')]
 class PostController
 {
-    // GET 获取列表
-    #[Route('GET', '')]
-    public function index(
-        ServerRequestInterface $request,
-        ResponseInterface $response,
-        array $args
-    ): ResponseInterface {
+    // GET /posts - 获取列表
+    #[Route(methods: 'GET', route: '')]
+    public function index(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface {
         $posts = Post::paginate(20);
         return send($response, '获取成功', $posts);
     }
     
-    // GET 获取详情
-    #[Route('GET', '/{id}')]
-    public function show(
-        ServerRequestInterface $request,
-        ResponseInterface $response,
-        array $args
-    ): ResponseInterface {
-        $post = Post::find($args['id']);
-        if (!$post) {
-            throw new \Core\Handlers\ExceptionNotFound('文章不存在');
-        }
-        
+    // GET /posts/{id} - 获取详情
+    #[Route(methods: 'GET', route: '/{id}')]
+    public function show(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface {
+        $post = Post::findOrFail($args['id']);
         return send($response, '获取成功', $post->transform());
     }
     
-    // POST 创建
-    #[Route('POST', '')]
-    public function store(
-        ServerRequestInterface $request,
-        ResponseInterface $response,
-        array $args
-    ): ResponseInterface {
+    // POST /posts - 创建
+    #[Route(methods: 'POST', route: '')]
+    public function store(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface {
         $data = $request->getParsedBody();
         $post = Post::create($data);
-        
         return send($response, '创建成功', $post->transform(), [], 201);
     }
     
-    // PUT 更新
-    #[Route('PUT', '/{id}')]
-    public function update(
-        ServerRequestInterface $request,
-        ResponseInterface $response,
-        array $args
-    ): ResponseInterface {
-        $post = Post::find($args['id']);
-        if (!$post) {
-            throw new \Core\Handlers\ExceptionNotFound('文章不存在');
-        }
-        
-        $data = $request->getParsedBody();
-        $post->update($data);
-        
+    // PUT /posts/{id} - 更新
+    #[Route(methods: 'PUT', route: '/{id}')]
+    public function update(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface {
+        $post = Post::findOrFail($args['id']);
+        $post->update($request->getParsedBody());
         return send($response, '更新成功', $post->transform());
     }
     
-    // DELETE 删除
-    #[Route('DELETE', '/{id}')]
-    public function destroy(
-        ServerRequestInterface $request,
-        ResponseInterface $response,
-        array $args
-    ): ResponseInterface {
-        $post = Post::find($args['id']);
-        if (!$post) {
-            throw new \Core\Handlers\ExceptionNotFound('文章不存在');
-        }
-        
+    // DELETE /posts/{id} - 删除
+    #[Route(methods: 'DELETE', route: '/{id}')]
+    public function destroy(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface {
+        $post = Post::findOrFail($args['id']);
         $post->delete();
-        
         return send($response, '删除成功');
     }
 }

@@ -31,14 +31,20 @@ namespace App;
 
 use Core\App\AppExtend;
 use Core\Bootstrap;
+use Core\Route\Route;
+use Core\Auth\AuthMiddleware;
+use Core\Permission\PermissionMiddleware;
 
 class App extends AppExtend
 {
-    public function register(Bootstrap $app): void
+    public function init(Bootstrap $app): void
     {
-        // 注册路由应用
-        \Core\App::route()->set('api', new \Core\Route\Route());
-        \Core\App::route()->set('web', new \Core\Route\Route());
+        // 注册路由应用，并配置中间件
+        \Core\App::route()->set('api', (new Route('/api'))->addMiddleware(
+            new AuthMiddleware('api')
+        ));
+        
+        \Core\App::route()->set('web', new Route());
     }
 }
 ```
@@ -143,7 +149,7 @@ class ApiController
     }
 
     // 无需认证
-    #[Route(methods: 'GET', route: '/api/public', name: '', middleware: null, auth: false)]
+    #[Route(methods: 'GET', route: '/api/public', name: '', auth: false)]
     public function publicApi($request, $response, $args)
     {
         return send($response, '公开接口');
@@ -193,34 +199,38 @@ class ApiV1Controller
 }
 ```
 
-### 带中间件的路由组
+### 管理路由组
 
 ```php
-use Core\Auth\AuthMiddleware;
-use Core\Permission\PermissionMiddleware;
-
 #[RouteGroup(
     app: 'api',
     route: '/api/admin',
-    name: 'admin',
-    middleware: [AuthMiddleware::class, PermissionMiddleware::class]
+    name: 'admin'
 )]
 class AdminController
 {
     #[Route(methods: 'GET', route: '/users')]
     public function getUsers($request, $response, $args)
     {
-        // 自动应用 AuthMiddleware 和 PermissionMiddleware 中间件
         return send($response, '管理员用户列表');
     }
 
     #[Route(methods: 'PUT', route: '/settings')]
     public function updateSettings($request, $response, $args)
     {
-        // 自动应用 AuthMiddleware 和 PermissionMiddleware 中间件
         return send($response, '设置更新成功');
     }
 }
+```
+
+中间件在应用注册时统一配置：
+
+```php
+// App.php
+\Core\App::route()->set('api', (new Route('/api'))->addMiddleware(
+    new AuthMiddleware('api'),
+    new PermissionMiddleware('api', \App\Models\User::class)
+));
 ```
 
 ### 认证控制
@@ -260,49 +270,6 @@ class PublicController
 | `middleware` | `array` | 中间件数组（可选） |
 | `auth` | `bool` | 是否需要认证（默认 true） |
 
-## 中间件
-
-DuxLite 中的中间件通过 RouteGroup 来应用，Route 注解本身不支持单独的中间件参数。
-
-### 路由组中间件
-
-```php
-use Core\Auth\AuthMiddleware;
-
-#[RouteGroup(
-    app: 'api',
-    route: '/api/auth',
-    middleware: [AuthMiddleware::class]
-)]
-class AuthController
-{
-    #[Route(methods: 'GET', route: '/profile')]
-    public function getProfile($request, $response, $args)
-    {
-        // 自动应用 auth 中间件
-        return send($response, '用户资料');
-    }
-}
-
-use Core\Auth\AuthMiddleware;
-use Core\Permission\PermissionMiddleware;
-use App\Middleware\ThrottleMiddleware;
-
-#[RouteGroup(
-    app: 'api',
-    route: '/api/admin',
-    middleware: [AuthMiddleware::class, PermissionMiddleware::class, ThrottleMiddleware::class]
-)]
-class AdminController
-{
-    #[Route(methods: 'GET', route: '/users')]
-    public function getUsers($request, $response, $args)
-    {
-        // 自动应用 auth, admin, throttle 中间件
-        return send($response, '管理员用户列表');
-    }
-}
-```
 
 ## 命名路由
 
@@ -400,207 +367,5 @@ class ApiController
         // 成功响应
         return send($response, '获取成功', $users);
     }
-
-    public function createUser($request, $response, $args)
-    {
-        // 创建成功
-        return send($response, '创建成功', $user, [], 201);
-    }
 }
 ```
-
-
-## 完整示例
-
-以下是一个完整的用户 API 控制器示例，展示了路由定义、数据验证和异常处理：
-
-```php
-use Core\Route\Attribute\Route;
-use Core\Route\Attribute\RouteGroup;
-use Core\Handlers\ExceptionBusiness;
-use Core\Handlers\ExceptionNotFound;
-use Core\Handlers\ExceptionValidator;
-
-#[RouteGroup(
-    app: 'api',
-    route: '/api/v1',
-    name: 'api.v1'
-)]
-class UserApiController
-{
-    // 获取用户列表
-    #[Route(methods: 'GET', route: '/users')]
-    public function index($request, $response, $args)
-    {
-        $users = User::all();
-        return send($response, '获取成功', $users);
-    }
-
-    // 获取单个用户
-    #[Route(methods: 'GET', route: '/users/{id}')]
-    public function show($request, $response, $args)
-    {
-        $user = User::find($args['id']);
-        
-        if (!$user) {
-            throw new ExceptionNotFound('用户不存在');
-        }
-        
-        return send($response, '获取成功', $user);
-    }
-
-    // 创建用户
-    #[Route(methods: 'POST', route: '/users')]
-    public function store($request, $response, $args)
-    {
-        $data = $request->getParsedBody();
-        
-        // 数据验证
-        $validator = new Validator($data, [
-            'username' => ['required', 'minLength:3'],
-            'email' => ['required', 'email']
-        ]);
-        
-        if (!$validator->validate()) {
-            throw new ExceptionValidator($validator->errors());
-        }
-        
-        // 检查邮箱是否已存在
-        if (User::where('email', $data['email'])->exists()) {
-            throw new ExceptionBusiness('邮箱已被使用');
-        }
-        
-        $user = User::create($data);
-        return send($response, '创建成功', $user, [], 201);
-    }
-
-    // 更新用户
-    #[Route(methods: 'PUT', route: '/users/{id}')]
-    public function update($request, $response, $args)
-    {
-        $user = User::find($args['id']);
-        
-        if (!$user) {
-            throw new ExceptionNotFound('用户不存在');
-        }
-        
-        $data = $request->getParsedBody();
-        $user->update($data);
-        
-        return send($response, '更新成功', $user);
-    }
-
-    // 删除用户
-    #[Route(methods: 'DELETE', route: '/users/{id}')]
-    public function destroy($request, $response, $args)
-    {
-        $user = User::find($args['id']);
-        
-        if (!$user) {
-            throw new ExceptionNotFound('用户不存在');
-        }
-        
-        // 检查是否可以删除
-        if ($user->is_admin) {
-            throw new ExceptionBusiness('不能删除管理员用户');
-        }
-        
-        $user->delete();
-        return send($response, '删除成功');
-    }
-}
-```
-
-> **异常处理说明**：示例中使用了 DuxLite 的异常系统来处理各种错误情况。框架会自动将异常转换为对应的 HTTP 响应。更多异常处理详情请参考：[异常处理系统](/reference/core/exceptions)
-
-## 最佳实践
-
-### 1. 路由组织
-
-```php
-// ✅ 推荐：按功能分组
-#[RouteGroup(app: 'api', route: '/api/users', name: 'api.users')]
-class UserController {}
-
-// ❌ 避免：混合功能
-class MixedController
-{
-    #[Route(methods: 'GET', route: '/api/users')]
-    public function getUsers() {}
-    
-    #[Route(methods: 'GET', route: '/api/orders')]  // 不相关
-    public function getOrders() {}
-}
-```
-
-### 2. 参数验证
-
-```php
-// ✅ 推荐：在方法内进行参数验证
-#[Route(methods: 'GET', route: '/api/users/{id}')]
-public function getUser($request, $response, $args)
-{
-    // 验证参数类型
-    if (!is_numeric($args['id'])) {
-        throw new ExceptionBusiness('用户ID必须为数字');
-    }
-    
-    $userId = (int) $args['id']; // 安全转换
-}
-```
-
-### 3. 异常处理
-
-```php
-// ✅ 推荐：直接抛出异常，让框架处理
-if (!$user) {
-    throw new ExceptionNotFound('用户不存在');
-}
-
-if ($user->status === 'banned') {
-    throw new ExceptionBusiness('用户已被禁用');
-}
-
-if (!$validator->validate()) {
-    throw new ExceptionValidator($validator->errors());
-}
-```
-
-> 详细的异常处理机制请参考：[异常处理系统](/reference/core/exceptions)
-
-### 4. 中间件顺序
-
-```php
-// ✅ 推荐：在 RouteGroup 中合理安排中间件顺序
-use Core\Auth\AuthMiddleware;
-use Core\Permission\PermissionMiddleware;
-use App\Middleware\ThrottleMiddleware;
-
-#[RouteGroup(
-    app: 'api',
-    route: '/api/admin',
-    middleware: [
-        AuthMiddleware::class,      // 先认证
-        PermissionMiddleware::class,     // 再授权
-        ThrottleMiddleware::class   // 最后限流
-    ]
-)]
-class AdminController
-{
-    #[Route(methods: 'POST', route: '/users')]
-    public function createUser($request, $response, $args)
-    {
-        // 自动应用所有中间件
-    }
-}
-```
-
-### 5. 响应格式
-
-```php
-// ✅ 推荐：统一格式
-return send($response, '操作成功', $data);
-return send($response, '创建成功', $data, [], 201);
-```
-
-DuxLite 的路由系统简单易用，通过注解就能快速定义 API 路由，让开发更加高效。

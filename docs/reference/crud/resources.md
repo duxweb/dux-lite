@@ -2,6 +2,45 @@
 
 资源控制器是 DuxLite 的核心特性，通过 `#[Resource]` 注解和 `Resources` 基类，快速实现标准化的 CRUD 操作。
 
+## 应用注册
+
+在使用资源控制器之前，必须先在应用中注册资源：
+
+```php
+// App.php
+use Core\App\AppExtend;
+use Core\Bootstrap;
+use Core\Resources\Resource;
+use Core\Auth\AuthMiddleware;
+use Core\Permission\PermissionMiddleware;
+
+class App extends AppExtend
+{
+    public function init(Bootstrap $app): void
+    {
+        // 初始化资源
+        \Core\App::resource()->set(
+            "admin",
+            (new Resource(
+                'admin',
+                '/admin'
+            ))->addAuthMiddleware(
+                new AuthMiddleware("admin"),
+                new PermissionMiddleware("admin", \App\Models\User::class)
+            )
+        );
+    }
+}
+```
+
+配置文件注册：
+```toml
+# config/app.toml
+registers = [
+    "App\\App"
+]
+```
+
 ## 基本概念
 
 ### 设计理念
@@ -446,7 +485,7 @@ class UserController extends Resources
     /**
      * 导出用户数据
      */
-    #[Action(['GET'], '/export', name: 'export')]
+    #[Action(methods: 'GET', route: '/export', name: 'export')]
     public function export(
         ServerRequestInterface $request,
         ResponseInterface $response,
@@ -463,7 +502,7 @@ class UserController extends Resources
     /**
      * 批量激活用户
      */
-    #[Action(['PUT'], '/batch-activate', name: 'batchActivate')]
+    #[Action(methods: 'PUT', route: '/batch-activate', name: 'batchActivate')]
     public function batchActivate(
         ServerRequestInterface $request,
         ResponseInterface $response,
@@ -486,7 +525,7 @@ class UserController extends Resources
     /**
      * 修改用户密码
      */
-    #[Action(['PUT'], '/{id}/password', name: 'changePassword')]
+    #[Action(methods: 'PUT', route: '/{id}/password', name: 'changePassword')]
     public function changePassword(
         ServerRequestInterface $request,
         ResponseInterface $response,
@@ -529,7 +568,7 @@ class UserController extends Resources
 class UserController extends Resources
 {
     // 需要权限检查
-    #[Action(['GET'], '/statistics', name: 'statistics', can: true)]
+    #[Action(methods: 'GET', route: '/statistics', name: 'statistics', can: true)]
     public function getStatistics(...): ResponseInterface
     {
         // 需要 admin.users.statistics 权限
@@ -537,7 +576,7 @@ class UserController extends Resources
     }
 
     // 跳过权限检查
-    #[Action(['GET'], '/public-info', name: 'publicInfo', can: false)]
+    #[Action(methods: 'GET', route: '/public-info', name: 'publicInfo', can: false)]
     public function getPublicInfo(...): ResponseInterface
     {
         // 不需要权限，但仍需要认证
@@ -545,7 +584,7 @@ class UserController extends Resources
     }
 
     // 跳过认证和权限
-    #[Action(['GET'], '/status', name: 'status', auth: false, can: false)]
+    #[Action(methods: 'GET', route: '/status', name: 'status', auth: false, can: false)]
     public function getStatus(...): ResponseInterface
     {
         // 完全公开的接口
@@ -645,7 +684,7 @@ class ProductController extends Resources
     /**
      * 批量上架
      */
-    #[Action(['POST'], '/batch-publish', name: 'batchPublish')]
+    #[Action(methods: 'POST', route: '/batch-publish', name: 'batchPublish')]
     public function batchPublish(
         ServerRequestInterface $request,
         ResponseInterface $response,

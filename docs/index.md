@@ -9,10 +9,10 @@ hero:
   actions:
     - theme: brand
       text: 快速开始
-      link: /guide/getting-started
+      link: /guide/quick-start
     - theme: alt
-      text: API 文档
-      link: /api/introduction
+      text: API 参考
+      link: /reference/api/routing
     - theme: alt
       text: 开发指南
       link: /guide/overview

@@ -2,6 +2,54 @@
 
 资源路由通过 `#[Resource]` 注解自动生成标准的 RESTful 路由，并集成认证中间件和权限控制。
 
+## 路由注册
+
+### 资源应用注册
+
+在使用资源路由之前，必须先在应用中注册资源：
+
+```php
+// App.php
+use Core\App\AppExtend;
+use Core\Bootstrap;
+use Core\Resources\Resource;
+use Core\Auth\AuthMiddleware;
+use Core\Permission\PermissionMiddleware;
+
+class App extends AppExtend
+{
+    public function init(Bootstrap $app): void
+    {
+        // 初始化资源，配置认证和权限中间件
+        \Core\App::resource()->set(
+            "admin",
+            (new Resource(
+                'admin',
+                '/admin'
+            ))->addAuthMiddleware(
+                new AuthMiddleware("admin"),
+                new PermissionMiddleware("admin", \App\Models\User::class)
+            )
+        );
+
+        // 注册其他路由
+        \Core\App::route()->set("web", new \Core\Route\Route(""));
+        \Core\App::route()->set("api", new \Core\Route\Route("/api"));
+    }
+}
+```
+
+### 配置文件
+
+在 `config/app.toml` 中注册应用：
+
+```toml
+# 应用注册
+registers = [
+    "App\\App"
+]
+```
+
 ## 基本概念
 
 ### 自动路由生成
@@ -15,8 +63,7 @@ use Core\Auth\AuthMiddleware;
 #[Resource(
     app: 'admin',
     route: '/admin/users',
-    name: 'users',
-    middleware: [AuthMiddleware::class]  // 必须添加认证中间件
+    name: 'users'
 )]
 class UserController extends Resources
 {
@@ -48,7 +95,6 @@ class UserController extends Resources
     route: '/admin/users',                     // 资源路由前缀
     name: 'users',                            // 资源名称
     actions: ['list', 'show', 'create'],     // 可选：限制启用的操作
-    middleware: [AuthMiddleware::class],      // 必需：认证中间件
     softDelete: true                          // 可选：启用软删除功能
 )]
 ```
@@ -61,44 +107,82 @@ class UserController extends Resources
 | **route** | `string` | ✅ | 资源路由前缀，所有操作都会基于此路径 |
 | **name** | `string` | ✅ | 资源名称，用于生成路由名和权限标识 |
 | **actions** | `array\|false` | ❌ | 启用的操作列表，默认全部，`false` 禁用所有 |
-| **middleware** | `array` | ❌ | 中间件列表，**建议添加认证中间件** |
 | **softDelete** | `bool` | ❌ | 是否启用软删除，默认 `false` |
 
 ## 认证中间件集成
 
-### 必须使用认证中间件
+### AuthMiddleware 认证中间件
 
-资源路由依赖于认证中间件来保护接口安全：
+`AuthMiddleware` 负责验证用户身份和认证状态：
 
 ```php
 use Core\Auth\AuthMiddleware;
-use Core\Permission\PermissionMiddleware;
 
-#[Resource(
-    app: 'admin',
-    route: '/admin/users',
-    name: 'users',
-    middleware: [
-        AuthMiddleware::class,           // 必需：用户认证
-        PermissionMiddleware::class      // 可选：权限检查
-    ]
-)]
-class UserController extends Resources
-{
-    // 所有 CRUD 操作都需要认证
-}
+// 基本用法
+new AuthMiddleware($guard)
+
+// 参数说明：
+// $guard - 认证守卫名称，用于区分不同的认证系统
+//   如：'admin'（管理后台）、'api'（API接口）、'member'（会员系统）
 ```
 
-### 中间件执行顺序
+**认证流程**：
+1. 检查请求中的认证信息（Token、Session等）
+2. 验证认证信息的有效性
+3. 将认证用户信息注入到请求上下文
+4. 认证失败时返回401错误
 
-中间件按照数组顺序执行：
+### PermissionMiddleware 权限中间件
+
+`PermissionMiddleware` 负责检查用户是否有执行当前操作的权限：
 
 ```php
-middleware: [
-    AuthMiddleware::class,        // 1. 先认证用户身份
-    PermissionMiddleware::class,  // 2. 再检查操作权限
-    CustomMiddleware::class       // 3. 最后执行自定义逻辑
-]
+use Core\Permission\PermissionMiddleware;
+
+// 基本用法  
+new PermissionMiddleware($guard, $userModel)
+
+// 参数说明：
+// $guard - 权限守卫名称，与AuthMiddleware保持一致
+// $userModel - 用户模型类，用于权限查询
+//   如：\App\Models\User::class、\App\Models\Admin::class
+```
+
+**权限检查流程**：
+1. 从认证信息中获取用户ID
+2. 根据路由名生成权限标识（如：admin.users.create）
+3. 查询用户是否拥有该权限
+4. 权限不足时返回403错误
+
+### 中间件配置示例
+
+```php
+// 管理后台配置
+\Core\App::resource()->set(
+    "admin",
+    (new Resource('admin', '/admin'))->addAuthMiddleware(
+        new AuthMiddleware("admin"),                              // 管理员认证
+        new PermissionMiddleware("admin", \App\Models\Admin::class) // 管理员权限
+    )
+);
+
+// API接口配置
+\Core\App::resource()->set(
+    "api", 
+    (new Resource('api', '/api'))->addAuthMiddleware(
+        new AuthMiddleware("api"),                               // API认证
+        new PermissionMiddleware("api", \App\Models\User::class)  // 用户权限
+    )
+);
+
+// 会员系统配置
+\Core\App::resource()->set(
+    "member",
+    (new Resource('member', '/member'))->addAuthMiddleware(
+        new AuthMiddleware("member"),                              // 会员认证
+        new PermissionMiddleware("member", \App\Models\Member::class) // 会员权限
+    )
+);
 ```
 
 ## 限制操作范围
@@ -112,8 +196,7 @@ middleware: [
     app: 'api',
     route: '/api/reports',
     name: 'reports',
-    actions: ['list', 'show'],  // 只生成查询相关路由
-    middleware: [AuthMiddleware::class]
+    actions: ['list', 'show']  // 只生成查询相关路由
 )]
 class ReportController extends Resources
 {
@@ -133,14 +216,13 @@ class ReportController extends Resources
     app: 'api',
     route: '/api/tools',
     name: 'tools',
-    actions: false,  // 禁用所有默认操作
-    middleware: [AuthMiddleware::class]
+    actions: false  // 禁用所有默认操作
 )]
 class ToolController extends Resources
 {
     // 不生成任何默认路由，只能使用 Action 注解自定义操作
     
-    #[Action(['GET'], '/status', name: 'status')]
+    #[Action(methods: 'GET', route: '/status', name: 'status')]
     public function getStatus(...): ResponseInterface
     {
         return send($response, '工具状态正常');
@@ -159,8 +241,7 @@ class ToolController extends Resources
     app: 'admin',
     route: '/admin/posts',
     name: 'posts',
-    softDelete: true,  // 启用软删除
-    middleware: [AuthMiddleware::class]
+    softDelete: true  // 启用软删除
 )]
 class PostController extends Resources
 {
@@ -190,8 +271,7 @@ class PostController extends Resources
 #[Resource(
     app: 'admin',        // 应用名
     route: '/admin/users',
-    name: 'users',       // 资源名
-    middleware: [AuthMiddleware::class, PermissionMiddleware::class]
+    name: 'users'       // 资源名
 )]
 class UserController extends Resources
 {
@@ -216,36 +296,6 @@ class UserController extends Resources
 // 会自动检查用户是否有 admin.users.create 权限
 ```
 
-## 路由注册
-
-### 应用注册
-
-确保在应用中注册了路由：
-
-```php
-// App.php
-class App extends AppExtend
-{
-    public function register(Bootstrap $app): void
-    {
-        // 注册路由应用
-        \Core\App::route()->set('admin', new \Core\Route\Route());
-        \Core\App::route()->set('api', new \Core\Route\Route());
-    }
-}
-```
-
-### 配置文件
-
-在 `config/app.toml` 中注册应用：
-
-```toml
-# 应用注册
-registers = [
-    "App\\App"
-]
-```
-
 ## 自定义操作路由
 
 ### Action 注解
@@ -256,15 +306,14 @@ registers = [
 #[Resource(
     app: 'admin',
     route: '/admin/users',
-    name: 'users',
-    middleware: [AuthMiddleware::class]
+    name: 'users'
 )]
 class UserController extends Resources
 {
     /**
      * 导出用户数据
      */
-    #[Action(['GET'], '/export', name: 'export')]
+    #[Action(methods: 'GET', route: '/export', name: 'export')]
     public function export(...): ResponseInterface
     {
         // 完整路径：/admin/users/export
@@ -277,7 +326,7 @@ class UserController extends Resources
     /**
      * 批量操作
      */
-    #[Action(['POST'], '/batch-activate', name: 'batchActivate')]
+    #[Action(methods: 'POST', route: '/batch-activate', name: 'batchActivate')]
     public function batchActivate(...): ResponseInterface
     {
         // 完整路径：/admin/users/batch-activate
@@ -292,21 +341,21 @@ class UserController extends Resources
 
 ```php
 // 需要权限检查（默认）
-#[Action(['GET'], '/export', name: 'export', can: true)]
+#[Action(methods: 'GET', route: '/export', name: 'export', can: true)]
 public function export(...): ResponseInterface
 {
     // 需要 admin.users.export 权限
 }
 
 // 跳过权限检查
-#[Action(['GET'], '/public-info', name: 'publicInfo', can: false)]
+#[Action(methods: 'GET', route: '/public-info', name: 'publicInfo', can: false)]
 public function getPublicInfo(...): ResponseInterface
 {
     // 不需要权限，但仍需要认证
 }
 
 // 跳过认证和权限
-#[Action(['GET'], '/status', name: 'status', auth: false, can: false)]
+#[Action(methods: 'GET', route: '/status', name: 'status', auth: false, can: false)]
 public function getStatus(...): ResponseInterface
 {
     // 完全公开的接口
@@ -318,17 +367,11 @@ public function getStatus(...): ResponseInterface
 ```php
 use Core\Resources\Attribute\Resource;
 use Core\Resources\Attribute\Action;
-use Core\Auth\AuthMiddleware;
-use Core\Permission\PermissionMiddleware;
 
 #[Resource(
     app: 'admin',
     route: '/admin/products',
-    name: 'products',
-    middleware: [
-        AuthMiddleware::class,       // 认证中间件
-        PermissionMiddleware::class  // 权限中间件
-    ]
+    name: 'products'
 )]
 class ProductController extends Resources
 {
@@ -344,7 +387,7 @@ class ProductController extends Resources
     /**
      * 自定义操作：批量上架
      */
-    #[Action(['POST'], '/batch-publish', name: 'batchPublish')]
+    #[Action(methods: 'POST', route: '/batch-publish', name: 'batchPublish')]
     public function batchPublish(...): ResponseInterface
     {
         // 路径：/admin/products/batch-publish
@@ -356,7 +399,7 @@ class ProductController extends Resources
     /**
      * 自定义操作：库存预警（公开接口）
      */
-    #[Action(['GET'], '/stock-alert', name: 'stockAlert', can: false)]
+    #[Action(methods: 'GET', route: '/stock-alert', name: 'stockAlert', can: false)]
     public function stockAlert(...): ResponseInterface
     {
         // 路径：/admin/products/stock-alert

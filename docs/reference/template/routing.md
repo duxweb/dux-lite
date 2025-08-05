@@ -59,7 +59,7 @@ class HomeController
     /**
      * 首页
      */
-    #[Route('GET', '/', name: 'home', app: 'web')]
+    #[Route('GET', '/', name: 'home')]
     public function index(
         ServerRequestInterface $request,
         ResponseInterface $response,
@@ -74,7 +74,7 @@ class HomeController
     /**
      * 关于我们
      */
-    #[Route('GET', '/about', name: 'about', app: 'web')]
+    #[Route('GET', '/about', name: 'about')]
     public function about(
         ServerRequestInterface $request,
         ResponseInterface $response,
@@ -96,7 +96,7 @@ class ArticleController
     /**
      * 文章列表
      */
-    #[Route('GET', '/articles', name: 'articles.list', app: 'web')]
+    #[Route('GET', '/articles', name: 'articles')]
     public function list(
         ServerRequestInterface $request,
         ResponseInterface $response,
@@ -119,7 +119,7 @@ class ArticleController
     /**
      * 文章详情
      */
-    #[Route('GET', '/articles/{id}', name: 'articles.detail', app: 'web')]
+    #[Route('GET', '/articles/{id}', name: 'article')]
     public function detail(
         ServerRequestInterface $request,
         ResponseInterface $response,
@@ -153,7 +153,7 @@ class ContactController
     /**
      * 显示联系表单
      */
-    #[Route('GET', '/contact', name: 'contact.form', app: 'web')]
+    #[Route('GET', '/contact', name: 'contact')]
     public function form(
         ServerRequestInterface $request,
         ResponseInterface $response,
@@ -167,7 +167,7 @@ class ContactController
     /**
      * 处理表单提交
      */
-    #[Route('POST', '/contact', name: 'contact.submit', app: 'web')]
+    #[Route('POST', '/contact', name: 'contact.submit')]
     public function submit(
         ServerRequestInterface $request,
         ResponseInterface $response,
@@ -209,7 +209,7 @@ class ContactController
     /**
      * 提交成功页面
      */
-    #[Route('GET', '/contact/success', name: 'contact.success', app: 'web')]
+    #[Route('GET', '/contact/success', name: 'contact.success')]
     public function success(
         ServerRequestInterface $request,
         ResponseInterface $response,
@@ -230,7 +230,7 @@ class ContactController
 ```php
 class UserController
 {
-    #[Route(['GET', 'POST'], '/profile', name: 'profile', app: 'web')]
+    #[Route(['GET', 'POST'], '/profile', name: 'profile')]
     public function profile(
         ServerRequestInterface $request,
         ResponseInterface $response,
@@ -314,7 +314,7 @@ return redirect($response, '/new-url', 301);
 ### JSON响应（AJAX接口）
 
 ```php
-#[Route('POST', '/api/comments', name: 'api.comments', app: 'web')]
+#[Route('POST', '/api/comments', name: 'api.comments')]
 public function addComment(
     ServerRequestInterface $request,
     ResponseInterface $response,

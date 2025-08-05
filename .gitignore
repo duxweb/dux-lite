@@ -5,6 +5,7 @@ vendor
 uploads
 .cunzhi-memory
 node_modules
+.claude
 
 # duxweb
 client/autoInit.js
