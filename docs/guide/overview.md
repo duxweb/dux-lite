@@ -96,8 +96,8 @@ curl http://localhost:8000/hello
 
 1. **快速入门** → [快速开始](/guide/quick-start)
 2. **核心概念** → [应用生命周期](/guide/lifecycle)
-3. **实战开发** → [路由系统](/core/routing)
-4. **深入学习** → [数据库 ORM](/core/database/eloquent)
+3. **实战开发** → [路由系统](/reference/api/routing)
+4. **深入学习** → [数据库 ORM](/reference/data/database)
 
 ## 社区支持
 

@@ -199,8 +199,8 @@ curl http://localhost:8000/hello/World
 
 - 📖 了解[应用生命周期](/guide/lifecycle)
 - ⚙️ 配置[数据库和缓存](/guide/configuration)
-- 🛣️ 学习[路由系统](/core/routing)
-- 🎯 查看[控制器用法](/core/controllers)
+- 🛣️ 学习[路由系统](/reference/api/routing)
+- 🎯 查看[控制器用法](/reference/api/controllers)
 
 ## 常见问题
 

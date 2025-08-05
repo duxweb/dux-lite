@@ -176,7 +176,7 @@ class UserController extends Resources
 
 ### 数据验证
 
-使用 `validator()` 方法定义验证规则。更多验证规则和使用方法请参考：[数据验证](/reference/core/validation)
+使用 `validator()` 方法定义验证规则。更多验证规则和使用方法请参考：[数据验证](/reference/data/validation)
 
 ```php
 class UserController extends Resources

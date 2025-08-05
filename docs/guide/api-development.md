@@ -100,5 +100,5 @@ throw new ExceptionBusiness('用户不存在', 404);
 
 - 详细的 API 开发文档：[API 参考](/reference/api/routing)
 - 中间件使用：[中间件参考](/reference/api/middleware)
-- 数据验证：[验证器参考](/reference/core/validator)
+- 数据验证：[验证器参考](/reference/data/validation)
 - 错误处理：[异常处理](/reference/api/responses)

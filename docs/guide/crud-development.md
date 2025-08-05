@@ -135,6 +135,6 @@ $adminRoute = new Route('/admin', 'admin', new AuthMiddleware());
 ## 下一步
 
 - 详细的 CRUD 开发文档：[资源控制器参考](/reference/crud/resources)
-- 数据验证：[验证器参考](/reference/core/validator)
-- 模型使用：[模型参考](/reference/core/models)
+- 数据验证：[验证器参考](/reference/data/validation)
+- 数据库使用：[数据库参考](/reference/data/database)
 - 权限控制：[权限参考](/reference/crud/permissions)
