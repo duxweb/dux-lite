@@ -1,10 +1,6 @@
 *.iml
-logs
-data
 vendor
-uploads
 .cunzhi-memory
-node_modules
 .claude
 
 # duxweb
@@ -16,8 +12,8 @@ client/config.json
 config/*.dev.yaml
 
 # compiled output
-/dist
-/node_modules
+dist
+node_modules
 
 # Logs
 logs
