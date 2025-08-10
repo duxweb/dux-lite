@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "private": true,
+  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "vitepress dev",
@@ -14,8 +15,9 @@
   "license": "ISC",
   "packageManager": "pnpm@10.11.0",
   "devDependencies": {
-    "mermaid": "^11.6.0",
-    "vitepress": "^1.6.3",
+    "@duxweb/vitepress-theme": "^1.0.6",
+    "mermaid": "^11.9.0",
+    "vitepress": "^1.6.4",
     "vitepress-plugin-mermaid": "^2.0.17"
   }
 }

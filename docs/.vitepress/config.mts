@@ -136,7 +136,7 @@ export default defineConfig({
 
     footer: {
       message: '基于 MIT 许可证发布',
-      copyright: 'Copyright © 2023-present DuxWeb'
+      copyright: 'Copyright © 2025 DuxWeb'
     },
 
     editLink: {
@@ -144,10 +144,6 @@ export default defineConfig({
       text: '在 GitHub 上编辑此页面'
     },
 
-    search: {
-      provider: 'local',
-    },
-    lastUpdatedText: '最后更新时间',
   },
   markdown: {
     config(md) {
@@ -158,9 +154,13 @@ export default defineConfig({
     plugins: [MermaidPlugin()], // add plugins
     optimizeDeps: { // include mermaid
       include: ['mermaid'],
+      exclude: ['@duxweb/vitepress-theme']
     },
     ssr: {
-      noExternal: ['mermaid'],
+      noExternal: ['mermaid', '@duxweb/vitepress-theme'],
     },
+    build: {
+      cssMinify: false
+    }
   },
 })
