@@ -376,9 +376,6 @@ class App
             $db = self::config("geo")->get("db");
 
             $dbFile = config_path($db ?: '');
-            if (!$dbFile) {
-                $dbFile = __DIR__ . '/Static/ip2region.xdb';
-            }
 
             if ($db && is_file($dbFile)) {
                 $ip2region = XdbSearcher::newWithFileOnly($dbFile);
@@ -391,15 +388,6 @@ class App
             );
         }
         return self::$di->get("geo");
-    }
-
-    public static function getFont(string $font)
-    {
-        $fontName = match($font) {
-            'puhui' => 'AlibabaPuHuiTi-3-55-Regular.ttf',
-            'hanyi' => 'HYQiHei-55S.otf',
-        };
-        return __DIR__ . '/Static/fonts/' . $fontName;
     }
 
     public static function banner(array $data = [], array $extra = [])
