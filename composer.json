@@ -63,7 +63,8 @@
     "enqueue/amqp-lib": "^0.10.19",
     "peppeocchi/php-cron-scheduler": "^4.0",
     "react/event-loop": "^1.5",
-    "composer/composer": "^2.8"
+    "composer/composer": "^2.8",
+    "ezyang/htmlpurifier": "^4.18"
   },
   "require-dev": {
     "pestphp/pest": "^3.5",

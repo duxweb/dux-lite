@@ -147,6 +147,20 @@ if (!function_exists('is_service')) {
     }
 }
 
+if (!function_exists('xss_clear')) {
+    function xss_clear(string $str = ""): string
+    {
+        if (!App::di()->has('htmlPurifier')) {
+            $config = HTMLPurifier_Config::createDefault();
+            $purifier = new HTMLPurifier($config);
+            App::di()->set('htmlPurifier', $purifier);
+        } else {
+            $purifier = App::di()->get('htmlPurifier');
+        }
+        return $purifier->purify($str);
+    }
+}
+
 
 if (!function_exists('__')) {
     function __(string $value, ...$params): string
