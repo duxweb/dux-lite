@@ -102,7 +102,8 @@ class Register
                         pattern: $params["route"] ?? "",
                         callable: $class,
                         name: lcfirst($methodName),
-                        middleware: $params["middleware"] ?? []
+                        middleware: $params["middleware"] ?? [],
+                        priority: (int)($params['priority'] ?? 0)
                     );
                 } else {
                     if (!$appName) {
@@ -114,11 +115,25 @@ class Register
                         pattern: $params["route"] ?? "",
                         callable: $class,
                         name: lcfirst($methodName),
-                        middleware: $params["middleware"] ?? []
+                        middleware: $params["middleware"] ?? [],
+                        priority: (int)($params['priority'] ?? 0)
                     );
                 }
             }
         }
+    }
+
+    /**
+     * 导出所有 App 路由为扁平列表，便于全局排序后统一注册。
+     * @return array
+     */
+    public function exportFlatAll(): array
+    {
+        $all = [];
+        foreach ($this->app as $route) {
+            $all = [...$all, ...$route->exportFlat()];
+        }
+        return $all;
     }
 
     private function parseClass(string $class): array

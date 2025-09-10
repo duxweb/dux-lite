@@ -22,6 +22,7 @@ class Route
         public string       $name = '',
         public ?string      $app = null,
         public bool         $auth = true,
+        public int          $priority = 0,
     )
     {
     }

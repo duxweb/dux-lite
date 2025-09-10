@@ -183,9 +183,23 @@ class Bootstrap
         // 注册计划任务
         App::scheduler()->registerAttribute();
 
-        // 普通路由注册
-        foreach (App::route()->app as $route) {
-            $route->run($this->web);
+        // 普通路由注册（全局扁平化 + 排序，避免通配路由遮蔽静态路由）
+        $flat = App::route()->exportFlatAll();
+        usort($flat, function ($a, $b) {
+            $pa = $a['priority'] ?? 0; $pb = $b['priority'] ?? 0;
+            if ($pa !== $pb) return $pb <=> $pa; // 高优先级在前
+            $sa = $a['score'] ?? 0; $sb = $b['score'] ?? 0;
+            if ($sa !== $sb) return $sb <=> $sa; // 更具体在前
+            return 0;
+        });
+        
+        foreach ($flat as $item) {
+            $r = $this->web->map($item['methods'], $item['pattern'], $item['callable'])
+                ->setName($item['name'])
+                ->setArgument('app', $item['app']);
+            foreach ($item['middleware'] as $mw) {
+                $r->add($mw);
+            }
         }
 
         // 公共路由

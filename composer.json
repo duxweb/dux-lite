@@ -64,7 +64,8 @@
     "peppeocchi/php-cron-scheduler": "^4.0",
     "react/event-loop": "^1.5",
     "composer/composer": "^2.8",
-    "ezyang/htmlpurifier": "^4.18"
+    "ezyang/htmlpurifier": "^4.18",
+    "masterminds/html5": "^2.10"
   },
   "require-dev": {
     "pestphp/pest": "^3.5",

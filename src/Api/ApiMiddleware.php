@@ -21,10 +21,14 @@ class ApiMiddleware
 
     public function __invoke(Request $request, RequestHandler $handler): Response
     {
+        // 内部请求跳过签名/时效校验
+        if ($request->getAttribute('internal')) {
+            return $handler->handle($request);
+        }
 
         // 请求超时
         if (!$this->allowTimestamp($request)) {
-            //throw new ExceptionBusiness('Request Timeout', 408);
+            throw new ExceptionBusiness('Request Timeout', 408);
         }
         // 签名失败
         if (!$this->signVerify($request)) {

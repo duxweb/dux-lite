@@ -81,6 +81,7 @@ export default defineConfig({
             { text: '路由', link: '/reference/template/routing' },
             { text: '控制器', link: '/reference/template/controllers' },
             { text: '视图模板', link: '/reference/template/views' },
+            { text: '扩展标签', link: '/reference/template/preprocessor' },
             { text: '前端集成', link: '/reference/template/frontend' }
           ]
         },

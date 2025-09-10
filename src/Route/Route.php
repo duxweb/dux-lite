@@ -206,8 +206,25 @@ class Route
             "callable" => $callable,
             "name" => $name ? ($this->name ? $this->name . "." . $name : $name) : '',
             "middleware" => $middleware ?: [],
-            "priority" => $priority
+            "priority" => $priority,
+            "score" => $this->computeScore($pattern),
         ];
+    }
+
+    private function computeScore(string $pattern): int
+    {
+        $len = strlen($pattern);
+        $dynamic = 0;
+        $greedyPenalty = 0;
+        // count dynamic tokens: {...} or regex parentheses, wildcards
+        $dynamic += substr_count($pattern, '{');
+        $dynamic += substr_count($pattern, '(');
+        $dynamic += substr_count($pattern, '*');
+        if (str_contains($pattern, '.*')) {
+            $greedyPenalty += 1000;
+        }
+        // higher is better: prefer longer static, fewer dynamics, less greedy
+        return max(0, $len - $dynamic * 10 - $greedyPenalty);
     }
 
     /**
@@ -220,14 +237,14 @@ class Route
     {
         $pattern = $pattern ?: $this->pattern;
         foreach ($this->middleware as $vo) {
-            $middleware[] = get_class($vo);
+            // 保留中间件实例或类名本身，不再转换为类名字符串
+            $middleware[] = $vo;
         }
         $data = [];
         foreach ($this->data as $route) {
             $route["pattern"] = $pattern . $route["pattern"];
-            $routeMiddleware = array_map(function ($item) {
-                return get_class($item);
-            }, $route['middleware']);
+            // 保留路由自身中间件的原始形式（对象或类名）
+            $routeMiddleware = $route['middleware'];
 
             $data[] = [
                 "name" => $route["name"],
@@ -257,14 +274,12 @@ class Route
     {
         $pattern = $pattern ?: $this->pattern;
         foreach ($this->middleware as $vo) {
-            $middleware[] = get_class($vo);
+            $middleware[] = $vo;
         }
         $data = [];
         foreach ($this->data as $route) {
             $route["pattern"] = $pattern . $route["pattern"];
-            $routeMiddleware = array_map(function ($item) {
-                return get_class($item);
-            }, $route['middleware']);
+            $routeMiddleware = $route['middleware'];
 
             $data[] = [
                 "name" => $route["name"],
@@ -287,26 +302,69 @@ class Route
      */
     public function run(RouteCollectorProxy $route): void
     {
-        $dataList = $this->data;
-        $groupList = $this->group;
         $app = $this->app;
-        $route = $route->group($this->pattern, function (RouteCollectorProxy $group) use ($dataList, $groupList, $app) {
-            $priority = array_column($dataList, 'priority');
-            array_multisort($priority, SORT_ASC, $dataList);
-            foreach ($dataList as $item) {
-                $groupRoute = $group->map($item["methods"], $item["pattern"], $item["callable"])->setName($item["name"])->setArgument("app", $app);
-                if ($item['middleware']) {
-                    foreach ($item['middleware'] as $vo) {
-                        $groupRoute->add($vo);
-                    }
-                }
-            }
-            foreach ($groupList as $item) {
-                $item->run($group);
-            }
+        $all = $this->collectAll($this->pattern, []);
+        // Sort globally within this tree: priority DESC, score DESC
+        usort($all, function ($a, $b) {
+            $pa = $a['priority'] ?? 0; $pb = $b['priority'] ?? 0;
+            if ($pa !== $pb) return $pb <=> $pa;
+            $sa = $a['score'] ?? 0; $sb = $b['score'] ?? 0;
+            if ($sa !== $sb) return $sb <=> $sa;
+            return 0;
         });
-        foreach ($this->middleware as $middle) {
-            $route->add($middle);
+        foreach ($all as $item) {
+            $r = $route->map($item['methods'], $item['pattern'], $item['callable'])
+                ->setName($item['name'])
+                ->setArgument('app', $app);
+            foreach ($item['middleware'] as $mw) {
+                $r->add($mw);
+            }
         }
     }
+
+    /**
+     * 扁平导出当前路由树的全部路由，包含完整 pattern 与聚合后的中间件。
+     * 用于全局排序后一次性注册，避免通配路由遮蔽静态路由。
+     *
+     * @return array<int, array{
+     *   app:string, methods:array, pattern:string, callable:mixed, name:string,
+     *   middleware:array, priority:int, score:int
+     * }>
+     */
+    public function exportFlat(): array
+    {
+        return $this->collectAll($this->pattern, []);
+    }
+
+    private function collectAll(string $prefix, array $mwPrefix): array
+    {
+        $out = [];
+        $mwHere = [...$mwPrefix];
+        foreach ($this->middleware as $vo) {
+            $mwHere[] = $vo;
+        }
+        foreach ($this->data as $route) {
+            $pattern = $prefix . $route['pattern'];
+            $routeMw = [...$mwHere];
+            foreach ($route['middleware'] as $m) {
+                $routeMw[] = $m;
+            }
+            $out[] = [
+                'app' => $this->app,
+                'methods' => $route['methods'],
+                'pattern' => $pattern,
+                'callable' => $route['callable'],
+                'name' => $route['name'],
+                'middleware' => $routeMw,
+                'priority' => $route['priority'] ?? 0,
+                'score' => $this->computeScore($pattern),
+            ];
+        }
+        foreach ($this->group as $group) {
+            $out = [...$out, ...$group->collectAll($prefix . $group->pattern, $mwHere)];
+        }
+        return $out;
+    }
+
+    
 }
