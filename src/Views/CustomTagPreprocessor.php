@@ -19,11 +19,11 @@ class CustomTagPreprocessor
     /** @var string[] 允许的标签前缀（按需扩展）。默认支持 'x-' 前缀。*/
     private array $tagPrefixes = ['x-'];
     /**
-     * 可前缀化的内置标签集合（不包含 embed，避免隐式恢复 x-embed）。
+     * 可前缀化的内置标签集合（包含 embed，用于支持 x-embed）。
      * @var string[]
      */
     private array $prefixableTags = [
-        'layout','include','block','empty','if','elseif','else','for','foreach','loop','list','info'
+        'layout','include','embed','block','empty','if','elseif','else','for','foreach','loop','list','info'
     ];
 
     /**
@@ -482,6 +482,10 @@ class CustomTagPreprocessor
         if ($pathSpec !== null) {
             $parts[] = "'path' => " . $pathSpec;
         }
+        $argsSpec = $this->attrCode($node, 'args');
+        if ($argsSpec !== null) {
+            $parts[] = "'args' => " . $argsSpec;
+        }
         $parts[] = "'params' => " . $params;
         $parts[] = "'var' => '" . addslashes($varName) . "'";
         if ($isBlock && $asItem !== null) {
@@ -514,7 +518,7 @@ class CustomTagPreprocessor
         $params = [];
         foreach ($node->attributes as $attr) {
             $name = $attr->nodeName;
-            if (in_array($name, ['as', 'meta', 'data', ':data', 'path', ':path', 'debug'], true)) continue;
+            if (in_array($name, ['as', 'meta', 'data', ':data', 'path', ':path', 'args', ':args', 'debug'], true)) continue;
             $isExpr = str_starts_with($name, ':');
             $key = $isExpr ? substr($name, 1) : $name;
             $value = $attr->nodeValue ?? '';

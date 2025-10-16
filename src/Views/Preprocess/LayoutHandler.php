@@ -11,13 +11,11 @@ class LayoutHandler
 {
     public function __invoke(DOMElement $node, CustomTagPreprocessor $pp): string
     {
-        // 将 <layout ...> 视为 embed：在当前位置嵌入模板并允许块覆盖
+        // 将 <layout ...> 按原生 {layout ...} 语义处理：
+        // 仅注册为文件头部宏。同时为了不强制闭合标签，
+        // 若书写为 <layout ...>（未自闭合），其子节点（实际就是后续内容）继续正常渲染。
         $args = $pp->includeArgsFromEl($node);
-        $inner = $pp->renderChildren($node);
-        // 复用与 Embed 一致的容错：若未声明任何 block，则默认包到 content 块
-        if (!preg_match('/\{\s*block\s+[^}]+\}/', $inner)) {
-            $inner = '{block content}' . $inner . '{/block}';
-        }
-        return '{embed ' . $args . '}' . $inner . '{/embed}';
+        $pp->addLayoutFromArgs($args);
+        return $pp->renderChildren($node);
     }
 }

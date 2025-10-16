@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 namespace Core\Views;
+use ArrayObject;
 use Slim\Psr7\Factory\ServerRequestFactory;
 use Slim\Psr7\Factory\UriFactory;
 use Slim\Psr7\Factory\ResponseFactory;
@@ -27,7 +28,7 @@ class ApiService
     }
 
     /**
-     * @param string $route 传入 data 指定的“类::方法”或“/path/to/Class.php::method”
+     * @param string $route 传入 data 指定的“Class::method”（例如 "\\App\\Content\\Api\\Article::list"）
      * @param array $query  查询参数
      * @param array $pathArgs 路径参数（方法第三参 $args）
      */
@@ -87,16 +88,14 @@ class ApiService
 
         $this->lastError = [
             'exception' => 'InvalidRoute',
-            'message' => 'data must be "Class::method" or "/path/to/Class.php::method"',
+            'message' => 'data must be "Class::method" (e.g. \\App\\Content\\Api\\Article::list)',
             'route' => $route,
             'query' => $query,
         ];
         return [];
     }
 
-    /**
-     * 仅按 data 传入的“类::方法”或“/path/to/Class.php::方法”直接调用。
-     */
+    /** 仅按 data 传入的“Class::method”直接调用。 */
     /**
      * 便捷直调 "Class::method"。
      *
@@ -109,7 +108,7 @@ class ApiService
         if ($cm === null) {
             $this->lastError = [
                 'exception' => 'InvalidTarget',
-                'message' => 'data must be "Class::method" or "/path/to/Class.php::method"',
+                'message' => 'data must be "Class::method" (e.g. \\App\\Content\\Api\\Article::list)',
                 'data' => $methodSpec,
                 'query' => $query,
             ];
@@ -140,26 +139,18 @@ class ApiService
     }
 
     /**
-     * 解析 data="/App/Content/Api/Article::list" 或 "App\\Content\\Api\\Article::list"
-     * 以及 data 传入 PHP 文件路径：例如 "/.../app/Content/Api/Article.php::list"
-     */
-    /**
-     * 解析 "Class::method" 或 "/path/Class.php::method" 为 [class, method]。
+     * 解析 "Class::method" 为 [class, method]。
+     * 仅支持命名空间类名 + 双冒号方法，如 "\\App\\Content\\Api\\Article::list"。
      *
      * @return array{0:string,1:string}|null
      */
     private function parseClassMethodRoute(string $route): ?array
     {
-        // 规范化：去除包裹引号、替换全角冒号、容忍多种分隔符
+        // 规范化：去除包裹引号、替换全角冒号
         $route = trim($route);
         $route = trim($route, "\"' ");
         $route = str_replace('：', ':', $route);
-
-
-        // 兼容 '@'、'->'、'#' 作为方法分隔符
-        if (strpos($route, '::') === false) {
-            $route = str_replace(['@', '->', '#'], '::', $route);
-        }
+        
         if (strpos($route, '::') === false) {
             return null;
         }
@@ -167,22 +158,17 @@ class ApiService
         $classRaw = trim($classRaw);
         $method = trim($method ?: 'list');
 
-        if (str_ends_with($classRaw, '.php')) {
-            $file = $classRaw;
-            if (!is_file($file)) {
-                return null;
-            }
-            $appRoot = \Core\App::$appPath ?? '';
-            if ($appRoot && str_starts_with($file, $appRoot)) {
-                $rel = ltrim(substr($file, strlen($appRoot)), '/\\');
-                $rel = preg_replace('~\.php$~', '', (string)$rel);
-                $rel = str_replace(['/', '\\'], '\\', (string)$rel);
-                $cls = 'App\\' . $rel;
-            } else { return null; }
-            return [$cls, $method];
+        // 仅接受命名空间类，不支持文件路径
+        if ($classRaw === '' || str_ends_with($classRaw, '.php')) {
+            return null;
         }
-        $classRaw = ltrim($classRaw, '/\\');
-        $cls = str_replace('/', '\\', $classRaw);
+        // 允许前导反斜杠，统一为命名空间分隔符
+        $cls = ltrim($classRaw, '\\');
+        // 若意外含有正斜杠，转换为命名空间分隔符（宽松处理）
+        $cls = str_replace('/', '\\', $cls);
+        if ($cls === '') {
+            return null;
+        }
         return [$cls, $method];
     }
 
@@ -286,19 +272,32 @@ class ApiService
             $data = $result['data'] ?? null;
             $meta = $result['meta'] ?? null;
             if ($data !== null || $meta !== null) {
-                return [$data, $meta];
+                return [$this->toArrayObject($data), $this->toArrayObject($meta)];
             }
-            return [$result, null];
+            return [$this->toArrayObject($result), null];
         }
         if (is_object($result)) {
             $data = $result->data ?? null;
             $meta = $result->meta ?? null;
             if ($data !== null || $meta !== null) {
-                return [$data, $meta];
+                return [$this->toArrayObject($data), $this->toArrayObject($meta)];
             }
-            return [$result, null];
+            return [$this->toArrayObject($result), null];
         }
         return [$result, null];
+    }
+
+    /**
+     * 将数组或对象包裹为 ArrayObject(ARRAY_AS_PROPS)，其余原样返回。
+     * 便于在模板中用对象属性或数组下标两种方式访问。
+     */
+    private function toArrayObject(mixed $val): mixed
+    {
+        if ($val === null) return null;
+        if (is_array($val) || is_object($val)) {
+            return new ArrayObject($val, ArrayObject::ARRAY_AS_PROPS);
+        }
+        return $val;
     }
 
     /**

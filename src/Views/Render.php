@@ -50,6 +50,26 @@ class Render
                 }
             }
         }
+        // 合并显式 args 属性传入的参数（显式 > path 提取）
+        if (isset($xt['args'])) {
+            $manual = $xt['args'];
+            if ($manual === '*') {
+                // 特殊值：'*' 表示将当前 params 全量合并到 args（显式覆盖 path）
+                $args = array_replace($args, is_array($params) ? $params : []);
+            } elseif (is_array($manual)) {
+                $args = array_replace($args, $manual);
+            } elseif (is_string($manual)) {
+                $dec = json_decode($manual, true);
+                if (is_array($dec)) {
+                    $args = array_replace($args, $dec);
+                }
+            }
+        }
+
+        // 最省事：始终把其余 params 补充到 args（不覆盖已存在键：显式/Path 优先）
+        if (is_array($params)) {
+            $args = $args + $params;
+        }
         $result = $api->fetch($target, $params, $args);
         [$data, $meta] = $api->split($result);
         $error = $api->getLastError();
