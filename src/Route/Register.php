@@ -92,16 +92,16 @@ class Register
                 $name = $params["name"];
                 $appName = $params["app"];
 
-                if (!$name) {
-                    [$className, $methodName, $name] = $this->parseClass($class);
-                }
+                // Always parse class to get method for default route naming
+                [$className, $parsedMethodName, $autoName] = $this->parseClass($class);
+                $routeName = $name ?: lcfirst((string)$parsedMethodName);
 
                 if ($routeGroup) {
                     $routeGroup->map(
                         methods: is_array($params["methods"]) ? $params["methods"] : [$params["methods"]],
                         pattern: $params["route"] ?? "",
                         callable: $class,
-                        name: lcfirst($methodName),
+                        name: $routeName,
                         middleware: $params["middleware"] ?? [],
                         priority: (int)($params['priority'] ?? 0)
                     );
@@ -114,7 +114,7 @@ class Register
                         methods: is_array($params["methods"]) ? $params["methods"] : [$params["methods"]],
                         pattern: $params["route"] ?? "",
                         callable: $class,
-                        name: lcfirst($methodName),
+                        name: $routeName,
                         middleware: $params["middleware"] ?? [],
                         priority: (int)($params['priority'] ?? 0)
                     );
@@ -140,8 +140,9 @@ class Register
     {
         [$className, $methodName] = explode(":", $class, 2);
         $classArr = explode("\\", $className);
-        $layout = array_slice($classArr, -3, 1)[0];
-        $name = lcfirst($layout) . "." . lcfirst(end($classArr));
+        $layout = array_slice($classArr, -3, 1)[0] ?? '';
+        $last = end($classArr) ?: '';
+        $name = lcfirst((string)$layout) . "." . lcfirst((string)$last);
         return [$className, $methodName, $name];
     }
 }
