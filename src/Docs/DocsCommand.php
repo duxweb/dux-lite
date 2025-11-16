@@ -183,7 +183,7 @@ class DocsCommand extends Command
 
         match (true) {
             $name === Docs::class && !$hasMethod => $this->setDocsGroup($groups, $item['class'], $annotation['params']),
-            $name === Route::class && $hasMethod => $routes[$annotation['class']] = $annotation['params'],
+            $name === Route::class && $hasMethod => $routes[$annotation['class']][] = $annotation['params'],
             $name === RouteGroup::class && !$hasMethod => $this->setRouteGroup($groups, $item['class'], $annotation['params']),
             default => null
         };
@@ -229,15 +229,21 @@ class DocsCommand extends Command
 
         $className = explode(':', $routeKey)[0];
         $apiParams = $apiAnnotation['params'];
-        $routeParams = $routes[$routeKey];
         $groupInfo = $groups[$className] ?? null;
         $groupName = $groupInfo['name'] ?? 'Default';
 
-        $path = $this->buildPath($routeParams, $groupInfo);
-        $this->addTag($groupName, $groupInfo);
+        $routeDefinitions = $routes[$routeKey];
+        if (!isset($routeDefinitions[0]) || !is_array($routeDefinitions[0])) {
+            $routeDefinitions = [$routeDefinitions];
+        }
 
-        foreach ($this->getMethods($routeParams) as $method) {
-            $this->generateOperation($path, $method, $apiParams, $item, $groupName, $routeKey);
+        foreach ($routeDefinitions as $routeParams) {
+            $path = $this->buildPath($routeParams, $groupInfo);
+            $this->addTag($groupName, $groupInfo);
+
+            foreach ($this->getMethods($routeParams) as $method) {
+                $this->generateOperation($path, $method, $apiParams, $item, $groupName, $routeKey);
+            }
         }
     }
 
