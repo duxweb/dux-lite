@@ -796,7 +796,8 @@ class DocsCommand extends Command
     private function generateOperationId(string $path, string $method, string $routeKey): string
     {
         [$class, $methodName] = explode(':', $routeKey);
-        $className = basename(str_replace('\\', '/', $class));
-        return strtolower($method) . $className . ucfirst($methodName);
+        $normalizedClass = preg_replace('/[^A-Za-z0-9]/', '', str_replace('\\', '', ltrim($class, '\\')));
+
+        return strtolower($method) . $normalizedClass . ucfirst($methodName);
     }
 }
