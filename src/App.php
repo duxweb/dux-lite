@@ -87,6 +87,7 @@ class App
 
     public static function run()
     {
+        $_SERVER['VAR_DUMPER_FORMAT'] = 'cli';
         self::$bootstrap->loadApp();
         self::$bootstrap->loadRoute();
         self::$bootstrap->loadCommand();
@@ -96,6 +97,7 @@ class App
 
     public static function runWeb()
     {
+        $_SERVER['VAR_DUMPER_FORMAT'] = 'html';
         self::$bootstrap->loadApp();
         self::$bootstrap->loadRoute();
         Plugin::boot(self::$bootstrap);
@@ -111,7 +113,7 @@ class App
         if (!function_exists('frankenphp_handle_request')) {
             throw new \RuntimeException('FrankenPHP worker mode requires FrankenPHP environment');
         }
-
+        $_SERVER['VAR_DUMPER_FORMAT'] = 'server';
         self::$bootstrap->loadApp();
         self::$bootstrap->loadRoute();
         Plugin::boot(self::$bootstrap);
