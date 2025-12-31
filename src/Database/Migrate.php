@@ -117,7 +117,9 @@ class Migrate
             'user' => $connectionSettings['username'],
             'password' => $connectionSettings['password'],
             'host' => $connectionSettings['host'],
+            'port' => $connectionSettings['port'] ?? 3306,
             'driver' => 'pdo_' . $connectionSettings['driver'],
+            'charset' => $connectionSettings['charset'] ?? 'utf8mb4',
         ]);
     }
 
