@@ -107,27 +107,26 @@ public function init(Bootstrap $bootstrap): void
 
 ```toml
 # config/queue.toml
-[queue]
-driver = "default"
+default = "queueA"
 
-[redis.drivers.default]
-driver = "redis"
-host = "127.0.0.1"
-port = 6379
-prefix = "dux_queue_"
+[workers.queueA]
+type = "redis"
+driver = "default"
+num = 4
+high = 1
+medium = 2
+low = 1
 ```
 
 ### 异步任务处理
 
 ```php
 // 创建队列任务
-class EmailJob extends \Core\Queue\QueueMessage
+class EmailJob
 {
-    public function __construct(private array $users) {}
-    
-    public function handle(): void
+    public function handle(array $users): void
     {
-        foreach ($this->users as $user) {
+        foreach ($users as $user) {
             // 发送邮件逻辑
             $this->sendEmail($user);
         }
@@ -135,7 +134,7 @@ class EmailJob extends \Core\Queue\QueueMessage
 }
 
 // 推送到队列
-\Core\App::queue()->add(EmailJob::class, 'handle', ['users' => $users]);
+\Core\App::queue()->add(EmailJob::class, 'handle', [$users])->send();
 
 // 处理队列
 \Core\App::queue()->process();

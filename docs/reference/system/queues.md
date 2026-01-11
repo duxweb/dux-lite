@@ -1,24 +1,42 @@
 # 队列处理
 
-DuxLite 基于 Enqueue 提供队列系统，支持 Redis 和 AMQP（RabbitMQ）两种队列后端，用于处理异步任务。
+DuxLite 基于 Symfony Messenger 提供队列系统，支持 Redis 和 AMQP（RabbitMQ）两种队列后端，用于处理异步任务。
 
 ## 核心组件
 
 - **Queue**：队列管理器 (`Core\Queue\Queue`)
 - **QueueMessage**：队列消息封装 (`Core\Queue\QueueMessage`)
-- **QueueProcessor**：队列处理器 (`Core\Queue\QueueProcessor`)
-- **QueueCommand**：队列消费命令，启动队列工作进程
+- **QueueJobMessage**：内部消息对象（框架自动使用）
+- **QueueCommand**：队列管理命令，启动并发 worker 并输出状态
+- **QueueConsumeCommand**：单 worker 消费命令（`queue:consume`）
+
+## 依赖要求
+
+- Redis 后端：需要安装 `ext-redis`
+- AMQP 后端：需要安装 `ext-amqp`
 
 ## 配置系统
 
 ### 队列服务配置 (`config/queue.toml`)
 
 ```toml
-# 队列服务类型：redis 或 amqp
-type = "redis"
+# 默认 work 名称（add() 不传 name 时使用）
+default = "queueA"
 
-# 驱动器名称（对应 database.toml 中的配置）
+# work 配置：num 是该 work 的总并发；high/medium/low 是优先级权重（会按权重分配并发，总和不要求等于 num）
+[workers.queueA]
+type = "redis"
 driver = "default"
+num = 10
+high = 3
+medium = 4
+low = 3
+
+[workers.queueB]
+type = "amqp"
+driver = "default"
+num = 5
+high = 5
 ```
 
 ### 队列后端配置 (`config/database.toml`)
@@ -59,10 +77,6 @@ use Core\App;
 
 // 获取默认队列
 $queue = App::queue();
-
-// 获取指定类型的队列
-$redisQueue = App::queue('redis');
-$amqpQueue = App::queue('amqp');
 ```
 
 ### 创建任务类
@@ -103,19 +117,12 @@ class EmailJob
 ```php
 use Core\App;
 
-// 获取队列实例
-$queue = App::queue();
-
-// 添加任务到默认队列
-$message = $queue->add(
+// 发送到默认 work（config/queue.toml 的 default）+ 默认队列（优先 medium）
+App::queue()->add(
     class: 'App\Jobs\EmailJob',
     method: 'send',
     params: ['user@example.com', '测试邮件', '这是测试内容'],
-    name: 'queue'  // 队列名称（可选，默认为 'queue'）
-);
-
-// 立即发送任务
-$message->send();
+)->send();
 ```
 
 **延迟执行：**
@@ -135,14 +142,21 @@ $message->delay(3600)->send();
 **指定队列：**
 
 ```php
-// 添加到指定队列
-$message = $queue->add(
+// name 指向 work（workers.<name>）
+// priority 指向该 work 下的优先级队列名（high/medium/low/queue...）
+App::queue()->add(
     'App\Jobs\ImageJob',
     'resize',
     ['/path/to/image.jpg', 800, 600],
-    'image_queue'  // 专门处理图片的队列
-);
-$message->send();
+    name: 'queueA',
+    priority: 'high',
+)->send();
+
+// 或者用 priority() 链式设置优先级
+App::queue()
+    ->add('App\Jobs\ImageJob', 'resize', ['/path/to/image.jpg', 800, 600], name: 'queueA')
+    ->priority('high')
+    ->send();
 ```
 
 ## 启动队列消费者
@@ -150,15 +164,20 @@ $message->send();
 ### 基础消费命令
 
 ```bash
-# 启动默认队列消费者
+# 启动队列管理进程（读取 config/queue.toml 的 workers.*，并周期显示队列状态）
 php dux queue:start
 
-# 启动指定队列消费者
-php dux queue:start email_queue
+# 只启动指定 work
+php dux queue:start queueA queueB
 
-# 启动图片处理队列
-php dux queue:start image_queue
+# 禁用状态输出
+php dux queue:start --no-status
+
+# 单 worker 模式（只消费一个队列，适合自行用守护进程拉起多份）
+php dux queue:consume queueA high
 ```
+
+说明：`queueA` 的 `num=10` 表示总 worker 数；`high/medium/low` 是权重，管理进程会按权重把 10 个 worker 分配到不同优先级队列。
 
 ### 命令输出示例
 
@@ -169,6 +188,16 @@ php dux queue:start image_queue
 | Core Ver: 2.0 |
 | Run Time: ... |
 +---------------+
+```
+
+队列管理进程会输出各队列的 `pending/delayed/reserved`（仅 Redis 支持统计）。
+
+## 队列状态查询
+
+你也可以在业务代码中查询队列状态（不同后端支持程度不同，Redis 最完整）：
+
+```php
+$stats = App::queue()->stats(['high', 'medium', 'low'], 'queueA');
 ```
 
 ## 队列处理状态
@@ -208,4 +237,4 @@ class QueueEventListener
 }
 ```
 
-DuxLite 队列系统基于 Enqueue 实现，支持 Redis 和 AMQP 后端，提供简单高效的异步任务处理能力。
+DuxLite 队列系统基于 Symfony Messenger 实现，支持 Redis 和 AMQP 后端，提供简单高效的异步任务处理能力。

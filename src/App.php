@@ -330,18 +330,15 @@ class App
         return $config;
     }
 
-    public static function queue(string $type = ""): Queue
+    public static function queue(): Queue
     {
-        if (!$type) {
-            $type = self::config("queue")->get("type", 'redis');
-        }
-        if (!self::$di->has("queue." . $type)) {
+        if (!self::$di->has("queue")) {
             self::$di->set(
-                "queue." . $type,
-                new Queue($type)
+                "queue",
+                new Queue()
             );
         }
-        return self::$di->get("queue." . $type);
+        return self::$di->get("queue");
     }
 
     public static function storage(string $type = ""): StorageInterface

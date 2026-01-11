@@ -23,7 +23,7 @@
   "minimum-stability": "dev",
   "prefer-stable": true,
   "require": {
-    "php": ">=8.2",
+    "php": ">=8.4",
     "ext-zlib": "*",
     "ext-pdo": "*",
     "php-di/php-di": "^7.0",
@@ -58,14 +58,16 @@
     "kalnoy/nestedset": "^6.0",
     "zoujingli/ip2region": "^2.0",
     "eftec/bladeone": "^4.16",
-    "enqueue/enqueue": "^0.10.24",
-    "enqueue/redis": "^0.10.19",
-    "enqueue/amqp-lib": "^0.10.19",
     "peppeocchi/php-cron-scheduler": "^4.0",
     "react/event-loop": "^1.5",
     "composer/composer": "^2.8",
     "ezyang/htmlpurifier": "^4.18",
-    "masterminds/html5": "^2.10"
+    "masterminds/html5": "^2.10",
+    "symfony/messenger": "^7.4"
+  },
+  "suggest": {
+    "symfony/redis-messenger": "使用 Redis 队列后端需要（同时需要 ext-redis）",
+    "symfony/amqp-messenger": "使用 AMQP 队列后端需要（同时需要 ext-amqp）"
   },
   "require-dev": {
     "pestphp/pest": "^3.5",

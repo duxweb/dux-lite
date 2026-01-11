@@ -183,12 +183,6 @@ App::event()->listen('user.created', function($user) {
 ```php
 // 获取默认队列
 $queue = App::queue();
-
-// 获取指定类型队列
-$redisQueue = App::queue('redis');
-
-// 推送任务到队列
-App::queue()->push('SendEmail', ['to' => 'user@example.com']);
 ```
 
 ### 任务调度
@@ -197,10 +191,17 @@ App::queue()->push('SendEmail', ['to' => 'user@example.com']);
 // 获取调度器
 $scheduler = App::scheduler();
 
-// 添加调度任务（通常在启动时自动加载）
-App::scheduler()->add('daily-backup', '0 2 * * *', function() {
-    // 备份逻辑
-});
+// 收集调度任务（callback 仅支持 类 或 类:方法）
+App::scheduler()->add(
+    TaskService::class . ':dailyBackup',
+    [],
+    '0 2 * * *',
+    'daily-backup',
+    '每日备份'
+);
+
+// 生成任务文件（保存到 data/scheduler/jobs.php）
+App::scheduler()->gen();
 ```
 
 ## 框架服务

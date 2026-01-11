@@ -192,22 +192,29 @@ prefix = ""
 
 ## 队列配置 (`queue.toml`)
 
-::: info 队列配置说明
-根据代码分析，队列配置主要依赖于 `database.toml` 中的 Redis/AMQP 配置，队列服务通过以下逻辑工作：
-:::
-
 ```toml
-# 队列服务类型：redis 或 amqp
-type = "redis"
+# 默认 worker 名称（add() 不传 name 时使用）
+default = "queueA"
 
-# 队列驱动器名称（对应 database.toml 中的配置）
+[workers.queueA]
+type = "redis"
 driver = "default"
+num = 10
+high = 3
+medium = 4
+low = 3
+
+[workers.queueB]
+type = "amqp"
+driver = "default"
+num = 5
+high = 5
 ```
 
 **队列工作原理：**
-- `App::queue()` 方法从 `queue.toml` 读取 `type`（默认 "redis"）
-- 然后从 `database.toml` 读取对应的连接配置
-- 支持 Redis 和 AMQP（RabbitMQ）两种队列后端
+- `App::queue()` 只返回队列服务实例
+- `add(..., name: worker, priority: high|medium|low)` 会按 `workers.<worker>.type/driver` 选择后端
+- `queue:start` 会按 `num` 总并发 + `high/medium/low` 权重分配并发启动 worker
 
 ## 存储配置 (`storage.toml`)
 
@@ -321,7 +328,6 @@ $redis = App::redis('cache'); // 指定连接名
 
 // 队列服务配置
 $queue = App::queue(); // 使用默认配置
-$queue = App::queue('redis'); // 指定类型
 ```
 
 ## 最佳实践

@@ -4,38 +4,52 @@ declare(strict_types=1);
 
 namespace Core\Queue;
 
-
 class QueueMessage
 {
+    private int $delayMs = 0;
 
-    private \Interop\Queue\Message $message;
-    private \Interop\Queue\Queue $queue;
-    private int|float $delay = 0;
-
-
+    /**
+     * @param string $name worker 名（workers.<name>），为空则使用 default
+     * @param string $priority 优先级（high/medium/low），为空则默认 medium
+     */
     public function __construct(
-        public \Interop\Queue\Context $context,
-        public string     $class,
-        public string     $method = '',
-        public array      $params = [],
+        private Queue $queue,
+        public string $class,
+        public string $method = '',
+        public array $params = [],
         public string $name = '',
+        public string $priority = '',
     ) {
-        $this->queue = $this->context->createQueue($name);
-        $this->message = $this->context->createMessage(json_encode([
-            'class' => $this->class,
-            'method' => $this->method,
-            'params' => $this->params
-        ]));
     }
 
-    public function delay($second = 0): self
+    /**
+     * 设置优先级（high/medium/low）。
+     */
+    public function priority(string $priority): self
     {
-        $this->delay = $second * 1000;
+        $this->priority = $priority;
         return $this;
     }
 
+    /**
+     * 设置延迟时间（秒）。
+     */
+    public function delay(int|float $second = 0): self
+    {
+        $this->delayMs = max(0, (int)round($second * 1000));
+        return $this;
+    }
+
+    /**
+     * 投递到队列。
+     */
     public function send(): void
     {
-        $this->context->createProducer()->setDeliveryDelay($this->delay)->send($this->queue, $this->message);
+        $this->queue->dispatch(
+            $this->name,
+            $this->priority,
+            new QueueJobMessage($this->class, $this->method, $this->params),
+            $this->delayMs
+        );
     }
 }

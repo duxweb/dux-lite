@@ -22,8 +22,10 @@ use Core\Middleware\LangMiddleware;
 use Core\Permission\PermissionCommand;
 use Core\Plugin\Plugin;
 use Core\Queue\QueueCommand;
+use Core\Queue\QueueConsumeCommand;
 use Core\Route\RouteCommand;
 use Core\Scheduler\SchedulerCommand;
+use Core\Scheduler\SchedulerGenCommand;
 use Core\Worker\WorkerCommand;
 use DI\DependencyException;
 use DI\NotFoundException;
@@ -231,7 +233,9 @@ class Bootstrap
         $commands[] = ListCommand::class;
         $commands[] = MigrateCommand::class;
         $commands[] = QueueCommand::class;
+        $commands[] = QueueConsumeCommand::class;
         $commands[] = SchedulerCommand::class;
+        $commands[] = SchedulerGenCommand::class;
         $commands[] = DocsCommand::class;
         $commands[] = WorkerCommand::class;
 

@@ -96,8 +96,7 @@ $events = App::di()->get('events');
 
 // 队列服务
 $queue = App::queue();
-$queue = App::queue('redis');
-$queue = App::di()->get('queue.redis');
+$queue = App::di()->get('queue');
 ```
 
 ## 服务命名约定
@@ -115,7 +114,6 @@ $queue = App::di()->get('queue.redis');
 ```php
 'cache.file'      // 文件缓存
 'cache.redis'     // Redis 缓存
-'queue.redis'     // Redis 队列
 'storage.local'   // 本地存储
 'config.use'      // 应用配置
 ```

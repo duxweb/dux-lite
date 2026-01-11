@@ -19,7 +19,7 @@ use Core\Scheduler\Attribute\Scheduler;
 class TaskService
 {
     // 每天凌晨2点执行
-    #[Scheduler('0 2 * * *')]
+    #[Scheduler(cron: '0 2 * * *', name: 'daily-backup', desc: '每日备份')]
     public function dailyBackup(): void
     {
         App::log('scheduler')->info('开始每日备份任务');
@@ -27,7 +27,7 @@ class TaskService
     }
     
     // 每5分钟执行
-    #[Scheduler('*/5 * * * *')]
+    #[Scheduler(cron: '*/5 * * * *', name: 'clean-cache', desc: '清理缓存')]
     public function cleanCache(): void
     {
         App::log('scheduler')->info('清理缓存');
@@ -35,7 +35,7 @@ class TaskService
     }
     
     // 每小时执行
-    #[Scheduler('0 * * * *')]
+    #[Scheduler(cron: '0 * * * *', name: 'generate-report', desc: '生成报表')]
     public function generateReport(): void
     {
         App::log('scheduler')->info('生成报告');
@@ -47,14 +47,14 @@ class TaskService
 ### 动态添加任务
 
 ```php
-// 动态添加类方法任务
-App::scheduler()->add('0 3 * * *', [TaskService::class, 'maintenance']);
-
-// 动态添加闭包任务
-App::scheduler()->add('*/10 * * * *', function() {
-    App::log('scheduler')->info('定时检查任务');
-    // 执行检查逻辑
-});
+// 动态添加类:方法任务（仅收集，不会立即注册）
+App::scheduler()->add(
+    TaskService::class . ':maintenance',
+    [],
+    '0 3 * * *',
+    'maintenance',
+    '定时维护任务'
+);
 ```
 
 ## 启动调度器
@@ -64,23 +64,46 @@ App::scheduler()->add('*/10 * * * *', function() {
 ```bash
 # 启动调度器服务
 php dux scheduler
+
+# 禁用监控（默认开启监控 jobs 文件，变动后自动重启）
+php dux scheduler --no-watch
+```
+
+如果使用外部守护进程（systemd/supervisor 等），当 `data/scheduler/jobs.php` 发生变动时，命令会以退出码 `100` 退出，由守护进程负责拉起新进程。
+
+## 生成计划任务文件
+
+调度器启动时会优先从 `data/scheduler/jobs.php` 读取计划任务并注册运行。
+
+你可以在应用启动阶段（注解 + 手动 add 收集完数据后）调用：
+
+```php
+App::scheduler()->gen();
+```
+
+也可以通过命令行生成：
+
+```bash
+php dux scheduler:gen
 ```
 
 ### Scheduler 类方法
 
 ```php
-// 添加任务
-// $cron: Cron表达式, $callback: 回调函数或类方法数组, $params: 参数
-App::scheduler()->add(string $cron, callable|array $callback, array $params = []): void
+// 收集任务（callback 仅支持 类 或 类:方法）
+App::scheduler()->add(string $callback, array $params = [], string $cron = '* * * * *', string $name = '', string $desc = ''): void
 
-// 创建任务作业
-App::scheduler()->job($callback, array $params = []): \GO\Job
+// 生成 data 目录任务文件
+App::scheduler()->gen(): array
 
-// 运行调度器
-App::scheduler()->run(): void
+// 运行调度器（从 data 文件读取任务并注册）
+App::scheduler()->run(bool $watch = false, int $watchInterval = 3): int
 
 // 注册注解定义的任务
 App::scheduler()->registerAttribute(): void
+
+// 获取当前收集到的临时任务数据
+App::scheduler()->getData(): array
 ```
 
 ## Cron 表达式
