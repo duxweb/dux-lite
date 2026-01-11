@@ -60,10 +60,14 @@ App::event()->addListener('user.created', function ($user) {
 use Core\App;
 
 // 触发事件
-App::event()->dispatch('user.login', $user);
+$user = User::find(1);
+App::event()->dispatch($user, 'user.login');
 
-// 触发带多个参数的事件
-App::event()->dispatch('order.completed', $order, $user);
+// 需要携带多个参数时，建议定义事件对象
+$event = new class($order, $user) extends \Symfony\Contracts\EventDispatcher\Event {
+    public function __construct(public $order, public $user) {}
+};
+App::event()->dispatch($event, 'order.completed');
 ```
 
 ## 框架提供的全局事件
@@ -198,7 +202,7 @@ public function register($data)
     $user = User::create($data);
     
     // 触发注册事件
-    App::event()->dispatch('user.registered', $user);
+    App::event()->dispatch($user, 'user.registered');
     
     return $user;
 }

@@ -225,7 +225,7 @@ class App extends AppExtend
         });
 
         // ✅ 注册事件监听器
-        App::event()->listen('user.created', function($user) {
+        App::event()->addListener('user.created', function ($user) {
             // 发送欢迎邮件
         });
     }

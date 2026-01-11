@@ -248,6 +248,14 @@ class UserController extends Resources
 ```php
 class UserController extends Resources
 {
+    private array $auth = [];
+
+    public function init(ServerRequestInterface $request, ResponseInterface $response, array $args): void
+    {
+        // AuthMiddleware 会把 token 解析结果写入 request attribute：auth
+        $this->auth = (array) \Core\Utils\Attribute::getRequestParams($request, 'auth') ?: [];
+    }
+
     /**
      * 创建前钩子
      */
@@ -259,8 +267,7 @@ class UserController extends Resources
         }
 
         // 设置创建者
-        $auth = \Core\App::auth();
-        $model->created_by = $auth['id'];
+        $model->created_by = $this->auth['id'] ?? 0;
     }
 
     /**
@@ -300,8 +307,7 @@ class UserController extends Resources
     public function editBefore(Data $data, mixed $model): void
     {
         // 权限检查
-        $auth = \Core\App::auth();
-        if ($model->id !== $auth['id'] && !$this->isAdmin($auth)) {
+        if ($model->id !== ($this->auth['id'] ?? 0) && !$this->isAdmin($this->auth)) {
             throw new \Core\Handlers\ExceptionBusiness('无权限编辑此用户', 403);
         }
 

@@ -170,10 +170,10 @@ $message = __('user.welcome', ['name' => 'John']);
 $events = App::event();
 
 // 触发事件
-App::event()->dispatch('user.created', $user);
+App::event()->dispatch($user, 'user.created');
 
 // 监听事件
-App::event()->listen('user.created', function($user) {
+App::event()->addListener('user.created', function ($user) {
     // 处理逻辑
 });
 ```

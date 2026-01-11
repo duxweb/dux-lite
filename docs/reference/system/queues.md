@@ -12,18 +12,32 @@ DuxLite 基于 Symfony Messenger 提供队列系统，支持 Redis 和 AMQP（Ra
 
 ## 依赖要求
 
-- Redis 后端：需要安装 `ext-redis`
-- AMQP 后端：需要安装 `ext-amqp`
+队列是可选能力：不使用队列后端时，不需要安装任何队列相关扩展/包。
+
+- Redis 后端：需要安装 `symfony/redis-messenger` + `ext-redis`
+- AMQP 后端：需要安装 `symfony/amqp-messenger` + `ext-amqp`
+
+安装示例：
+
+```bash
+# Redis 队列
+composer require symfony/redis-messenger
+
+# AMQP 队列
+composer require symfony/amqp-messenger
+```
 
 ## 配置系统
 
 ### 队列服务配置 (`config/queue.toml`)
 
 ```toml
-# 默认 work 名称（add() 不传 name 时使用）
+# 默认 worker 名（add() 不传 name 时使用）
 default = "queueA"
 
-# work 配置：num 是该 work 的总并发；high/medium/low 是优先级权重（会按权重分配并发，总和不要求等于 num）
+# worker 配置：
+# - num 是该 worker 的总并发
+# - high/medium/low 是优先级权重（会按权重分配并发，总和不要求等于 num）
 [workers.queueA]
 type = "redis"
 driver = "default"
@@ -143,7 +157,7 @@ $message->delay(3600)->send();
 
 ```php
 // name 指向 work（workers.<name>）
-// priority 指向该 work 下的优先级队列名（high/medium/low/queue...）
+// priority 指向该 work 下的优先级（high/medium/low）
 App::queue()->add(
     'App\Jobs\ImageJob',
     'resize',
@@ -190,49 +204,41 @@ php dux queue:consume queueA high
 +---------------+
 ```
 
-队列管理进程会输出各队列的 `pending/delayed/reserved`（仅 Redis 支持统计）。
+队列管理进程会输出 `pending/running/executed/failed`：
+- `pending`：待执行数量（各优先级 pending + delayed 汇总，仅 Redis 支持）
+- `running`：执行中数量（reserved 汇总，仅 Redis 支持）
+- `executed/failed`：本次启动后统计（跨进程汇总）
 
 ## 队列状态查询
 
 你也可以在业务代码中查询队列状态（不同后端支持程度不同，Redis 最完整）：
 
 ```php
-$stats = App::queue()->stats(['high', 'medium', 'low'], 'queueA');
+// 全部 worker 统计
+$stats = App::queue()->stats();
+
+// 单个 worker 统计
+$stats = App::queue()->stats('queueA');
 ```
-
-## 队列处理状态
-
-队列处理器根据任务执行结果返回不同状态：
-
-| 状态 | 常量 | 说明 |
-|------|------|------|
-| **ACK** | `Processor::ACK` | 任务执行成功，从队列中移除 |
-| **REJECT** | `Processor::REJECT` | 任务无效，直接丢弃 |
-| **REQUEUE** | `Processor::REQUEUE` | 任务失败，重新放入队列等待重试 |
 
 ## 与事件系统集成
 
 ```php
 use Core\Event\Attribute\Listener;
+use Core\Queue\QueueEvent;
 
 class QueueEventListener
 {
-    #[Listener('user.registered')]
-    public function handleUserRegistered($user): void
+    #[Listener(QueueEvent::ENQUEUE)]
+    public function onEnqueue(QueueEvent $event): void
     {
-        // 异步发送欢迎邮件
-        App::queue()->add(
-            'App\Jobs\EmailJob',
-            'sendWelcome',
-            [$user->id]
-        )->send();
+        // 任务入队事件：可用于统计、日志、监控等
+    }
 
-        // 延迟生成用户报告
-        App::queue()->add(
-            'App\Jobs\ReportJob',
-            'generateUserReport',
-            [$user->id]
-        )->delay(300)->send(); // 延迟 5 分钟
+    #[Listener(QueueEvent::FAILED)]
+    public function onFailed(QueueEvent $event): void
+    {
+        // 执行失败事件：$event->exception 可用于异常收集
     }
 }
 ```

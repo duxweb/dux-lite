@@ -178,9 +178,6 @@ class HelloController
 ```bash
 # 使用 PHP 内置服务器
 php -S localhost:8000 -t public
-
-# 使用 DuxLite 命令（如果已配置）
-./dux serve
 ```
 
 ### 测试访问

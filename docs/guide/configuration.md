@@ -216,6 +216,10 @@ high = 5
 - `add(..., name: worker, priority: high|medium|low)` 会按 `workers.<worker>.type/driver` 选择后端
 - `queue:start` 会按 `num` 总并发 + `high/medium/low` 权重分配并发启动 worker
 
+**队列依赖说明（可选安装）：**
+- Redis 后端：需要安装 `symfony/redis-messenger` + `ext-redis`
+- AMQP 后端：需要安装 `symfony/amqp-messenger` + `ext-amqp`
+
 ## 存储配置 (`storage.toml`)
 
 文件存储服务配置，调用 `App::storage()` 方法获取存储服务实例

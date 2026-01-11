@@ -62,7 +62,7 @@ config/
 ├── use.dev.toml          # 开发环境应用配置
 ├── database.toml         # 生产环境数据库配置
 ├── database.dev.toml     # 开发环境数据库配置
-├── cache.toml            # 缓存配置
+├── queue.toml            # 队列配置（可选）
 └── server.toml           # 服务器配置
 ```
 

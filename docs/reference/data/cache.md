@@ -1,26 +1,20 @@
 # 缓存系统
 
-DuxLite 基于 PSR-16 标准提供统一的缓存接口，支持文件、Redis、Memcached 等多种驱动。
+DuxLite 基于 PSR-16 标准提供统一的缓存接口，内置支持文件缓存与 Redis 缓存。
 
 ## 缓存配置
 
-配置文件：`config/cache.toml`
+缓存配置写在 `config/use.toml` 的 `[cache]` 节点：
 
 ```toml
-[default]
-driver = "file"
-path = "data/cache"
-
-[redis]
-driver = "redis"
-connection = "default"
-prefix = "cache:"
-
-[session]
-driver = "redis"
-connection = "session"
-prefix = "sess:"
+[cache]
+# file | redis
+type = "file"
+prefix = "cache_"
+defaultLifetime = 3600
 ```
+
+如果使用 Redis 缓存，需要在 `config/database.toml` 配置 Redis 驱动（并确保 `predis/predis` 或 `ext-redis` 可用）。
 
 ## 基础操作
 
@@ -32,9 +26,8 @@ use Core\App;
 // 获取默认缓存驱动
 $cache = App::cache();
 
-// 获取指定缓存驱动
+// 获取指定缓存驱动（目前内置支持 file/redis）
 $redisCache = App::cache('redis');
-$sessionCache = App::cache('session');
 ```
 
 ### 基本操作
@@ -84,10 +77,6 @@ $cache->deleteMultiple(['user.1', 'user.2']);
 ### Redis 缓存
 - 适用：高性能应用、分布式系统
 - 特点：高性能读写，支持数据结构，内存存储
-
-### Memcached 缓存
-- 适用：大型分布式应用
-- 特点：专为缓存设计，分布式友好，LRU 自动清理
 
 ## 最佳实践
 

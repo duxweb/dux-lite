@@ -7,7 +7,7 @@ DuxLite 基于 JWT 提供简洁的用户认证机制，支持 Header 和 Cookie 
 使用应用配置中的 `app.secret` 作为 JWT 签名密钥：
 
 ```toml
-# config/app.toml
+# config/use.toml
 [app]
 secret = "your-jwt-secret-key"
 ```

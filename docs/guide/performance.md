@@ -9,14 +9,10 @@ DuxLite 应用性能优化的最佳实践，基于框架内置功能实现高性
 DuxLite 支持文件缓存和 Redis 缓存：
 
 ```toml
-# config/cache.toml
-[cache.drivers.default]
-driver = "file"
-prefix = "dux_"
-defaultLifetime = 3600
-
-[cache.drivers.redis]
-driver = "redis"
+# config/use.toml
+[cache]
+# file | redis
+type = "file"
 prefix = "dux_"
 defaultLifetime = 3600
 ```
@@ -188,8 +184,8 @@ secret = "dev-secret-key"
 ### 缓存配置文件
 
 ```bash
-# 缓存配置文件提升启动速度
-php dux config:cache
+# 清理框架缓存文件（路由缓存、注解缓存等）
+php dux app:cache
 ```
 
 ## Worker 模式

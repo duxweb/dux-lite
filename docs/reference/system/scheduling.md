@@ -71,6 +71,8 @@ php dux scheduler --no-watch
 
 如果使用外部守护进程（systemd/supervisor 等），当 `data/scheduler/jobs.php` 发生变动时，命令会以退出码 `100` 退出，由守护进程负责拉起新进程。
 
+说明：调度器自身不会“自我拉起新进程”，Windows/Linux/macOS 都建议用外部守护进程保证常驻与自动拉起。
+
 ## 生成计划任务文件
 
 调度器启动时会优先从 `data/scheduler/jobs.php` 读取计划任务并注册运行。
