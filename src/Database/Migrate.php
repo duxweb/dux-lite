@@ -81,8 +81,15 @@ class Migrate
         $modelTable = $model->getTable();
         $tempTable = 'table_' . $modelTable;
         $tableExists = $connect->getSchemaBuilder()->hasTable($modelTable);
+        $connectionSettings = $connect->getConfig();
         $connect->getSchemaBuilder()->dropIfExists($tempTable);
-        $connect->getSchemaBuilder()->create($tableExists ? $tempTable : $modelTable, function (Blueprint $table) use ($model) {
+        $connect->getSchemaBuilder()->create($tableExists ? $tempTable : $modelTable, function (Blueprint $table) use ($model, $connectionSettings) {
+            if (!empty($connectionSettings['charset'])) {
+                $table->charset($connectionSettings['charset']);
+            }
+            if (!empty($connectionSettings['collation'])) {
+                $table->collation($connectionSettings['collation']);
+            }
             if ($model->getTableComment()) {
                 $table->comment($model->getTableComment());
             }
@@ -100,8 +107,8 @@ class Migrate
         $connection = $this->getDoctrineConnection($connect);
         $schemaManager = $connection->createSchemaManager();
         $tableDiff = $schemaManager->createComparator()->compareTables(
-            $schemaManager->introspectTable($pre . $modelTable),
-            $schemaManager->introspectTable($pre . $tempTable)
+            $schemaManager->introspectTableByUnquotedName($pre . $modelTable),
+            $schemaManager->introspectTableByUnquotedName($pre . $tempTable)
         );
         if (!$tableDiff->isEmpty()) {
             $schemaManager->alterTable($tableDiff);
@@ -112,7 +119,7 @@ class Migrate
     public function getDoctrineConnection(Connection $modelConnection): \Doctrine\DBAL\Connection
     {
         $connectionSettings = $modelConnection->getConfig();
-        return DriverManager::getConnection([
+        $options = [
             'dbname' => $connectionSettings['database'],
             'user' => $connectionSettings['username'],
             'password' => $connectionSettings['password'],
@@ -120,7 +127,14 @@ class Migrate
             'port' => $connectionSettings['port'] ?? 3306,
             'driver' => 'pdo_' . $connectionSettings['driver'],
             'charset' => $connectionSettings['charset'] ?? 'utf8mb4',
-        ]);
+        ];
+        if (!empty($connectionSettings['collation'])) {
+            $options['defaultTableOptions'] = [
+                'charset' => $options['charset'],
+                'collation' => $connectionSettings['collation'],
+            ];
+        }
+        return DriverManager::getConnection($options);
     }
 
     // 注册迁移模型
@@ -137,4 +151,3 @@ class Migrate
         }
     }
 }
-
