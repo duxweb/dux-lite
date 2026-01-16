@@ -113,6 +113,7 @@ class Migrate
         if (!$tableDiff->isEmpty()) {
             $schemaManager->alterTable($tableDiff);
         }
+        $this->forceTableCharset($connect, $modelTable);
         $connect->getSchemaBuilder()->drop($tempTable);
     }
 
@@ -135,6 +136,55 @@ class Migrate
             ];
         }
         return DriverManager::getConnection($options);
+    }
+
+    private function forceTableCharset(Connection $connect, string $table): void
+    {
+        $connectionSettings = $connect->getConfig();
+        if (($connectionSettings['driver'] ?? '') !== 'mysql') {
+            return;
+        }
+        if (empty($connectionSettings['charset']) || empty($connectionSettings['collation'])) {
+            return;
+        }
+        $charset = $connectionSettings['charset'];
+        $collation = $connectionSettings['collation'];
+        $tableName = $connect->getTablePrefix() . $table;
+        if (!$this->needsCharsetConversion($connect, $tableName, $charset, $collation, $connectionSettings['database'] ?? null)) {
+            return;
+        }
+        $connect->statement(
+            "ALTER TABLE `{$tableName}` CONVERT TO CHARACTER SET {$charset} COLLATE {$collation}"
+        );
+    }
+
+    private function needsCharsetConversion(
+        Connection $connect,
+        string $tableName,
+        string $charset,
+        string $collation,
+        ?string $database
+    ): bool {
+        if (!$database) {
+            return false;
+        }
+        $tableInfo = $connect->selectOne(
+            'SELECT TABLE_COLLATION FROM information_schema.TABLES WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?',
+            [$database, $tableName]
+        );
+        if ($tableInfo && isset($tableInfo->TABLE_COLLATION) && $tableInfo->TABLE_COLLATION !== $collation) {
+            return true;
+        }
+        $columns = $connect->select(
+            'SELECT COLLATION_NAME, CHARACTER_SET_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLLATION_NAME IS NOT NULL',
+            [$database, $tableName]
+        );
+        foreach ($columns as $column) {
+            if (($column->COLLATION_NAME ?? null) !== $collation || ($column->CHARACTER_SET_NAME ?? null) !== $charset) {
+                return true;
+            }
+        }
+        return false;
     }
 
     // 注册迁移模型
