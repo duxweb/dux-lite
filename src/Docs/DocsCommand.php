@@ -30,6 +30,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 class DocsCommand extends Command
 {
     private array $openApiDoc;
+    private array $annotationIndex = [];
     private const PARAMETER_CONFIGS = [
         ['class' => Query::class, 'in' => 'query'],
         ['class' => Params::class, 'in' => 'path'],
@@ -77,6 +78,18 @@ class DocsCommand extends Command
         return Command::SUCCESS;
     }
 
+    public function build(string $host = 'localhost', string $port = '8080', ?string $version = null): string
+    {
+        $outputFile = data_path("docs/openapi.json");
+        $this->setupServersByValues($host, $port);
+        $this->setupVersionByValue($version, $outputFile);
+        $attributes = App::attributes();
+        $this->parseAnnotations($attributes);
+        $this->saveDocument($outputFile);
+
+        return $outputFile;
+    }
+
     private function initializeOpenApiDoc(): void
     {
         $this->openApiDoc = [
@@ -106,6 +119,11 @@ class DocsCommand extends Command
     {
         $host = $input->getOption('host');
         $port = $input->getOption('port');
+        $this->setupServersByValues($host, $port);
+    }
+
+    private function setupServersByValues(string $host, string $port): void
+    {
         $this->openApiDoc['servers'] = [
             ['url' => "http://{$host}:{$port}", 'description' => __('docs.server_description', 'common')]
         ];
@@ -114,7 +132,11 @@ class DocsCommand extends Command
     private function setupVersion(InputInterface $input, string $outputFile): void
     {
         $version = $input->getOption('ver');
+        $this->setupVersionByValue($version, $outputFile);
+    }
 
+    private function setupVersionByValue(?string $version, string $outputFile): void
+    {
         if ($version) {
             $this->openApiDoc['info']['version'] = $version;
         } else {
@@ -152,49 +174,60 @@ class DocsCommand extends Command
 
     private function saveDocument(string $outputFile): void
     {
+        $this->normalizeTags();
         $jsonContent = json_encode($this->openApiDoc, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+        if ($jsonContent === false) {
+            throw new \RuntimeException('Failed to encode OpenAPI document: ' . json_last_error_msg());
+        }
         FileSystem::write($outputFile, $jsonContent);
     }
 
     private function parseAnnotations(array $attributes): void
     {
-        [$groups, $routes] = $this->collectGroupsAndRoutes($attributes);
-        $this->processApiAnnotations($attributes, $groups, $routes);
+        $this->annotationIndex = [];
+        [$groups, $routes, $docsClasses] = $this->collectGroupsAndRoutes($attributes);
+        $this->processApiAnnotations($attributes, $groups, $routes, $docsClasses);
     }
 
     private function collectGroupsAndRoutes(array $attributes): array
     {
         $groups = [];
         $routes = [];
+        $docsClasses = [];
 
         foreach ($attributes as $item) {
             foreach ($item['annotations'] as $annotation) {
-                $this->processAnnotation($annotation, $item, $groups, $routes);
+                $this->processAnnotation($annotation, $item, $groups, $routes, $docsClasses);
             }
         }
 
-        return [$groups, $routes];
+        return [$groups, $routes, $docsClasses];
     }
 
-    private function processAnnotation(array $annotation, array $item, array &$groups, array &$routes): void
+    private function processAnnotation(array $annotation, array $item, array &$groups, array &$routes, array &$docsClasses): void
     {
         $name = $annotation['name'];
         $hasMethod = isset($annotation['method']);
+        if (isset($annotation['class'], $annotation['name'])) {
+            $routeKey = $annotation['class'];
+            $this->annotationIndex[$routeKey][$annotation['name']][] = $annotation;
+        }
 
         match (true) {
-            $name === Docs::class && !$hasMethod => $this->setDocsGroup($groups, $item['class'], $annotation['params']),
+            $name === Docs::class && !$hasMethod => $this->setDocsGroup($groups, $item['class'], $annotation['params'], $docsClasses),
             $name === Route::class && $hasMethod => $routes[$annotation['class']][] = $annotation['params'],
             $name === RouteGroup::class && !$hasMethod => $this->setRouteGroup($groups, $item['class'], $annotation['params']),
             default => null
         };
     }
 
-    private function setDocsGroup(array &$groups, string $className, array $params): void
+    private function setDocsGroup(array &$groups, string $className, array $params, array &$docsClasses): void
     {
         if (!isset($groups[$className])) {
             $groups[$className] = [];
         }
         $groups[$className] = array_merge($groups[$className], $params);
+        $docsClasses[$className] = true;
     }
 
     private function setRouteGroup(array &$groups, string $className, array $params): void
@@ -205,12 +238,12 @@ class DocsCommand extends Command
         $groups[$className]['routeGroup'] = $params;
     }
 
-    private function processApiAnnotations(array $attributes, array $groups, array $routes): void
+    private function processApiAnnotations(array $attributes, array $groups, array $routes, array $docsClasses): void
     {
         foreach ($attributes as $item) {
             $className = $item['class'];
 
-            if (!isset($groups[$className])) {
+            if (!isset($docsClasses[$className])) {
                 continue;
             }
 
@@ -299,12 +332,55 @@ class DocsCommand extends Command
 
     private function addTag(string $groupName, ?array $groupInfo): void
     {
-        if (!in_array($groupName, array_column($this->openApiDoc['tags'], 'name'))) {
-            $this->openApiDoc['tags'][] = [
-                'name' => $groupName,
-                'description' => $groupInfo['desc']
-            ];
+        $category = $groupInfo['category'] ?? '';
+        foreach ($this->openApiDoc['tags'] as &$tag) {
+            if ($tag['name'] !== $groupName) {
+                continue;
+            }
+            if (($tag['description'] ?? '') === '') {
+                $tag['description'] = $groupInfo['desc'] ?? '';
+            }
+            if (!empty($category) && empty($tag['x-category'])) {
+                $tag['x-category'] = $category;
+            }
+            return;
         }
+
+        $tag = [
+            'name' => $groupName,
+            'description' => $groupInfo['desc'] ?? ''
+        ];
+        if (!empty($category)) {
+            $tag['x-category'] = $category;
+        }
+        $this->openApiDoc['tags'][] = $tag;
+    }
+
+    private function normalizeTags(): void
+    {
+        if (empty($this->openApiDoc['tags'])) {
+            return;
+        }
+
+        $unique = [];
+        foreach ($this->openApiDoc['tags'] as $tag) {
+            if (!isset($tag['name'])) {
+                continue;
+            }
+            $name = $tag['name'];
+            if (!isset($unique[$name])) {
+                $unique[$name] = $tag;
+                continue;
+            }
+            if (($unique[$name]['description'] ?? '') === '' && !empty($tag['description'])) {
+                $unique[$name]['description'] = $tag['description'];
+            }
+            if (empty($unique[$name]['x-category']) && !empty($tag['x-category'])) {
+                $unique[$name]['x-category'] = $tag['x-category'];
+            }
+        }
+
+        $this->openApiDoc['tags'] = array_values($unique);
     }
 
     private function generateOperation(string $path, string $method, array $apiParams, array $item, string $groupName, string $routeKey): void
@@ -346,10 +422,8 @@ class DocsCommand extends Command
         }
 
         // 一次性收集已存在的参数，避免重复循环
-        $existingParams = array_column(
-            array_filter($item['annotations'], fn($a) => $a['name'] === \Core\Docs\Attribute\Params::class && $a['class'] === $routeKey
-            ), 'params'
-        );
+        $existingAnnotations = $this->filterAnnotations($item, \Core\Docs\Attribute\Params::class, $routeKey);
+        $existingParams = array_column($existingAnnotations, 'params');
         $existingParamFields = array_column($existingParams, 'field');
 
         $parameters = [];
@@ -398,19 +472,17 @@ class DocsCommand extends Command
     {
         $parameters = [];
 
-        foreach ($item['annotations'] as $annotation) {
-            if ($annotation['name'] === $config['class'] && $annotation['class'] === $routeKey) {
-                $params = $annotation['params'];
-                $parameters[] = [
-                    'name' => $params['field'],
-                    'in' => $config['in'],
-                    'summary' => $params['name'],
-                    'description' => $params['desc'] ?: $params['name'],
-                    'required' => $params['required'] ?? ($config['in'] === 'path'),
-                    'schema' => ['type' => $params['type']->value],
-                    'example' => $params['example'] ?? null
-                ];
-            }
+        foreach ($this->filterAnnotations($item, $config['class'], $routeKey) as $annotation) {
+            $params = $annotation['params'];
+            $parameters[] = [
+                'name' => $params['field'],
+                'in' => $config['in'],
+                'summary' => $params['name'],
+                'description' => $params['desc'] ?: $params['name'],
+                'required' => $params['required'] ?? ($config['in'] === 'path'),
+                'schema' => ['type' => $params['type']->value],
+                'example' => $params['example'] ?? null
+            ];
         }
 
         return $parameters;
@@ -698,7 +770,6 @@ class DocsCommand extends Command
     {
         $schema = [
             'type' => $params['type']->value,
-            'title' => $params['name'],
             'description' => $params['desc'] ?: $params['name']
         ];
 
@@ -788,6 +859,9 @@ class DocsCommand extends Command
 
     private function filterAnnotations(array $item, string $className, string $routeKey): array
     {
+        if (isset($this->annotationIndex[$routeKey][$className])) {
+            return $this->annotationIndex[$routeKey][$className];
+        }
         return array_filter($item['annotations'],
             fn($a) => $a['name'] === $className && $a['class'] === $routeKey
         );

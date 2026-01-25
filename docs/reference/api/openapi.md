@@ -29,7 +29,7 @@ DuxLite 提供了完整的 OpenAPI 3.0 文档自动生成系统，通过注解�
 ```php
 use Core\Docs\Attribute\Docs;
 
-#[Docs(name: '用户管理', desc: '用户相关接口')]
+#[Docs(name: '用户管理', desc: '用户相关接口', category: '用户')]
 class UserController
 {
     // 控制器方法
@@ -252,7 +252,7 @@ use Core\Docs\Enum\PayloadTypeEnum;
 use Core\Docs\Enum\ResultTypeEnum;
 use Core\Route\Attribute\Route;
 
-#[Docs(name: '用户管理', desc: '用户相关的增删改查接口')]
+#[Docs(name: '用户管理', desc: '用户相关的增删改查接口', category: '用户')]
 class UserController extends Resources
 {
     #[Query(field: 'page', name: '页码', type: FieldEnum::INTEGER, required: false, example: 1)]
