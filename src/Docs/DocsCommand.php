@@ -333,15 +333,16 @@ class DocsCommand extends Command
     private function addTag(string $groupName, ?array $groupInfo): void
     {
         $category = $groupInfo['category'] ?? '';
-        foreach ($this->openApiDoc['tags'] as &$tag) {
-            if ($tag['name'] !== $groupName) {
+        $tagCount = count($this->openApiDoc['tags']);
+        for ($i = 0; $i < $tagCount; $i++) {
+            if (($this->openApiDoc['tags'][$i]['name'] ?? '') !== $groupName) {
                 continue;
             }
-            if (($tag['description'] ?? '') === '') {
-                $tag['description'] = $groupInfo['desc'] ?? '';
+            if (($this->openApiDoc['tags'][$i]['description'] ?? '') === '') {
+                $this->openApiDoc['tags'][$i]['description'] = $groupInfo['desc'] ?? '';
             }
-            if (!empty($category) && empty($tag['x-category'])) {
-                $tag['x-category'] = $category;
+            if (!empty($category) && empty($this->openApiDoc['tags'][$i]['x-category'])) {
+                $this->openApiDoc['tags'][$i]['x-category'] = $category;
             }
             return;
         }
