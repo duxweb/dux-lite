@@ -21,7 +21,7 @@ class QueueConsumeCommand extends Command
             ->setName('queue:consume')
             ->setDescription('队列消费进程（常驻）')
             ->addArgument('work', InputArgument::OPTIONAL, 'worker 名（workers.<work>）', '')
-            ->addArgument('priority', InputArgument::OPTIONAL, '优先级（high/medium/low）', '');
+            ->addArgument('priority', InputArgument::OPTIONAL, '优先级（high/medium/low），为空按权重混合消费', '');
     }
 
     /**

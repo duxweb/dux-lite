@@ -7,6 +7,7 @@ namespace Core\Queue;
 class QueueMessage
 {
     private int $delayMs = 0;
+    private string $id = '';
 
     /**
      * @param string $name worker 名（workers.<name>），为空则使用 default
@@ -41,6 +42,15 @@ class QueueMessage
     }
 
     /**
+     * 设置任务 ID（用于日志跟踪）。
+     */
+    public function id(string $id): self
+    {
+        $this->id = $id;
+        return $this;
+    }
+
+    /**
      * 投递到队列。
      */
     public function send(): void
@@ -48,7 +58,7 @@ class QueueMessage
         $this->queue->dispatch(
             $this->name,
             $this->priority,
-            new QueueJobMessage($this->class, $this->method, $this->params),
+            new QueueJobMessage($this->class, $this->method, $this->params, $this->priority, $this->id),
             $this->delayMs
         );
     }

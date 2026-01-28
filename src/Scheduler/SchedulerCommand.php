@@ -16,18 +16,17 @@ class SchedulerCommand extends Command
     {
         $this->setName("scheduler:run")->setDescription('Scheduler start service');
         $this
-            ->addOption('watch', null, InputOption::VALUE_NEGATABLE, 'Watch scheduler jobs file and restart on change', true)
             ->addOption('watch-interval', null, InputOption::VALUE_REQUIRED, 'Watch interval (seconds)', '3');
     }
 
 
     public function execute(InputInterface $input, OutputInterface $output): int
     {
-        $watch = (bool)$input->getOption('watch');
         $watchInterval = max(1, (int)$input->getOption('watch-interval'));
 
         $scheduler = App::scheduler();
         $jobs = $scheduler->loadJobs();
+        $output->writeln('<info>Watching jobs file: ' . $scheduler->jobsFilePath() . '</info>');
 
         $rows = $this->formatRows($jobs);
         if (!$rows) {
@@ -40,7 +39,42 @@ class SchedulerCommand extends Command
             ->setRows($rows);
         $table->render();
 
-        $code = $scheduler->run($watch, $watchInterval);
+        if (function_exists('pcntl_fork') && function_exists('posix_kill')) {
+            $jobsPath = $scheduler->jobsFilePath();
+            $hash = $this->hashFile($jobsPath);
+            $pid = pcntl_fork();
+            if ($pid === -1) {
+                $output->writeln('<error>Unable to fork watcher process, running without watcher.</error>');
+            } elseif ($pid === 0) {
+                $code = $scheduler->run();
+                exit($code === Scheduler::EXIT_OK ? Command::SUCCESS : $code);
+            } else {
+                $interval = max(1, $watchInterval);
+                while (true) {
+                    $status = null;
+                    $res = pcntl_waitpid($pid, $status, WNOHANG);
+                    if ($res === $pid) {
+                        $exitCode = pcntl_wexitstatus($status);
+                        return $exitCode === 0 ? Command::SUCCESS : $exitCode;
+                    }
+
+                    sleep($interval);
+                    $newHash = $this->hashFile($jobsPath);
+                    if ($hash !== $newHash) {
+                        $output->writeln('<comment>Jobs file changed, stopping scheduler...</comment>');
+                        App::log('scheduler')->info('Scheduler jobs file changed, stopping', [
+                            'file' => $jobsPath,
+                        ]);
+                        posix_kill($pid, SIGTERM);
+                        sleep(1);
+                        posix_kill($pid, SIGKILL);
+                        return Scheduler::EXIT_RESTART;
+                    }
+                }
+            }
+        }
+
+        $code = $scheduler->run();
         if ($code === Scheduler::EXIT_RESTART) {
             return Scheduler::EXIT_RESTART;
         }
@@ -59,5 +93,14 @@ class SchedulerCommand extends Command
             ];
         }
         return $rows;
+    }
+
+    private function hashFile(string $path): ?string
+    {
+        clearstatcache(true, $path);
+        if (!is_file($path)) {
+            return null;
+        }
+        return hash_file('sha256', $path) ?: null;
     }
 }

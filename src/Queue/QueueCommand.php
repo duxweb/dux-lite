@@ -11,6 +11,7 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Output\ConsoleSectionOutput;
 use Symfony\Component\Process\Process;
 
 class QueueCommand extends Command
@@ -19,6 +20,7 @@ class QueueCommand extends Command
      * manager 进程是否需要退出（跨平台）。
      */
     private bool $stop = false;
+    private ?ConsoleSectionOutput $statusSection = null;
 
     /**
      * 启动管理进程：按 workers 配置拉起多个 queue:consume 子进程，并周期输出队列状态。
@@ -29,7 +31,7 @@ class QueueCommand extends Command
             ->setName('queue:start')
             ->setDescription('队列管理进程（按配置启动并发 worker）')
             ->addArgument('works', InputArgument::IS_ARRAY, '指定要启动的 worker 名（默认启动全部）')
-            ->addOption('status-interval', null, InputOption::VALUE_REQUIRED, '状态刷新间隔（秒）', '2')
+            ->addOption('status-interval', null, InputOption::VALUE_REQUIRED, '状态刷新间隔（秒）', '5')
             ->addOption('no-status', null, InputOption::VALUE_NONE, '关闭状态输出');
     }
 
@@ -38,6 +40,12 @@ class QueueCommand extends Command
      */
     public function execute(InputInterface $input, OutputInterface $output): int
     {
+        if (function_exists('ini_set')) {
+            @ini_set('max_execution_time', '0');
+        }
+        if (function_exists('set_time_limit')) {
+            @set_time_limit(0);
+        }
         $processes = [];
         register_shutdown_function(function () use (&$processes) {
             // 跨平台兜底：manager 退出时尽量停止全部子进程，避免 orphan。
@@ -69,7 +77,11 @@ class QueueCommand extends Command
             return Command::FAILURE;
         }
 
-        $output->writeln('Worker command: ' . PHP_BINARY . ' ' . $entry . ' queue:consume <work> <priority>');
+        $output->writeln('Start time: ' . date('Y-m-d H:i:s'));
+        $output->writeln('Worker command: ' . PHP_BINARY . ' ' . $entry . ' queue:consume <work> [priority]');
+        if (method_exists($output, 'section')) {
+            $this->statusSection = $output->section();
+        }
 
         $processes = $this->startWorkers($workers, $entry);
 
@@ -90,19 +102,17 @@ class QueueCommand extends Command
     }
 
     /**
-     * @param array<string, array{type:string,driver:string,num:int,weights:array{high:int,medium:int,low:int},queues:array<string,int>}> $workers
+     * @param array<string, array{type:string,driver:string,num:int,weights:array{high:int,medium:int,low:int}}> $workers
      * @return array<string, array<string, array<int, Process>>>
      */
     private function startWorkers(array $workers, string $entry): array
     {
         $processes = [];
         foreach ($workers as $work => $cfg) {
-            $processes[$work] = [];
-            foreach ($cfg['queues'] as $priority => $concurrency) {
-                $processes[$work][$priority] = [];
-                for ($i = 0; $i < $concurrency; $i++) {
-                    $processes[$work][$priority][] = $this->startWorkerProcess($entry, (string)$work, (string)$priority);
-                }
+            $processes[$work] = ['all' => []];
+            $concurrency = (int)($cfg['num'] ?? 0);
+            for ($i = 0; $i < $concurrency; $i++) {
+                $processes[$work]['all'][] = $this->startWorkerProcess($entry, (string)$work, '');
             }
         }
         return $processes;
@@ -111,9 +121,13 @@ class QueueCommand extends Command
     /**
      * 启动一个消费子进程。
      */
-    private function startWorkerProcess(string $entry, string $work, string $priority): Process
+    private function startWorkerProcess(string $entry, string $work, string $priority = ''): Process
     {
-        $process = new Process([PHP_BINARY, $entry, 'queue:consume', $work, $priority]);
+        $cmd = [PHP_BINARY, $entry, 'queue:consume', $work];
+        if ($priority !== '') {
+            $cmd[] = $priority;
+        }
+        $process = new Process($cmd);
         $process->setEnv([
             ...($_ENV ?? []),
             'DUX_QUEUE_RUN_ID' => (string)(getenv('DUX_QUEUE_RUN_ID') ?: ''),
@@ -153,7 +167,11 @@ class QueueCommand extends Command
                     if ($process->isRunning()) {
                         continue;
                     }
-                    $list[$idx] = $this->startWorkerProcess($entry, (string)$work, (string)$priority);
+                    $priorityName = (string)$priority;
+                    if ($priorityName === 'all') {
+                        $priorityName = '';
+                    }
+                    $list[$idx] = $this->startWorkerProcess($entry, (string)$work, $priorityName);
                 }
             }
             unset($list);
@@ -162,7 +180,7 @@ class QueueCommand extends Command
     }
 
     /**
-     * @param array<string, array{type:string,driver:string,num:int,weights:array{high:int,medium:int,low:int},queues:array<string,int>}> $workers
+     * @param array<string, array{type:string,driver:string,num:int,weights:array{high:int,medium:int,low:int}}> $workers
      * @param array<string, array<string, array<int, Process>>> $processes
      */
     private function renderStatus(OutputInterface $output, array $workers, array $processes): void
@@ -188,7 +206,7 @@ class QueueCommand extends Command
             $rows[] = [
                 (string)$work,
                 (string)($cfg['num'] ?? 0),
-                (string)($cfg['queues']['high'] ?? 0) . '/' . (string)($cfg['queues']['medium'] ?? 0) . '/' . (string)($cfg['queues']['low'] ?? 0),
+                (string)($cfg['weights']['high'] ?? 0) . '/' . (string)($cfg['weights']['medium'] ?? 0) . '/' . (string)($cfg['weights']['low'] ?? 0),
                 (string)$running,
                 $row ? (string)$row['pending'] : '-',
                 $row ? (string)$row['running'] : '-',
@@ -198,9 +216,13 @@ class QueueCommand extends Command
             ];
         }
 
-        $table = new Table($output);
+        $tableOutput = $this->statusSection ?: $output;
+        if ($this->statusSection) {
+            $this->statusSection->clear();
+        }
+        $table = new Table($tableOutput);
         $table
-            ->setHeaders(['work', 'num', 'alloc(h/m/l)', 'procs', 'pending', 'running', 'executed', 'failed', 'time'])
+            ->setHeaders(['work', 'num', 'weight(h/m/l)', 'procs', 'pending', 'running', 'executed', 'failed', 'time'])
             ->setRows($rows);
         $table->render();
     }
@@ -281,4 +303,5 @@ class QueueCommand extends Command
     {
         return \DIRECTORY_SEPARATOR === '\\';
     }
+
 }

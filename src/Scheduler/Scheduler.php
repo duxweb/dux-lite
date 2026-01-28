@@ -115,7 +115,7 @@ class Scheduler
         return $data;
     }
 
-    public function run(bool $watch = true, int $watchInterval = 3): int
+    public function run(): int
     {
         if (function_exists('ini_set')) {
             @ini_set('max_execution_time', '0');
@@ -129,28 +129,6 @@ class Scheduler
         $this->scheduler->work();
         $loop = Loop::get();
 
-        $restart = false;
-        if ($watch) {
-            $watchFiles = [$this->jobsFilePath()];
-            $hashes = [];
-            foreach ($watchFiles as $path) {
-                $hashes[$path] = $this->hashFile($path);
-            }
-            $loop->addPeriodicTimer(max(1, $watchInterval), function () use (&$restart, $watchFiles, &$hashes) {
-                foreach ($watchFiles as $path) {
-                    $hash = $this->hashFile($path);
-                    if (($hashes[$path] ?? null) !== $hash) {
-                        $restart = true;
-                        App::log('scheduler')->info('Scheduler jobs file changed, restarting', [
-                            'file' => $path,
-                        ]);
-                        Loop::stop();
-                        return;
-                    }
-                }
-            });
-        }
-
         // 定时检查任务
         $loop->addPeriodicTimer(1, function () {
             $seconds = [0];
@@ -160,9 +138,6 @@ class Scheduler
         });
         $loop->run();
 
-        if ($restart) {
-            return self::EXIT_RESTART;
-        }
         return self::EXIT_OK;
     }
 
@@ -256,11 +231,4 @@ class Scheduler
         }
     }
 
-    private function hashFile(string $path): ?string
-    {
-        if (!is_file($path)) {
-            return null;
-        }
-        return hash_file('sha256', $path) ?: null;
-    }
 }

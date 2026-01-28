@@ -53,6 +53,10 @@ class Queue
     public function dispatch(string $worker, string $priority, QueueJobMessage $message, int $delayMs = 0): void
     {
         [$worker, $priority] = $this->resolveWorkerAndPriorityForSend($worker, $priority);
+        $message->priority = $priority;
+        if ($message->id === '') {
+            $message->id = $this->generateMessageId();
+        }
         $transport = $this->getSendTransport($worker, $priority);
 
         $envelope = new Envelope($message);
@@ -66,7 +70,9 @@ class Queue
     }
 
     /**
-     * 启动单个 worker 进程消费指定队列（常驻）。
+     * 启动单个 worker 进程消费队列（常驻）。
+     * - priority 为空时：按权重混合消费所有优先级队列
+     * - priority 指定时：仅消费该优先级队列
      */
     public function process(string $priority = '', string $worker = ''): void
     {
@@ -83,21 +89,36 @@ class Queue
             putenv('DUX_QUEUE_WORK=' . $worker);
         }
         if ((string)(getenv('DUX_QUEUE_PRIORITY') ?: '') === '') {
-            putenv('DUX_QUEUE_PRIORITY=' . $priority);
+            putenv('DUX_QUEUE_PRIORITY=' . ($priority !== '' ? $priority : 'mixed'));
         }
         if ((string)(getenv('DUX_QUEUE_RUN_ID') ?: '') === '') {
             putenv('DUX_QUEUE_RUN_ID=manual-' . date('YmdHis') . '-' . getmypid());
         }
 
         $adapter = $this->createAdapterForWork($worker);
-        $transport = $adapter->createConsumeTransport($this->physicalQueueName($worker, $priority), $this->resolveConsumerName());
 
         $handler = new QueueJobMessageHandler();
         $locator = new HandlersLocator([
             QueueJobMessage::class => [new HandlerDescriptor([$handler, '__invoke'])],
         ]);
         $bus = new MessageBus([new HandleMessageMiddleware($locator)]);
-        $worker = new Worker(['default' => $transport], $bus);
+
+        $weights = $this->extractPriorityWeights($this->getWorkersConfigCached()[$worker] ?? []);
+        $receivers = [];
+        foreach (['high', 'medium', 'low'] as $item) {
+            $receivers[$item] = $adapter->createConsumeTransport(
+                $this->physicalQueueName($worker, $item),
+                $this->resolveConsumerName()
+            );
+        }
+
+        if ($priority === '') {
+            $receiver = new WeightedPriorityReceiver($receivers, $weights);
+            $worker = new Worker(['default' => $receiver], $bus);
+        } else {
+            $receiver = new PriorityFallbackReceiver($priority, $receivers, $weights);
+            $worker = new Worker(['default' => $receiver], $bus);
+        }
 
         $this->registerSignalHandlers($worker);
         $worker->run(['sleep' => 1000000]);
@@ -162,7 +183,7 @@ class Queue
 
     /**
      * 读取并规范化 workers 配置（num 为总并发，high/medium/low 为权重）。
-     * @return array<string, array{type:string,driver:string,num:int,weights:array{high:int,medium:int,low:int},queues:array<string,int>}>
+     * @return array<string, array{type:string,driver:string,num:int,weights:array{high:int,medium:int,low:int}}>
      */
     public function getWorkersConfig(): array
     {
@@ -179,7 +200,6 @@ class Queue
             }
             $num = max(0, (int)($cfg['num'] ?? 0));
             $weights = $this->extractPriorityWeights($cfg);
-            $queues = $this->resolveQueueTargets($weights, $num);
             $normalized[(string)$work] = [
                 'type' => $type,
                 'driver' => $driver,
@@ -189,7 +209,6 @@ class Queue
                     'medium' => (int)($weights['medium'] ?? 0),
                     'low' => (int)($weights['low'] ?? 0),
                 ],
-                'queues' => $queues,
             ];
         }
         return $normalized;
@@ -293,10 +312,7 @@ class Queue
     {
         $worker = $this->resolveWorkerName($worker);
         $priority = trim($priority);
-        if ($priority === '') {
-            $priority = 'medium';
-        }
-        if (!in_array($priority, ['high', 'medium', 'low'], true)) {
+        if ($priority !== '' && !in_array($priority, ['high', 'medium', 'low'], true)) {
             throw new RuntimeException('Queue priority not supported: ' . $priority);
         }
         return [$worker, $priority];
@@ -349,53 +365,23 @@ class Queue
                 $queues[$key] = 0;
             }
         }
+        if (array_sum($queues) <= 0) {
+            $queues = [
+                'high' => 3,
+                'medium' => 2,
+                'low' => 1,
+            ];
+        }
         return $queues;
     }
 
-    /**
-     * @param array<string,int> $weights
-     * @return array<string,int> queueName => concurrency
-     */
-    private function resolveQueueTargets(array $weights, int $num): array
+    private function generateMessageId(): string
     {
-        if ($num <= 0) {
-            return [];
-        }
-
-        // 没配置权重（或全为 0）则全部走 medium
-        $totalWeight = array_sum($weights);
-        if (!$weights || $totalWeight <= 0) {
-            return ['medium' => $num];
-        }
-
-        // 将权重归一化到 num 并发（最大余数法）
-        $targets = [];
-        $remainders = [];
-        $allocated = 0;
-        foreach ($weights as $queue => $weight) {
-            if ($weight <= 0) {
-                $targets[$queue] = 0;
-                continue;
-            }
-            $raw = ($num * $weight) / $totalWeight;
-            $base = (int)floor($raw);
-            $targets[$queue] = $base;
-            $allocated += $base;
-            $remainders[] = ['queue' => $queue, 'rem' => $raw - $base];
-        }
-
-        $remaining = $num - $allocated;
-        usort($remainders, static fn ($a, $b) => $b['rem'] <=> $a['rem']);
-        for ($i = 0; $i < $remaining; $i++) {
-            if (!isset($remainders[$i])) {
-                break;
-            }
-            $q = $remainders[$i]['queue'];
-            $targets[$q] = ($targets[$q] ?? 0) + 1;
-        }
-
-        // drop zero targets
-        $targets = array_filter($targets, static fn ($v) => (int)$v > 0);
-        return $targets ?: ['medium' => $num];
+        $time = dechex(time());
+        $micro = (int)((microtime(true) - floor(microtime(true))) * 1000000);
+        $microHex = str_pad(dechex($micro), 5, '0', STR_PAD_LEFT);
+        $rand = bin2hex(random_bytes(4));
+        return $time . $microHex . $rand;
     }
+
 }
