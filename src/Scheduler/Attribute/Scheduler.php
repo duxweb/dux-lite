@@ -9,7 +9,7 @@ use Attribute;
 class Scheduler {
 
     public function __construct(
-        public string $cron = '* * * * *',
+        public ?string $cron = null,
         public string $name = '',
         public string $desc = ''
     ) {

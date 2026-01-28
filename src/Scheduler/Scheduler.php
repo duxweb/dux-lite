@@ -12,12 +12,11 @@ class Scheduler
 {
     public const int EXIT_OK = 0;
     public const int EXIT_RESTART = 100;
-    public const string DEFAULT_CRON = '* * * * *';
 
     public GoScheduler $scheduler;
 
     /**
-     * @var array<int, array{name:string,desc:string,cron:string,callback:string,params:array}>
+     * @var array<int, array{name:string,desc:string,cron:?string,callback:string,params:array}>
      */
     public array $data = [];
 
@@ -40,7 +39,7 @@ class Scheduler
     public function add(
         string $callback,
         array $params = [],
-        string $cron = self::DEFAULT_CRON,
+        ?string $cron = null,
         string $name = '',
         string $desc = ''
     ): void {
@@ -59,10 +58,13 @@ class Scheduler
     public function job(
         string $callback,
         array $params = [],
-        string $cron = self::DEFAULT_CRON,
+        ?string $cron = null,
         string $name = '',
         string $desc = ''
-    ): \GO\Job {
+    ): ?\GO\Job {
+        if (!is_string($cron) || trim($cron) === '') {
+            return null;
+        }
         [$class, $method] = $this->parseCallback($callback);
 
         $job = $this->scheduler->call(function () use ($class, $method, $params) {
@@ -104,19 +106,19 @@ class Scheduler
     }
 
     /**
-     * 优先从 data 文件读取计划任务，否则回退到当前内存数据
+     * 优先从 data 文件读取计划任务，为空时生成并写入
      */
     public function loadJobs(): array
     {
         $data = $this->readJobsFile($this->jobsFilePath());
         if (!$data) {
-            $data = $this->data;
+            $data = $this->gen();
         }
         $this->data = $data;
         return $data;
     }
 
-    public function run(bool $watch = false, int $watchInterval = 3): int
+    public function run(bool $watch = true, int $watchInterval = 3): int
     {
         $jobs = $this->loadJobs();
         $this->registerJobs($jobs);
@@ -171,7 +173,7 @@ class Scheduler
                     continue;
                 }
                 $params = $annotation['params'] ?? [];
-                $cron = $params['cron'] ?? $params[0] ?? self::DEFAULT_CRON;
+                $cron = $params['cron'] ?? $params[0] ?? null;
                 $name = $params['name'] ?? $params[1] ?? '';
                 $desc = $params['desc'] ?? $params[2] ?? '';
                 $this->add(
@@ -229,12 +231,16 @@ class Scheduler
             if (!$callback) {
                 continue;
             }
+            $cron = $job['cron'] ?? null;
+            if (!is_string($cron) || trim($cron) === '') {
+                continue;
+            }
 
             try {
                 $this->job(
                     $callback,
                     is_array($job['params'] ?? null) ? $job['params'] : [],
-                    (string)($job['cron'] ?? self::DEFAULT_CRON),
+                    $cron,
                     (string)($job['name'] ?? ''),
                     (string)($job['desc'] ?? '')
                 );
