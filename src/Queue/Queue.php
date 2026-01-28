@@ -70,6 +70,12 @@ class Queue
      */
     public function process(string $priority = '', string $worker = ''): void
     {
+        if (function_exists('ini_set')) {
+            @ini_set('max_execution_time', '0');
+        }
+        if (function_exists('set_time_limit')) {
+            @set_time_limit(0);
+        }
         [$worker, $priority] = $this->resolveWorkerAndPriorityForConsume($worker, $priority);
 
         // 允许直接运行 `queue:consume <work> <priority>`，确保 handler 能拿到上下文用于事件/统计。

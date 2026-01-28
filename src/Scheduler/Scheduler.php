@@ -120,6 +120,12 @@ class Scheduler
 
     public function run(bool $watch = true, int $watchInterval = 3): int
     {
+        if (function_exists('ini_set')) {
+            @ini_set('max_execution_time', '0');
+        }
+        if (function_exists('set_time_limit')) {
+            @set_time_limit(0);
+        }
         $jobs = $this->loadJobs();
         $this->registerJobs($jobs);
 

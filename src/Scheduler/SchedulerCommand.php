@@ -14,7 +14,7 @@ class SchedulerCommand extends Command
 {
     protected function configure(): void
     {
-        $this->setName("scheduler")->setDescription('Scheduler start service');
+        $this->setName("scheduler:run")->setDescription('Scheduler start service');
         $this
             ->addOption('watch', null, InputOption::VALUE_NEGATABLE, 'Watch scheduler jobs file and restart on change', true)
             ->addOption('watch-interval', null, InputOption::VALUE_REQUIRED, 'Watch interval (seconds)', '3');
