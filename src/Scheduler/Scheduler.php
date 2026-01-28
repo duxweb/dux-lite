@@ -90,9 +90,6 @@ class Scheduler
         App::event()->dispatch($event, 'scheduler.gen');
 
         $data = $event->getData();
-        if (!$data) {
-            $data = $event->getFallbackData();
-        }
 
         $file = $this->jobsFilePath();
         $dir = dirname($file);
