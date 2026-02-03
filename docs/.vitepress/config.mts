@@ -1,5 +1,8 @@
-import { defineConfig } from 'vitepress'
-import { MermaidMarkdown, MermaidPlugin, withMermaid } from "vitepress-plugin-mermaid";
+import { withDuxTheme } from '@duxweb/vitepress-theme/config'
+import { createRequire } from 'node:module'
+
+const require = createRequire(import.meta.url)
+const dayjsEsmPath = require.resolve('dayjs/esm/index.js')
 
 // 自动检测 base 路径
 const getBase = () => {
@@ -10,12 +13,19 @@ const getBase = () => {
 }
 
 // https://vitepress.dev/reference/site-config
-export default defineConfig({
+export default withDuxTheme({
   title: "DuxLite v2",
   description: "基于 SlimPHP 的轻量级 PHP Web 框架",
   lang: 'zh-CN',
   base: getBase(),
   lastUpdated: true,
+  vite: {
+    resolve: {
+      alias: {
+        dayjs: dayjsEsmPath
+      }
+    }
+  },
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
     nav: [
@@ -147,21 +157,5 @@ export default defineConfig({
 
   },
   markdown: {
-    config(md) {
-      md.use(MermaidMarkdown); // add this
-    },
-  },
-  vite: {
-    plugins: [MermaidPlugin()], // add plugins
-    optimizeDeps: { // include mermaid
-      include: ['mermaid'],
-      exclude: ['@duxweb/vitepress-theme']
-    },
-    ssr: {
-      noExternal: ['mermaid', '@duxweb/vitepress-theme'],
-    },
-    build: {
-      cssMinify: false
-    }
-  },
+  }
 })

@@ -13,11 +13,8 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "packageManager": "pnpm@10.11.0",
   "devDependencies": {
-    "@duxweb/vitepress-theme": "^1.0.6",
-    "mermaid": "^11.9.0",
-    "vitepress": "^1.6.4",
-    "vitepress-plugin-mermaid": "^2.0.17"
+    "@duxweb/vitepress-theme": "^1.1.2",
+    "vitepress": "^1.6.4"
   }
 }
