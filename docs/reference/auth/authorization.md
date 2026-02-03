@@ -51,8 +51,8 @@ public function register(Bootstrap $app): void
 ```php
 // 权限中间件注册
 $adminRoute = new Route('/admin', 'admin',
-    new AuthMiddleware('admin'),                    // 认证中间件
-    new PermissionMiddleware('admin', User::class)  // 权限中间件
+    new AuthMiddleware('admin'),                          // 认证中间件
+    new PermissionMiddleware('admin', \App\Models\User::class)  // 权限中间件
 );
 ```
 
@@ -65,11 +65,12 @@ $adminRoute = new Route('/admin', 'admin',
 class UserController extends Resources
 {
     // 权限由中间件自动验证：
-    // admin.users.list     - index()
-    // admin.users.show     - show()  
+    // admin.users.list     - list()
+    // admin.users.show     - show()
     // admin.users.create   - create()
-    // admin.users.edit     - update()
-    // admin.users.delete   - destroy()
+    // admin.users.edit     - edit()
+    // admin.users.store    - store()
+    // admin.users.delete   - delete()
     
     public function index(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
@@ -92,11 +93,11 @@ class UserController extends Resources
 class UserController extends Resources
 {
     // 跳过权限检查
-    #[Action(['GET'], '/stats', name: 'stats', can: false)]
+    #[Action(methods: 'GET', route: '/stats', name: 'stats', can: false)]
     public function getStats(): ResponseInterface {}
 
     // 跳过认证和权限  
-    #[Action(['GET'], '/public', name: 'public', auth: false)]
+    #[Action(methods: 'GET', route: '/public', name: 'public', auth: false)]
     public function getPublic(): ResponseInterface {}
 }
 ```

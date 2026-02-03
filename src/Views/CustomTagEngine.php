@@ -18,6 +18,14 @@ class CustomTagEngine extends Engine
     private string $cacheScope = '';
     // 标记是否已完成一次模板创建以初始化 Latte 环境
     private bool $envInitialized = false;
+    /** @var bool 是否输出预处理跟踪 */
+    private bool $traceEnabled = false;
+    /** @var bool 跟踪是否包含源模板内容 */
+    private bool $traceIncludeSource = true;
+    /** @var null|string 跟踪输出目录 */
+    private ?string $traceDir = null;
+    /** @var null|callable(array): void */
+    private $traceCallback = null;
 
     /**
      * 构造函数：安装自定义扩展与预处理器。
@@ -29,6 +37,35 @@ class CustomTagEngine extends Engine
         $this->extension = new CustomLatteExtension();
         $this->addExtension($this->extension);
         
+    }
+
+    /**
+     * 启用预处理跟踪输出（DSL -> Latte）。
+     * @param bool $includeSource 是否写入原始模板内容
+     * @param null|string $dir 自定义跟踪目录，默认使用 tempDir
+     */
+    public function enablePreprocessTrace(bool $includeSource = true, ?string $dir = null): void
+    {
+        $this->traceEnabled = true;
+        $this->traceIncludeSource = $includeSource;
+        $this->traceDir = $dir;
+    }
+
+    /** 关闭预处理跟踪输出。 */
+    public function disablePreprocessTrace(): void
+    {
+        $this->traceEnabled = false;
+        $this->traceIncludeSource = true;
+        $this->traceDir = null;
+    }
+
+    /**
+     * 设置预处理跟踪回调。
+     * @param null|callable(array): void $callback
+     */
+    public function setPreprocessTraceCallback(?callable $callback): void
+    {
+        $this->traceCallback = $callback;
     }
 
     /**
@@ -170,6 +207,7 @@ class CustomTagEngine extends Engine
         $this->writeIfChanged($tempFile, $processedTemplate, $fileTime);
         // 写入源文件目录 sidecar，供 Loader 解析相对引用时使用
         @file_put_contents($tempFile . '.srcdir', (string)dirname((string)$file));
+        $this->tracePreprocess($file, $template, $processedTemplate, $tempFile);
         return $tempFile;
     }
 
@@ -203,7 +241,37 @@ class CustomTagEngine extends Engine
         if ($srcDir !== '') {
             @file_put_contents($tempFile . '.srcdir', $srcDir);
         }
+        $this->tracePreprocess($name, $source, $processed, $tempFile);
         return $tempFile;
+    }
+
+    /**
+     * 写入预处理跟踪文件。
+     */
+    private function tracePreprocess(string $name, string $source, string $processed, string $tempFile): void
+    {
+        if (!$this->traceEnabled) {
+            return;
+        }
+        $dir = $this->traceDir ?? $this->tempDir;
+        $dir = rtrim($dir, '/');
+        if ($dir && !is_dir($dir)) {
+            @mkdir($dir, 0777, true);
+        }
+        $payload = [
+            'name' => $name,
+            'cache' => $tempFile,
+            'updated_at' => date('c'),
+        ];
+        if ($this->traceIncludeSource) {
+            $payload['source'] = $source;
+        }
+        $payload['processed'] = $processed;
+        $traceFile = $dir . '/' . basename($tempFile) . '.trace.json';
+        @file_put_contents($traceFile, json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+        if ($this->traceCallback) {
+            ($this->traceCallback)($payload);
+        }
     }
 
     /** 获取路径所在目录（纯字符串处理）。 */

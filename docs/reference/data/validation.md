@@ -216,7 +216,7 @@ try {
     $validated = Validator::parser($data, $rules);
 } catch (ExceptionValidator $e) {
     // 获取错误信息
-    $errors = $e->getData();
+    $errors = $e->data;
     /*
     $errors 格式:
     [
@@ -258,6 +258,15 @@ $rules = Validator::rule($formFields);
 | `email` | `email` | 邮箱格式验证 |
 | `number` | `numeric` | 数字验证 |
 | `min` | `lengthMin` | 最小长度验证 |
+| `max` | `lengthMax` | 最大长度验证 |
+| `length` | `length` | 固定长度 |
+| `pattern` | `regex` | 正则匹配 |
+| `telnumber` | `regex` | 手机号验证 |
+| `url` | `url` | URL 验证 |
+| `boolean` | `boolean` | 布尔验证 |
+| `date` | `date` | 日期验证 |
+| `enum` | 自定义 | 枚举验证 |
+| `idcard` | `regex` | 身份证校验 |
 | `max` | `lengthMax` | 最大长度验证 |
 | `pattern` | `regex` | 正则表达式验证 |
 | `telnumber` | `regex` | 手机号验证 |

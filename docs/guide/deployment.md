@@ -46,7 +46,7 @@ server {
 
     # PHP 处理
     location ~ \.php$ {
-        fastcgi_pass unix:/var/run/php/php8.2-fpm.sock;
+        fastcgi_pass unix:/var/run/php/php8.4-fpm.sock;
         fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
         include fastcgi_params;
     }
@@ -94,7 +94,7 @@ server {
 ### 宝塔面板
 
 1. **添加站点**：设置网站根目录为 `/www/wwwroot/yoursite/public`
-2. **PHP 版本**：选择 PHP 8.2 或更高版本
+2. **PHP 版本**：选择 PHP 8.4 或更高版本
 3. **伪静态**：选择 "Laravel" 模板（规则相同）
 4. **SSL**：配置 SSL 证书（推荐 Let's Encrypt）
 

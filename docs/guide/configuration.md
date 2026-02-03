@@ -15,13 +15,13 @@ DuxLite 使用 TOML 格式的配置文件，提供了强大且灵活的配置管
 
 ### 配置层级
 
-配置系统采用分层设计，按优先级合并：
+配置系统不会自动合并 `.env`，只会按以下顺序加载 TOML 文件：
 
 1. **开发环境配置** - `config/*.dev.toml`（优先级最高）
 2. **生产环境配置** - `config/*.toml`
-3. **环境变量** - `.env` 文件（备用方案）
+3. **空配置** - 文件不存在时使用默认值
 
-> 建议优先使用 TOML 配置文件，`.env` 仅在特殊情况下作为备用方案使用。
+如需使用环境变量，请在 TOML 中通过占位符 `%env(...)%` 显式引用。
 
 ### 占位符语法支持
 
@@ -45,7 +45,7 @@ password = "%env(DB_PASSWORD)%"
 database = "%env(DB_DATABASE)%"
 
 [storage.drivers.local]
-# 函数调用占位符
+# 函数调用占位符（支持 base_path/app_path/data_path/public_path/config_path 等）
 root = "%public_path(uploads)%"
 # 混合文本和占位符
 log_file = "logs/app_%date(Y-m-d)%.log"
@@ -72,7 +72,7 @@ prefix = "cache_%time()%_"
 
 3. **混合文本** - 可以在文本中嵌入多个占位符
    ```toml
-   log_file = "%storage_path(logs)%/app_%date(Y-m-d)%.log"
+log_file = "%data_path(logs)%/app_%date(Y-m-d)%.log"
    cache_key = "%env(APP_NAME)%_%time()%"
    ```
 
@@ -292,6 +292,13 @@ $cacheConfig = App::config('use')->get('cache', []);
 $cacheType = $cacheConfig['type'] ?? 'file';
 ```
 
+### 关闭占位符解析（原样读取）
+
+```php
+// 第二个参数传 false 可关闭占位符解析
+$config = App::config('use', false);
+```
+
 ### 使用占位符功能
 
 ```php
@@ -308,7 +315,7 @@ $host = $dbConfig->get('db.drivers.default.host'); // 已解析 %env(DB_HOST)%
 ### 传统环境变量访问
 
 ```php
-// ✅ 在 PHP 代码中直接访问环境变量
+// ✅ 在 PHP 代码中直接访问环境变量（仅在 .env 被加载时）
 $dbHost = $_ENV['DB_HOST'] ?? 'localhost';
 $appSecret = $_ENV['APP_SECRET'] ?? 'default-secret';
 
@@ -365,7 +372,7 @@ secret = "%env(APP_SECRET)%"
 ```
 
 ```bash
-# .env 文件
+# .env 文件（仅在 %env()% 被使用时参与）
 APP_DEBUG=false
 APP_SECRET=randomly-generated-32-char-secret-key
 DB_PASSWORD=your-secure-database-password

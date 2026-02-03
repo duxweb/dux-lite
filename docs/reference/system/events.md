@@ -237,14 +237,14 @@ class AsyncEventListener
     public function trackActivity($data): void
     {
         // 使用队列异步处理统计
-        Queue::push('analytics', $data);
+        \Core\App::queue()->add(\App\Jobs\AnalyticsJob::class, 'handle', [$data])->send();
     }
     
     #[Listener('email.send')]
     public function sendEmailAsync($emailData): void
     {
         // 异步发送邮件
-        Queue::push('email', $emailData);
+        \Core\App::queue()->add(\App\Jobs\EmailJob::class, 'send', [$emailData])->send();
     }
 }
 ```

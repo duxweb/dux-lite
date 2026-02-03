@@ -62,7 +62,7 @@ high = 5
 [redis.drivers.default]
 host = "localhost"
 port = 6379
-auth = ""                    # Redis 密码
+password = ""                # Redis 密码
 database = 0
 persistent = false
 optPrefix = "queue_"         # 队列前缀

@@ -33,7 +33,7 @@ class UserController extends Resources
 class UserController extends Resources
 {
     // 自动生成权限：admin.users.export
-    #[Action(['POST'], '/export', name: 'export')]
+    #[Action(methods: 'POST', route: '/export', name: 'export')]
     public function export(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
         // 权限由中间件自动验证，无需手动检查
@@ -74,7 +74,7 @@ class DashboardController extends Resources {}
 class UserController extends Resources  
 {
     // 跳过权限检查（但仍需认证）
-    #[Action(['GET'], '/stats', name: 'stats', can: false)]
+    #[Action(methods: 'GET', route: '/stats', name: 'stats', can: false)]
     public function getStats(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
         $stats = [
@@ -85,7 +85,7 @@ class UserController extends Resources
     }
 
     // 跳过认证和权限（公开接口）
-    #[Action(['GET'], '/public', name: 'public', auth: false, can: false)]  
+    #[Action(methods: 'GET', route: '/public', name: 'public', auth: false, can: false)]  
     public function getPublic(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
         return send($response, '公开数据', ['message' => 'Hello World']);
@@ -95,19 +95,6 @@ class UserController extends Resources
 
 ## 中间件集成
 
-### 认证和权限中间件
-
-```php
-use Core\Auth\AuthMiddleware;
-
-// 应用级权限控制
-$app->group('/admin', function (RouteCollectorProxy $group) {
-    // CRUD 权限由注解自动处理
-    $group->any('/users[/{action}[/{id}]]', UserController::class);
-    $group->any('/posts[/{action}[/{id}]]', PostController::class);
-})->add(new AuthMiddleware('admin'));  // 管理员应用权限
-```
-
 ### 应用注册配置
 
 ```php
@@ -116,7 +103,7 @@ public function register(Bootstrap $app): void
 {
     $adminRoute = new Route('/admin', 'admin',
         new AuthMiddleware('admin'),        // 认证中间件
-        new PermissionMiddleware('admin')   // 权限验证中间件
+        new PermissionMiddleware('admin', \App\Models\Admin::class)   // 权限验证中间件
     );
     \Core\App::route()->set('admin', $adminRoute);
 }
@@ -159,7 +146,7 @@ class UserController extends Resources
 ```php
 class PostController extends Resources
 {
-    public function update(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
+    public function edit(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
         $auth = $request->getAttribute('auth');
         $postId = (int)$args['id'];
@@ -174,8 +161,9 @@ class PostController extends Resources
             throw new ExceptionBusiness('只能编辑自己的文章', 403);
         }
         
-        $data = $this->validator($request->getParsedBody(), $request, $args);
-        $post->update($data);
+        $rules = $this->validator((array)$request->getParsedBody(), $request, $args);
+        $data = \Core\Validator\Validator::parser($request->getParsedBody(), $rules);
+        $post->update($data->toArray());
         
         return send($response, '更新成功', $post->transform());
     }

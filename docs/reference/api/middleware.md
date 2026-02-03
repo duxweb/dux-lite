@@ -18,7 +18,7 @@ public function register(Bootstrap $app): void
 
 ## AUTH 认证中间件
 
-验证用户身份和令牌，自动从 `Authorization` 请求头提取 JWT token。
+验证用户身份和令牌，优先从 `Authorization` 请求头提取 JWT token，未找到时尝试 `Cookie: token`。
 
 ```php
 use Core\Auth\AuthMiddleware;
@@ -75,12 +75,12 @@ $apiRoute = new Route('/api', 'api', new ApiMiddleware($callback));
 检查用户权限，配合认证中间件使用。
 
 ```php
-use Core\Auth\PermissionMiddleware;
+use Core\Permission\PermissionMiddleware;
 
 // App.php 中注册多个中间件
 $adminRoute = new Route('/admin', 'admin',
     new AuthMiddleware('admin'),
-    new PermissionMiddleware('admin', 'Admin')
+    new PermissionMiddleware('admin', \App\Models\Admin::class)
 );
 ```
 
@@ -98,10 +98,9 @@ public function list(): ResponseInterface
 
 自动检测和设置用户语言，全局中间件无需手动添加。
 
-**检测顺序：**
-1. 查询参数：`?lang=zh-CN`
-2. 请求头：`Accept-Language: zh-CN,en;q=0.9`
-3. 默认语言：`zh-CN`
+**检测来源：**
+1. 请求头：`Accept-Language: zh-CN,en;q=0.9`
+2. 默认语言：`en-US`
 
 **使用方式：**
 ```php
@@ -121,7 +120,7 @@ public function register(Bootstrap $app): void
 {
     $apiRoute = new Route('/api', 'api',
         new AuthMiddleware('api'),           // 1. 认证
-        new PermissionMiddleware('api', 'User'), // 2. 权限
+        new PermissionMiddleware('api', \App\Models\User::class), // 2. 权限
         new ApiMiddleware($callback)         // 3. 签名验证
     );
     \Core\App::route()->set('api', $apiRoute);

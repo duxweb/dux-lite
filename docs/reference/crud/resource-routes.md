@@ -113,7 +113,7 @@ class UserController extends Resources
 
 ### AuthMiddleware 认证中间件
 
-`AuthMiddleware` 负责验证用户身份和认证状态：
+`AuthMiddleware` 负责验证用户身份和认证状态（资源路由默认会自动挂载一个 `new AuthMiddleware($appName)`，这里可追加额外中间件）：
 
 ```php
 use Core\Auth\AuthMiddleware;

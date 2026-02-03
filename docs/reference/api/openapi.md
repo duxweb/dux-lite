@@ -21,6 +21,7 @@ DuxLite 提供了完整的 OpenAPI 3.0 文档自动生成系统，通过注解�
 - `#[Payload]` - 定义请求体数据
 - `#[Result]` - 定义返回数据结构
 - `#[ResultStatus]` - 定义自定义状态码
+- `#[ResultMessage]` - 定义 message 字段说明
 
 ## 基础用法
 
@@ -43,6 +44,7 @@ use Core\Docs\Attribute\Api;
 use Core\Docs\Enum\PayloadTypeEnum;
 use Core\Docs\Enum\ResultMimeEnum;
 use Core\Docs\Enum\ResultTypeEnum;
+use Core\Route\Attribute\Route;
 
 #[Api(
     name: '获取用户信息',
@@ -50,7 +52,7 @@ use Core\Docs\Enum\ResultTypeEnum;
     resultMime: ResultMimeEnum::JSON,
     resultType: ResultTypeEnum::MESSAGE
 )]
-#[Route('/users/{id}', ['GET'])]
+#[Route(methods: 'GET', route: '/users/{id}')]
 public function show($request, $response, $args)
 {
     // 实现逻辑
@@ -89,7 +91,7 @@ use Core\Docs\Attribute\Payload;
 #[Payload(field: 'email', name: '邮箱', type: FieldEnum::STRING, required: true, example: 'admin@example.com')]
 #[Payload(field: 'password', name: '密码', type: FieldEnum::STRING, required: true, example: '123456')]
 #[Api(name: '创建用户')]
-#[Route('/users', ['POST'])]
+#[Route(methods: 'POST', route: '/users')]
 public function store($request, $response, $args)
 {
     // 实现逻辑
@@ -221,13 +223,13 @@ ResultTypeEnum::DEFAULT   // 自定义格式
 
 ```bash
 # 生成 OpenAPI 文档
-php bin/cli docs:build
+php dux docs:build
 
 # 指定主机和端口
-php bin/cli docs:build --host=api.example.com --port=443
+php dux docs:build --host=api.example.com --port=443
 
 # 指定版本号
-php bin/cli docs:build --ver=2.0.0
+php dux docs:build --ver=2.0.0
 ```
 
 ### 输出文件
@@ -277,7 +279,7 @@ class UserController extends Resources
             'meta' => ['total' => 100, 'page' => 1]
         ]
     )]
-    #[Route('/users', ['GET'])]
+    #[Route(methods: 'GET', route: '/users')]
     public function index($request, $response, $args)
     {
         // 实现逻辑
@@ -289,7 +291,7 @@ class UserController extends Resources
     #[ResultData(field: 'email', name: '邮箱', type: FieldEnum::STRING, example: 'admin@example.com')]
     #[ResultStatus(code: 404, name: '用户不存在', desc: '指定ID的用户不存在')]
     #[Api(name: '获取用户详情')]
-    #[Route('/users/{id}', ['GET'])]
+    #[Route(methods: 'GET', route: '/users/{id}')]
     public function show($request, $response, $args)
     {
         // 实现逻辑
@@ -311,7 +313,7 @@ class UserController extends Resources
             'password' => '123456'
         ]
     )]
-    #[Route('/users', ['POST'])]
+    #[Route(methods: 'POST', route: '/users')]
     public function store($request, $response, $args)
     {
         // 实现逻辑

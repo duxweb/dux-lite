@@ -28,6 +28,13 @@ class CustomLatteExtension extends Extension
     public function getTags(): array
     {
         return [
+            'pagination' => function (Tag $tag) {
+                $tag->expectArguments();
+                $args = $tag->parser->parseArguments();
+                return new AuxiliaryNode(function (PrintContext $context) use ($args) {
+                    return $this->printPagination($context, $args);
+                });
+            },
             'xTag' => function (Tag $tag) {
                 $tag->expectArguments();
                 $args = $tag->parser->parseArguments();
@@ -162,6 +169,18 @@ class CustomLatteExtension extends Extension
             $__meta = $__pack[1];
             if (!empty($__xt['meta']) && $__meta !== null) { ${$__xt['meta']} = $__meta; }
             if (($__pack[5] ?? false)) { echo \Core\Views\Render::debugBlock($__pack, 'info'); }
+            PHP,
+            $args,
+        );
+    }
+
+    /** 生成 {pagination} 的运行时代码。 */
+    private function printPagination(PrintContext $context, ExpressionNode $args): string
+    {
+        return $context->format(
+            <<<'PHP'
+            $__pg = (function($x){ return (is_array($x) && array_key_exists(0,$x) && count($x)===1) ? $x[0] : $x; })(%node);
+            echo \Core\Views\Render::pagination(is_array($__pg) ? $__pg : []);
             PHP,
             $args,
         );

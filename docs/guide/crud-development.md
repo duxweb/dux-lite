@@ -64,18 +64,6 @@ use Illuminate\Database\Eloquent\Model;
 class User extends Model
 {
     protected $table = 'users';
-    
-    // 必须实现 transform 方法
-    public function transform(): array
-    {
-        return [
-            'id' => $this->id,
-            'name' => $this->name,
-            'email' => $this->email,
-            'status' => $this->status,
-            'created_at' => $this->created_at,
-        ];
-    }
 }
 ```
 
@@ -86,6 +74,18 @@ class UserController extends Resources
 {
     protected string $model = User::class;
     
+    // 建议在资源控制器中实现 transform
+    public function transform(object $item): array
+    {
+        return [
+            'id' => $item->id,
+            'name' => $item->name,
+            'email' => $item->email,
+            'status' => $item->status,
+            'created_at' => $item->created_at,
+        ];
+    }
+
     public function validator(array $data, ServerRequestInterface $request, array $args): array
     {
         return [
@@ -128,7 +128,7 @@ class UserController extends Resources
 
 ```php
 // 注册需要认证的路由
-$adminRoute = new Route('/admin', 'admin', new AuthMiddleware());
+$adminRoute = new Route('/admin', 'admin', new AuthMiddleware('admin'));
 \Core\App::route()->set('admin', $adminRoute);
 ```
 

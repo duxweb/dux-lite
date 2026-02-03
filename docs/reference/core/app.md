@@ -82,11 +82,8 @@ $pdo = App::db()->getConnection()->getPdo();
 // 获取迁移管理器
 $migrate = App::dbMigrate();
 
-// 执行迁移
-$migrate->run();
-
-// 回滚迁移
-$migrate->rollback();
+// 执行同步（建议通过命令行：php dux db:sync）
+$migrate->migrate($output, $appName);
 ```
 
 ## 缓存和存储
@@ -130,8 +127,8 @@ $storage = App::storage();
 $s3Storage = App::storage('s3');
 
 // 文件操作
-$storage->put('path/file.txt', 'content');
-$content = $storage->get('path/file.txt');
+$storage->write('path/file.txt', 'content');
+$content = $storage->read('path/file.txt');
 ```
 
 ## 配置和本地化
@@ -140,12 +137,12 @@ $content = $storage->get('path/file.txt');
 
 ```php
 // 获取配置
-$appConfig = App::config('app');
+$appConfig = App::config('use');
 $dbConfig = App::config('database');
 
 // 读取配置值
-$debug = App::config('app')->get('debug', false);
-$dbHost = App::config('database')->get('db.drivers.mysql.host');
+$debug = App::config('use')->get('app.debug', false);
+$dbHost = App::config('database')->get('db.drivers.default.host');
 ```
 
 ### 翻译服务
@@ -225,8 +222,10 @@ foreach ($attributes as $item) {
 // 获取权限注册器
 $permission = App::permission();
 
-// 注册权限（通常自动处理）
-App::permission()->register('user.edit', '编辑用户');
+// 注册权限（通过 Permission 对象配置）
+$permission = new \Core\Permission\Permission();
+$permission->group('users')->resources(['list', 'show', 'create', 'edit', 'delete']);
+App::permission()->set('admin', $permission);
 ```
 
 ### 资源管理
@@ -235,8 +234,9 @@ App::permission()->register('user.edit', '编辑用户');
 // 获取资源注册器
 $resource = App::resource();
 
-// 注册资源路由（通常自动处理）
-App::resource()->register($controllerClass);
+// 注册资源路由（通过 Resource 对象配置）
+$resource = new \Core\Resources\Resource('admin', '/admin');
+App::resource()->set('admin', $resource);
 ```
 
 ### 路由管理
@@ -365,7 +365,7 @@ $cache = new Cache('redis', $config);
 
 ```php
 // ✅ 推荐：使用配置服务
-$setting = App::config('app')->get('setting.name');
+$setting = App::config('use')->get('setting.name');
 
 // ❌ 避免：直接读取配置文件
 $setting = parse_ini_file('app.ini')['setting']['name'];

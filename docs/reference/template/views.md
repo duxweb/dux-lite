@@ -1,15 +1,12 @@
-# 视图模板
+# 视图模板（Latte 语法层）
 
-DuxLite 基于 Latte 模板引擎提供简洁的视图开发体验，支持模板继承、组件复用和安全的HTML渲染。
+本章只讲 Latte 语法和模板组织方式。  
+模板引擎作为“独立运行环境”的机制与执行流程，已在 `preprocessor.md` 中说明。
 
-## 基本概念
+## 定位与职责
 
-### 设计理念
-
-- **模板继承**：通过 `{layout}` 和 `{block}` 实现布局继承
-- **组件复用**：使用 `{include}` 实现模板组件化
-- **安全渲染**：默认 HTML 转义，防止 XSS 攻击
-- **简洁语法**：Latte 提供直观的模板语法
+- **模板引擎文档**：讲运行环境、超语法、数据调用、内建运行时能力  
+- **本章节**：只讲 Latte 语法、模板结构和组织规范
 
 ## 基础语法
 
@@ -133,7 +130,7 @@ DuxLite 基于 Latte 模板引擎提供简洁的视图开发体验，支持模�
 {/foreach}
 ```
 
-## 模板继承和布局
+## 模板继承和布局（Latte）
 
 ### 基础布局模板
 
@@ -258,7 +255,6 @@ DuxLite 基于 Latte 模板引擎提供简洁的视图开发体验，支持模�
 
 {block scripts}
     {include parent}
-    <script src="/assets/js/home.js"></script>
 {/block}
 ```
 
@@ -327,9 +323,6 @@ DuxLite 基于 Latte 模板引擎提供简洁的视图开发体验，支持模�
             </div>
         {/if}
         
-        {if $pagination}
-            {include 'partials/pagination.latte', pagination: $pagination}
-        {/if}
     </div>
 {/block}
 ```
@@ -457,8 +450,7 @@ templates/
 │   └── admin.latte        # 管理后台布局
 ├── partials/              # 可复用组件
 │   ├── header.latte
-│   ├── footer.latte
-│   └── pagination.latte
+│   └── footer.latte
 ├── errors/                # 错误页面
 │   ├── 404.latte
 │   └── 500.latte
@@ -469,7 +461,14 @@ templates/
         └── show.latte
 ```
 
-### 2. 安全考虑
+### 2. 路径写法
+
+- 相对路径：`{include 'partials/user-card.latte'}`
+- 绝对路径：`{include '/views/partials/user-card.latte'}`
+- 根目录前缀：`{include '@partials/user-card.latte'}`
+- 同样适用于 `{layout ...}` 与 `{embed ...}`
+
+### 3. 安全考虑
 
 ```html
 <!-- ✅ 推荐：默认自动转义 -->
@@ -482,7 +481,7 @@ templates/
 <p>{$userInput|noescape}</p>
 ```
 
-### 3. 组件化开发
+### 4. 组件化开发
 
 ```html
 <!-- ✅ 推荐：创建可复用组件 -->

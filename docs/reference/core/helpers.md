@@ -127,7 +127,7 @@ function format_data(Collection|LengthAwarePaginator|Model|null $data, callable 
 
 // 使用示例
 $posts = Post::paginate();
-[$data, $meta] = format_data($posts, fn($post) => $post->transform());
+["data" => $data, "meta" => $meta] = format_data($posts, fn($post) => $post->transform());
 return send($response, '获取成功', $data, $meta);
 ```
 

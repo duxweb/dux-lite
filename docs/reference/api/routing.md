@@ -39,10 +39,8 @@ class App extends AppExtend
 {
     public function init(Bootstrap $app): void
     {
-        // 注册路由应用，并配置中间件
-        \Core\App::route()->set('api', (new Route('/api'))->addMiddleware(
-            new AuthMiddleware('api')
-        ));
+        // 注册路由应用，并配置中间件（构造函数中传入）
+        \Core\App::route()->set('api', new Route('/api', 'api', new AuthMiddleware('api')));
         
         \Core\App::route()->set('web', new Route());
     }
@@ -166,6 +164,7 @@ class ApiController
 | `name` | `string` | 路由名称（可选） |
 | `app` | `string\|null` | 路由注册名（可选） |
 | `auth` | `bool` | 是否需要认证（默认 true） |
+| `priority` | `int` | 路由优先级（值越大越靠前） |
 
 ## 路由组
 
@@ -174,7 +173,7 @@ class ApiController
 ```php
 use Core\Route\Attribute\RouteGroup;
 
-#[RouteGroup(
+    #[RouteGroup(
     app: 'api',
     route: '/api/v1',
     name: 'api.v1'
@@ -227,7 +226,7 @@ class AdminController
 
 ```php
 // App.php
-\Core\App::route()->set('api', (new Route('/api'))->addMiddleware(
+\Core\App::route()->set('api', new Route('/api', 'api',
     new AuthMiddleware('api'),
     new PermissionMiddleware('api', \App\Models\User::class)
 ));
@@ -258,6 +257,12 @@ class PublicController
         return send($response, '用户资料');
     }
 }
+
+## 补充说明
+
+- `name` 为空时会自动使用方法名（小驼峰）作为路由名。
+- `app` 不填时，仅在 `RouteGroup` 中可继承组内 `app`；否则该路由会被忽略。
+- 路由会按 `priority` + 路由“具体度”全局排序注册，避免通配路由遮蔽静态路由。
 ```
 
 **RouteGroup 注解参数：**

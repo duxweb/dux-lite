@@ -19,13 +19,14 @@ my-app/
 │   ├── app.toml             # 模块注册
 │   ├── database.toml        # 数据库配置
 │   ├── queue.toml           # 队列配置
-│   └── storage.toml         # 存储配置
+│   ├── storage.toml         # 存储配置
+│   ├── server.toml          # Worker/Server 配置
+│   └── command.toml         # 自定义命令配置
 ├── data/                     # 数据存储目录
 │   ├── logs/                # 日志文件
 │   ├── cache/               # 缓存文件
 │   └── uploads/             # 上传文件
-├── database/                 # 数据库文件
-│   └── migrations/          # 数据库迁移文件
+├── database/                 # 自定义数据库资源（可选）
 ├── vendor/                   # Composer 依赖包
 ├── composer.json            # Composer 配置
 ├── dux                      # 命令行工具入口
@@ -119,6 +120,8 @@ DuxLite 框架只有两个基本要求：
 
 1. **模块注册类** - 每个模块目录下包含 `App.php` 类
 2. **命名空间规范** - 遵循 PSR-4 自动加载规则
+
+> 迁移与表结构同步通过模型 `#[AutoMigrate]` + `db:sync` 完成，不依赖 `database/migrations` 目录。
 
 ### 按功能分组示例
 

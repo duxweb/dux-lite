@@ -73,7 +73,7 @@ $authMiddleware = new AuthMiddleware(
 );
 
 // 在路由中使用
-$app->add($authMiddleware);
+\Core\App::route()->set('member', new \Core\Route\Route('/api', 'member', $authMiddleware));
 ```
 
 ### 中间件特性
@@ -151,14 +151,11 @@ class AuthController
 ```php
 use Core\Auth\AuthMiddleware;
 
-// 公开路由
-$app->post('/auth/login', [AuthController::class, 'login']);
+// 注册 API 路由（统一加认证中间件）
+$apiRoute = new \Core\Route\Route('/api', 'member', new AuthMiddleware('member'));
+\Core\App::route()->set('member', $apiRoute);
 
-// 需要认证的路由
-$app->group('/api', function (RouteCollectorProxy $group) {
-    $group->get('/me', [AuthController::class, 'me']);
-    $group->get('/profile', [UserController::class, 'profile']);
-})->add(new AuthMiddleware('member'));
+// 公开路由可单独放到 web/app 路由或额外注册
 ```
 
 ### 路由级认证控制
@@ -170,11 +167,11 @@ $app->group('/api', function (RouteCollectorProxy $group) {
 class UserController extends Resources
 {
     // 需要认证
-    #[Action(['GET'], '/', name: 'list')]
+    #[Action(methods: 'GET', route: '/', name: 'list')]
     public function index(...) { }
     
     // 无需认证
-    #[Action(['POST'], '/register', name: 'register', auth: false)]  
+    #[Action(methods: 'POST', route: '/register', name: 'register', auth: false)]  
     public function register(...) { }
 }
 ```

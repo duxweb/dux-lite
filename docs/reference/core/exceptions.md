@@ -38,15 +38,12 @@ throw new ExceptionBusiness('账户余额不足');
 
 **HTTP状态码：** 500  
 **用途：** 支持多语言的业务异常
-**重要：** 继承自 ExceptionBusiness，不会自动写入日志
+**重要：** 继承自 Exception，不会自动写入日志
 
 ```php
-// 基本使用
-throw new ExceptionBusinessLang('user.username_exists', ['username' => $name]);
+// 基本使用（内部调用 __() 翻译）
+throw new ExceptionBusinessLang('user.username_exists', ['%username%' => $name], 'common');
 throw new ExceptionBusinessLang('order.status_error');
-
-// 构造函数
-new ExceptionBusinessLang(string $message, array $parameters = [], string $domain = '')
 ```
 
 ### ExceptionValidator - 验证异常
@@ -88,16 +85,12 @@ throw new ExceptionNotFound('页面不存在');
 
 ```php
 // 基本使用
-throw new ExceptionData('支付失败', 400, [
+$e = new ExceptionData('支付失败', 400);
+$e->data = [
     'payment_id' => $paymentId,
     'error_code' => $errorCode
-]);
-
-// 构造函数
-new ExceptionData(string $message, int $code = 400, array $data = [])
-
-// 获取数据
-$exception->getData(); // 返回数组
+];
+throw $e;
 ```
 
 ### ExceptionInternal - 内部异常

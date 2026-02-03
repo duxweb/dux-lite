@@ -6,7 +6,7 @@ DuxLite 开发过程中的常见问题和解决方案。
 
 ### Q: 安装时提示 PHP 版本不符合要求？
 
-**A:** DuxLite v2 需要 PHP 8.2 或更高版本。
+**A:** DuxLite v2 需要 PHP 8.4 或更高版本。
 
 ```bash
 # 检查 PHP 版本
@@ -112,20 +112,20 @@ password = "your_password"
 charset = "utf8mb4"
 ```
 
-### Q: 模型必须要实现 transform() 方法吗？
+### Q: 必须实现 transform() 方法吗？
 
-**A:** 在使用资源控制器时，建议实现 transform() 方法统一数据输出：
+**A:** 在使用资源控制器时，建议在资源控制器中实现 `transform()` 统一数据输出：
 
 ```php
-class User extends Model
+class UserController extends Resources
 {
-    public function transform(): array
+    public function transform(object $item): array
     {
         return [
-            'id' => $this->id,
-            'name' => $this->name,
-            'email' => $this->email,
-            'created_at' => $this->created_at,
+            'id' => $item->id,
+            'name' => $item->name,
+            'email' => $item->email,
+            'created_at' => $item->created_at,
         ];
     }
 }
@@ -239,12 +239,13 @@ public function upload(ServerRequestInterface $request, ResponseInterface $respo
         throw new ExceptionBusiness('文件上传失败');
     }
     
-    $path = 'uploads/file.jpg';
-    \Core\App::storage()->put($path, $file->getStream()->getContents());
+$path = 'uploads/file.jpg';
+$stream = $file->getStream()->detach();
+\Core\App::storage()->writeStream($path, $stream);
     
     return send($response, 'ok', [
-        'url' => \Core\App::storage()->url($path),
-    ]);
+    'url' => \Core\App::storage()->publicUrl($path),
+]);
 }
 ```
 

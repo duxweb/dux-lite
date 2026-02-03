@@ -31,8 +31,8 @@ Worker 模式将应用常驻内存，通过多线程处理请求，相比传统 
 | 参数 | 说明 | 默认值 |
 |------|------|--------|
 | `--port` | 监听端口 | 8080 |
-| `--workers` | 工作进程数 | CPU 核心数 |
-| `--max-requests` | 每进程最大请求数 | 1000 |
+| `--workers` | 工作进程数 | 0（自动） |
+| `--max-requests` | 每进程最大请求数 | 0（无限） |
 
 ## 配置文件
 
@@ -41,7 +41,6 @@ Worker 模式将应用常驻内存，通过多线程处理请求，相比传统 
 ```toml
 # config/server.toml
 [worker]
-host = "0.0.0.0"
 port = 8080
 workers = 4
 max_requests = 1000

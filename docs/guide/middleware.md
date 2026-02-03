@@ -37,7 +37,7 @@ class AuthMiddleware implements MiddlewareInterface
         $token = $request->getHeaderLine('Authorization');
         
         if (empty($token)) {
-            throw new \Core\Exception\UnauthorizedException('Token required');
+            throw new \Core\Handlers\ExceptionBusiness('Token required', 401);
         }
         
         // 验证 Token 并添加用户信息
@@ -71,7 +71,7 @@ class AuthMiddleware implements MiddlewareInterface
         $token = $this->extractToken($request);
         
         if (!$token || !$this->validateToken($token)) {
-            throw new \Core\Exception\UnauthorizedException();
+            throw new \Core\Handlers\ExceptionBusiness('Unauthorized', 401);
         }
         
         return $handler->handle($request);
@@ -97,7 +97,7 @@ class RateLimitMiddleware implements MiddlewareInterface
         }
         
         if ($count >= $this->maxRequests) {
-            throw new \Core\Exception\TooManyRequestsException();
+            throw new \Core\Handlers\ExceptionBusiness('Too Many Requests', 429);
         }
         
         \Core\App::cache()->set($key, $count + 1, $this->timeWindow);
@@ -134,7 +134,7 @@ class App extends AppExtend
         // 注册管理员路由并添加多个中间件
         $adminRoute = new Route('/admin', 'admin',
             new AuthMiddleware('admin'),
-            new PermissionMiddleware('admin', 'Admin'),
+        new PermissionMiddleware('admin', \App\Models\Admin::class),
             new LogMiddleware()
         );
         \Core\App::route()->set('admin', $adminRoute);
@@ -151,7 +151,7 @@ public function register(Bootstrap $bootstrap): void
 {
     $apiRoute = new Route('/api', 'api',
         new AuthMiddleware('api'),           // 1. 认证
-        new PermissionMiddleware('api', 'User'), // 2. 权限
+        new PermissionMiddleware('api', \App\Models\User::class), // 2. 权限
         new ApiMiddleware($callback)         // 3. 签名验证
     );
     \Core\App::route()->set('api', $apiRoute);
@@ -202,7 +202,7 @@ public function list(): ResponseInterface
 // 注册顺序
 $route = new Route('/api', 'api',
     new LogMiddleware(),     // 3. 最外层
-    new AuthMiddleware(),   // 2. 中间层  
+    new AuthMiddleware('api'),   // 2. 中间层  
     new CorsMiddleware()    // 1. 最内层
 );
 

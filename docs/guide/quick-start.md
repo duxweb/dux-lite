@@ -6,11 +6,11 @@
 
 ```bash
 # 必需环境
-PHP >= 8.2
+PHP >= 8.4
 Composer >= 2.0
 
 # 必需扩展
-ext-pdo, ext-zlib, ext-mbstring, ext-openssl
+ext-pdo, ext-zlib
 ```
 
 ## 安装应用
@@ -86,8 +86,7 @@ App::create(
     debug: true
 );
 
-// 初始化并运行
-App::init();
+// 初始化并运行（create 内部已包含 init）
 App::runWeb();
 ```
 
@@ -149,7 +148,7 @@ class App extends AppExtend
 <?php
 namespace App\Web\Controllers;
 
-use Core\Attribute\Route;
+use Core\Route\Attribute\Route;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
@@ -205,7 +204,7 @@ curl http://localhost:8000/hello/World
 A: 检查 Web 服务器配置，确保请求被正确转发到 `public/index.php`
 
 **Q: 如何启用调试模式？**
-A: 在 `.env` 中设置 `APP_DEBUG=true`，或在 `App::create()` 中设置 `debug: true`
+A: 在 `config/use.dev.toml` 中设置 `app.debug = true`，或在 `App::create()` 中设置 `debug: true`
 
 **Q: 控制器路由不生效？**
 A: 确保控制器类已注册到应用模块，检查命名空间和注解语法

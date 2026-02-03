@@ -62,6 +62,8 @@ public static function init()
     self::$bootstrap->registerFunc();    // 注册公共函数
     self::$bootstrap->registerConfig();  // 注册公共配置
     self::$bootstrap->registerWeb();     // 注册 Web 服务
+    self::$bootstrap->registerPlugin();  // 注册插件
+    Plugin::register(self::$bootstrap);  // 插件初始化
 }
 ```
 
@@ -83,6 +85,7 @@ public static function runWeb()
 {
     self::$bootstrap->loadApp();    // 加载应用模块
     self::$bootstrap->loadRoute();  // 加载路由配置
+    Plugin::boot(self::$bootstrap); // 插件启动
     self::$bootstrap->runWeb();     // 启动 Web 服务
 }
 ```
@@ -95,6 +98,7 @@ public static function run()
     self::$bootstrap->loadApp();     // 加载应用模块
     self::$bootstrap->loadRoute();   // 加载路由配置
     self::$bootstrap->loadCommand(); // 加载命令行
+    Plugin::boot(self::$bootstrap);  // 插件启动
     self::$bootstrap->run();         // 运行命令行
 }
 ```
@@ -135,9 +139,9 @@ public function loadApp(): void
     App::event()->registerAttribute();     // 事件注解
     App::scheduler()->registerAttribute(); // 计划任务注解
 
-    // 7. 路由注册
-    foreach (App::route()->app as $route) {
-        $route->run($this->web);
+    // 7. 路由注册（全局扁平化 + 排序）
+    foreach (App::route()->exportFlatAll() as $item) {
+        // 统一注册（priority + 具体度排序）
     }
 
     // 8. 模块启动阶段 (boot)

@@ -80,6 +80,16 @@ $content = "第一行\n第二行\n第三行";
 return sendText($response, $content);
 ```
 
+### sendTpl() 函数
+
+用于渲染模板并返回 HTML（基于内置视图渲染器）：
+
+```php
+return sendTpl($response, 'user/profile', [
+    'user' => $user->transform()
+], 'web');
+```
+
 ## 原生 SlimPHP 响应
 
 除了助手函数，也可以使用原生的 PSR-7 响应方法：

@@ -9,25 +9,26 @@ DuxLite 基于 PHP 8+ 原生注解实现路由、资源、事件、任务等功�
 #### Route - 路由定义
 
 ```php
-#[Route('/users/{id}', ['GET'], 'users.show', where: ['id' => '\d+'])]
+#[Route(methods: 'GET', route: '/users/{id}', name: 'users.show')]
 public function show($request, $response, $args) {
     // 处理逻辑
 }
 ```
 
 参数：
-- `path`: 路由路径
-- `methods`: HTTP方法数组 (默认 ['GET'])
-- `name`: 路由名称
-- `middleware`: 中间件数组
-- `where`: 参数约束
+- `methods`: HTTP方法数组或字符串
+- `route`: 路由路径
+- `name`: 路由名称（可选）
+- `app`: 路由注册名（可选）
+- `auth`: 是否需要认证（默认 true）
+- `priority`: 路由优先级（默认 0）
 
 #### RouteGroup - 路由组
 
 ```php
-#[RouteGroup('/api/v1', name: 'api.v1.', middleware: ['auth'])]
+#[RouteGroup(app: 'api', route: '/api/v1', name: 'api.v1', middleware: [AuthMiddleware::class])]
 class ApiController {
-    #[Route('/profile', ['GET'], 'profile')]
+    #[Route(methods: 'GET', route: '/profile')]
     public function profile() {} // 实际路由: GET /api/v1/profile，名称: api.v1.profile
 }
 ```
@@ -37,23 +38,24 @@ class ApiController {
 #### Resource - 资源控制器
 
 ```php
-#[Resource(app: 'admin', route: '/admin/users', name: 'admin.users')]
+#[Resource(app: 'admin', route: '/admin/users', name: 'users')]
 class UserController extends Resources {
     // 自动生成标准 RESTful 路由：
-    // GET    /admin/users       -> index()
+    // GET    /admin/users       -> list()
     // GET    /admin/users/{id}  -> show()
-    // POST   /admin/users       -> store()
-    // PUT    /admin/users/{id}  -> update()
-    // DELETE /admin/users/{id}  -> destroy()
+    // POST   /admin/users       -> create()
+    // PUT    /admin/users/{id}  -> edit()
+    // PATCH  /admin/users/{id}  -> store()
+    // DELETE /admin/users/{id}  -> delete()
 }
 ```
 
 #### Action - 自定义资源动作
 
 ```php
-#[Resource(route: '/admin/users', name: 'admin.users')]
+#[Resource(app: 'admin', route: '/admin/users', name: 'users')]
 class UserController extends Resources {
-    #[Action(['POST'], '/{id}/activate', 'activate')]
+    #[Action(methods: 'POST', route: '/{id}/activate', name: 'activate')]
     public function activate($request, $response, $args) {
         // 自定义动作: POST /admin/users/{id}/activate
     }
@@ -120,7 +122,7 @@ class Cache {
 ```php
 class ProductController {
     #[Cache(ttl: 1800, key: 'products.list', tags: ['products'])]
-    #[Route('/products', ['GET'])]
+    #[Route(methods: 'GET', route: '/products')]
     public function index() {
         // 产品列表，缓存30分钟
     }
@@ -170,21 +172,6 @@ foreach ($attributes as $item) {
 }
 ```
 
-### 获取特定类的注解
-
-```php
-use Core\Utils\Attribute;
-
-// 获取类注解
-$classAttributes = Attribute::getClassAttributes(UserController::class);
-
-// 获取方法注解
-$methodAttributes = Attribute::getMethodAttributes(UserController::class, 'index');
-
-// 检查是否有特定注解
-$hasRoute = Attribute::hasMethodAttribute(UserController::class, 'show', Route::class);
-```
-
 ### 获取请求相关注解
 
 ```php
@@ -211,7 +198,7 @@ if ($cacheConfig) {
 
 ```php
 // ✅ 推荐：按功能组织，逻辑清晰
-#[Route('/users/{id}', ['GET'], 'users.show')]
+#[Route(methods: 'GET', route: '/users/{id}', name: 'users.show')]
 #[Cache(ttl: 600, tags: ['users'])]
 #[RequirePermission('user.read')]
 public function show() {}

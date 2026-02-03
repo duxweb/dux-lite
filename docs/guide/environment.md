@@ -8,12 +8,12 @@ DuxLite 环境配置和生产部署的完整指南。
 
 ```bash
 # 最低要求
-PHP >= 8.2
+PHP >= 8.4
 Memory >= 128M
 Disk >= 1GB
 
 # 推荐配置
-PHP >= 8.3
+PHP >= 8.4
 Memory >= 512M
 Disk >= 10GB
 ```
@@ -32,7 +32,7 @@ php-xml
 # 推荐扩展（性能优化）
 php-opcache
 php-redis
-php-swoole
+php-redis
 ```
 
 ### 外部依赖
@@ -97,7 +97,7 @@ username = "root"
 password = ""
 charset = "utf8mb4"
 
-[redis]
+[redis.drivers.default]
 host = "localhost"
 port = 6379
 password = ""
@@ -135,7 +135,7 @@ username = "app_user"
 password = "secure-password-here"
 charset = "utf8mb4"
 
-[redis]
+[redis.drivers.default]
 host = "redis.example.com"
 port = 6379
 password = "redis-password"

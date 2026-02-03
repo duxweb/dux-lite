@@ -54,10 +54,13 @@ public function getUsers(
         $query->where('name', 'like', "%{$search}%");
     }
     
-    // 使用框架的分页方法
+    // 使用框架的分页方法 + 统一格式化
     $users = $query->paginate($limit);
+    ["data" => $data, "meta" => $meta] = format_data($users, function ($item) {
+        return $item->transform();
+    });
     
-    return send($response, '获取成功', $users);
+    return send($response, '获取成功', $data, $meta);
 }
 ```
 
@@ -143,13 +146,14 @@ public function uploadAvatar(
         throw new \Core\Handlers\ExceptionBusiness('只支持 JPEG、PNG 格式');
     }
     
-    // 保存文件
-    $filename = uniqid() . '.jpg';
-    $directory = '/uploads/avatars';
-    $avatar->moveTo($directory . '/' . $filename);
+    // 保存文件（Storage）
+    $filename = uniqid('', true) . '.jpg';
+    $path = 'uploads/avatars/' . $filename;
+    $stream = $avatar->getStream()->detach();
+    \Core\App::storage()->writeStream($path, $stream);
     
     return send($response, '上传成功', [
-        'avatar_url' => $directory . '/' . $filename
+        'avatar_url' => \Core\App::storage()->publicUrl($path)
     ]);
 }
 ```
@@ -229,8 +233,11 @@ public function getPosts(
     
     // 分页查询 - 框架自动处理分页参数
     $posts = $query->paginate($limit);
+    ["data" => $data, "meta" => $meta] = format_data($posts, function ($item) {
+        return $item->transform();
+    });
     
-    return send($response, '获取成功', $posts);
+    return send($response, '获取成功', $data, $meta);
 }
 ```
 

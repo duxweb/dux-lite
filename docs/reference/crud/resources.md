@@ -164,7 +164,7 @@ class UserController extends Resources
             'email' => $item->email,
             'status' => $item->status,
             'status_text' => $item->status ? '正常' : '禁用',
-            'avatar' => $item->avatar ? url('/storage/' . $item->avatar) : null,
+            'avatar' => $item->avatar ? \Core\App::storage()->publicUrl($item->avatar) : null,
             'created_at' => $item->created_at->format('Y-m-d H:i:s'),
             'updated_at' => $item->updated_at->format('Y-m-d H:i:s'),
         ];
@@ -186,7 +186,7 @@ class UserController extends Resources
      */
     public function validator(array $data, ServerRequestInterface $request, array $args): array
     {
-        $action = $request->getAttribute('action', '');
+        $action = $this->method;
 
         $rules = [
             'name' => [

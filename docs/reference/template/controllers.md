@@ -13,8 +13,8 @@
 
 ### 核心方法
 
-- **view()**：渲染模板并返回响应
-- **redirect()**：页面重定向
+- **sendTpl()**：渲染模板并返回响应
+- **Location 重定向**：通过响应头实现重定向
 - **数据获取**：从请求中获取参数和数据
 - **数据验证**：表单数据验证和处理
 
@@ -36,13 +36,13 @@ class HomeController
     /**
      * 首页
      */
-    #[Route('GET', '/', name: 'home', app: 'web')]
+    #[Route(methods: 'GET', route: '/', name: 'home', app: 'web')]
     public function index(
         ServerRequestInterface $request,
         ResponseInterface $response,
         array $args
     ): ResponseInterface {
-        return view($response, 'home/index', [
+        return sendTpl($response, 'home/index', [
             'title' => '欢迎访问',
             'message' => 'Hello DuxLite!',
             'current_time' => date('Y-m-d H:i:s')
@@ -52,7 +52,7 @@ class HomeController
     /**
      * 关于页面
      */
-    #[Route('GET', '/about', name: 'about', app: 'web')]
+    #[Route(methods: 'GET', route: '/about', name: 'about', app: 'web')]
     public function about(
         ServerRequestInterface $request,
         ResponseInterface $response,
@@ -72,7 +72,7 @@ class HomeController
             ]
         ];
 
-        return view($response, 'home/about', $data);
+        return sendTpl($response, 'home/about', $data);
     }
 }
 ```
@@ -87,13 +87,13 @@ class ContactController
     /**
      * 显示联系表单
      */
-    #[Route('GET', '/contact', name: 'contact.form', app: 'web')]
+    #[Route(methods: 'GET', route: '/contact', name: 'contact.form', app: 'web')]
     public function form(
         ServerRequestInterface $request,
         ResponseInterface $response,
         array $args
     ): ResponseInterface {
-        return view($response, 'contact/form', [
+        return sendTpl($response, 'contact/form', [
             'title' => '联系我们',
             'form_action' => '/contact',
             'old_input' => [], // 用于表单回填
@@ -104,7 +104,7 @@ class ContactController
     /**
      * 处理表单提交
      */
-    #[Route('POST', '/contact', name: 'contact.submit', app: 'web')]
+    #[Route(methods: 'POST', route: '/contact', name: 'contact.submit', app: 'web')]
     public function submit(
         ServerRequestInterface $request,
         ResponseInterface $response,
@@ -148,11 +148,11 @@ class ContactController
             $this->sendContactNotification($validated);
 
             // 重定向到成功页面
-            return redirect($response, '/contact/success');
+            return $response->withHeader('Location', '/contact/success')->withStatus(302);
 
         } catch (\Core\Handlers\ExceptionValidator $e) {
             // 验证失败，返回表单页面并显示错误
-            return view($response, 'contact/form', [
+            return sendTpl($response, 'contact/form', [
                 'title' => '联系我们',
                 'form_action' => '/contact',
                 'old_input' => $data,      // 回填表单数据
@@ -164,13 +164,13 @@ class ContactController
     /**
      * 提交成功页面
      */
-    #[Route('GET', '/contact/success', name: 'contact.success', app: 'web')]
+    #[Route(methods: 'GET', route: '/contact/success', name: 'contact.success', app: 'web')]
     public function success(
         ServerRequestInterface $request,
         ResponseInterface $response,
         array $args
     ): ResponseInterface {
-        return view($response, 'contact/success', [
+        return sendTpl($response, 'contact/success', [
             'title' => '提交成功',
             'message' => '感谢您的留言，我们会尽快回复！',
             'redirect_url' => '/',
@@ -193,7 +193,7 @@ class ContactController
 ```php
 class UserController
 {
-    #[Route(['GET', 'POST'], '/profile', name: 'profile', app: 'web')]
+    #[Route(methods: ['GET', 'POST'], route: '/profile', name: 'profile', app: 'web')]
     public function profile(
         ServerRequestInterface $request,
         ResponseInterface $response,
@@ -202,7 +202,7 @@ class UserController
         // 获取当前用户
         $user = $this->getCurrentUser();
         if (!$user) {
-            return redirect($response, '/login?redirect=' . urlencode('/profile'));
+            return $response->withHeader('Location', '/login?redirect=' . urlencode('/profile'))->withStatus(302);
         }
 
         if ($request->getMethod() === 'POST') {
@@ -213,7 +213,7 @@ class UserController
         $params = $request->getQueryParams();
         $tab = $params['tab'] ?? 'basic';
 
-        return view($response, 'user/profile', [
+        return sendTpl($response, 'user/profile', [
             'title' => '个人资料',
             'user' => $user,
             'active_tab' => $tab,
@@ -246,10 +246,10 @@ class UserController
                     break;
             }
 
-            return redirect($response, '/profile?tab=' . ($data['tab'] ?? 'basic'));
+            return $response->withHeader('Location', '/profile?tab=' . ($data['tab'] ?? 'basic'))->withStatus(302);
 
         } catch (\Exception $e) {
-            return view($response, 'user/profile', [
+            return sendTpl($response, 'user/profile', [
                 'title' => '个人资料',
                 'user' => $user,
                 'active_tab' => $data['tab'] ?? 'basic',
@@ -283,20 +283,20 @@ class UserController
 ```php
 class UploadController
 {
-    #[Route('GET', '/upload', name: 'upload.form', app: 'web')]
+    #[Route(methods: 'GET', route: '/upload', name: 'upload.form', app: 'web')]
     public function form(
         ServerRequestInterface $request,
         ResponseInterface $response,
         array $args
     ): ResponseInterface {
-        return view($response, 'upload/form', [
+        return sendTpl($response, 'upload/form', [
             'title' => '文件上传',
             'max_size' => '2MB',
             'allowed_types' => ['jpg', 'png', 'gif']
         ]);
     }
 
-    #[Route('POST', '/upload', name: 'upload.submit', app: 'web')]
+    #[Route(methods: 'POST', route: '/upload', name: 'upload.submit', app: 'web')]
     public function upload(
         ServerRequestInterface $request,
         ResponseInterface $response,
@@ -324,17 +324,9 @@ class UploadController
             // 生成文件名和路径
             $extension = pathinfo($file->getClientFilename(), PATHINFO_EXTENSION);
             $filename = date('Y/m/d/') . uniqid() . '.' . $extension;
-            $uploadPath = '/uploads/' . $filename;
-            $fullPath = storage_path('public' . $uploadPath);
-
-            // 创建目录
-            $directory = dirname($fullPath);
-            if (!is_dir($directory)) {
-                mkdir($directory, 0755, true);
-            }
-
-            // 移动文件
-            $file->moveTo($fullPath);
+            $uploadPath = 'uploads/' . $filename;
+            $stream = $file->getStream()->detach();
+            \Core\App::storage()->writeStream($uploadPath, $stream);
 
             // 保存上传记录
             $upload = Upload::create([
@@ -346,14 +338,14 @@ class UploadController
                 'created_at' => date('Y-m-d H:i:s')
             ]);
 
-            return view($response, 'upload/success', [
+            return sendTpl($response, 'upload/success', [
                 'title' => '上传成功',
                 'file' => $upload,
-                'preview_url' => $uploadPath
+                'preview_url' => \Core\App::storage()->publicUrl($uploadPath)
             ]);
 
         } catch (\Exception $e) {
-            return view($response, 'upload/form', [
+            return sendTpl($response, 'upload/form', [
                 'title' => '文件上传',
                 'error_message' => $e->getMessage(),
                 'max_size' => '2MB',
@@ -371,13 +363,13 @@ class UploadController
 ```php
 class ErrorController
 {
-    #[Route('GET', '/404', name: 'error.404', app: 'web')]
+    #[Route(methods: 'GET', route: '/404', name: 'error.404', app: 'web')]
     public function notFound(
         ServerRequestInterface $request,
         ResponseInterface $response,
         array $args
     ): ResponseInterface {
-        return view($response, 'errors/404', [
+        return sendTpl($response, 'errors/404', [
             'title' => '页面未找到',
             'message' => '抱歉，您访问的页面不存在',
             'home_url' => '/',
@@ -386,21 +378,21 @@ class ErrorController
                 '返回首页重新浏览',
                 '使用搜索功能查找内容'
             ]
-        ])->withStatus(404);
+        ], 'web', 404);
     }
 
-    #[Route('GET', '/500', name: 'error.500', app: 'web')]
+    #[Route(methods: 'GET', route: '/500', name: 'error.500', app: 'web')]
     public function serverError(
         ServerRequestInterface $request,
         ResponseInterface $response,
         array $args
     ): ResponseInterface {
-        return view($response, 'errors/500', [
+        return sendTpl($response, 'errors/500', [
             'title' => '服务器错误',
             'message' => '服务器遇到了错误，请稍后再试',
             'home_url' => '/',
             'contact_url' => '/contact'
-        ])->withStatus(500);
+        ], 'web', 500);
     }
 }
 
@@ -422,10 +414,10 @@ class BaseController
         }
 
         // 生产环境显示友好错误页面
-        return view($response, 'errors/500', [
+        return sendTpl($response, 'errors/500', [
             'title' => '系统错误',
             'message' => '系统遇到了错误，请稍后再试'
-        ])->withStatus(500);
+        ], 'web', 500);
     }
 }
 ```
@@ -446,7 +438,7 @@ class ResponseHelper
         array $data = [],
         int $status = 200
     ): ResponseInterface {
-        return view($response, $template, $data)->withStatus($status);
+        return sendTpl($response, $template, $data, 'web', $status);
     }
 
     /**
@@ -457,7 +449,7 @@ class ResponseHelper
         string $url,
         int $status = 302
     ): ResponseInterface {
-        return redirect($response, $url, $status);
+        return $response->withHeader('Location', $url)->withStatus($status);
     }
 
     /**
@@ -485,7 +477,7 @@ class ResponseHelper
         $_SESSION['flash_message'] = $message;
         $_SESSION['flash_type'] = $type;
 
-        return redirect($response, $url);
+        return $response->withHeader('Location', $url)->withStatus(302);
     }
 }
 ```

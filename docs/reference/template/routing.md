@@ -14,7 +14,7 @@ DuxLite 模板开发使用传统的路由方式，通过在 App.php 中注册 we
 namespace App;
 
 use Core\App\AppExtend;
-use Core\Bootstrap\Bootstrap;
+use Core\Bootstrap;
 use Core\Route\Route;
 
 class App extends AppExtend
@@ -59,13 +59,13 @@ class HomeController
     /**
      * 首页
      */
-    #[Route('GET', '/', name: 'home')]
+    #[Route(methods: 'GET', route: '/', name: 'home')]
     public function index(
         ServerRequestInterface $request,
         ResponseInterface $response,
         array $args
     ): ResponseInterface {
-        return view($response, 'home/index', [
+        return sendTpl($response, 'home/index', [
             'title' => '欢迎访问',
             'message' => 'Hello DuxLite!'
         ]);
@@ -74,13 +74,13 @@ class HomeController
     /**
      * 关于我们
      */
-    #[Route('GET', '/about', name: 'about')]
+    #[Route(methods: 'GET', route: '/about', name: 'about')]
     public function about(
         ServerRequestInterface $request,
         ResponseInterface $response,
         array $args
     ): ResponseInterface {
-        return view($response, 'home/about', [
+        return sendTpl($response, 'home/about', [
             'title' => '关于我们',
             'company' => 'DuxLite Framework'
         ]);
@@ -96,7 +96,7 @@ class ArticleController
     /**
      * 文章列表
      */
-    #[Route('GET', '/articles', name: 'articles')]
+    #[Route(methods: 'GET', route: '/articles', name: 'articles')]
     public function list(
         ServerRequestInterface $request,
         ResponseInterface $response,
@@ -109,7 +109,7 @@ class ArticleController
             ->orderBy('created_at', 'desc')
             ->paginate(20);
 
-        return view($response, 'article/list', [
+        return sendTpl($response, 'article/list', [
             'title' => '文章列表',
             'articles' => $articles,
             'page' => $page
@@ -119,7 +119,7 @@ class ArticleController
     /**
      * 文章详情
      */
-    #[Route('GET', '/articles/{id}', name: 'article')]
+    #[Route(methods: 'GET', route: '/articles/{id}', name: 'article')]
     public function detail(
         ServerRequestInterface $request,
         ResponseInterface $response,
@@ -135,7 +135,7 @@ class ArticleController
         // 增加浏览量
         $article->increment('views');
 
-        return view($response, 'article/detail', [
+        return sendTpl($response, 'article/detail', [
             'title' => $article->title,
             'article' => $article
         ]);
@@ -153,13 +153,13 @@ class ContactController
     /**
      * 显示联系表单
      */
-    #[Route('GET', '/contact', name: 'contact')]
+    #[Route(methods: 'GET', route: '/contact', name: 'contact')]
     public function form(
         ServerRequestInterface $request,
         ResponseInterface $response,
         array $args
     ): ResponseInterface {
-        return view($response, 'contact/form', [
+        return sendTpl($response, 'contact/form', [
             'title' => '联系我们'
         ]);
     }
@@ -167,7 +167,7 @@ class ContactController
     /**
      * 处理表单提交
      */
-    #[Route('POST', '/contact', name: 'contact.submit')]
+    #[Route(methods: 'POST', route: '/contact', name: 'contact.submit')]
     public function submit(
         ServerRequestInterface $request,
         ResponseInterface $response,
@@ -203,19 +203,19 @@ class ContactController
         ]);
 
         // 重定向到成功页面
-        return redirect($response, '/contact/success');
+        return $response->withHeader('Location', '/contact/success')->withStatus(302);
     }
 
     /**
      * 提交成功页面
      */
-    #[Route('GET', '/contact/success', name: 'contact.success')]
+    #[Route(methods: 'GET', route: '/contact/success', name: 'contact.success')]
     public function success(
         ServerRequestInterface $request,
         ResponseInterface $response,
         array $args
     ): ResponseInterface {
-        return view($response, 'contact/success', [
+        return sendTpl($response, 'contact/success', [
             'title' => '提交成功',
             'message' => '感谢您的留言，我们会尽快回复！'
         ]);
@@ -230,7 +230,7 @@ class ContactController
 ```php
 class UserController
 {
-    #[Route(['GET', 'POST'], '/profile', name: 'profile')]
+    #[Route(methods: ['GET', 'POST'], route: '/profile', name: 'profile')]
     public function profile(
         ServerRequestInterface $request,
         ResponseInterface $response,
@@ -260,7 +260,7 @@ class UserController
             return $this->updateProfile($request, $response, $postData);
         } else {
             // 显示表单
-            return view($response, 'user/profile', [
+            return sendTpl($response, 'user/profile', [
                 'title' => '个人资料',
                 'tab' => $tab,
                 'user' => $this->getCurrentUser()
@@ -278,7 +278,7 @@ class UserController
         $user->update($data);
 
         // 重定向回资料页面
-        return redirect($response, '/profile?tab=' . ($data['tab'] ?? 'basic'));
+        return $response->withHeader('Location', '/profile?tab=' . ($data['tab'] ?? 'basic'))->withStatus(302);
     }
 }
 ```
@@ -289,32 +289,29 @@ class UserController
 
 ```php
 // 渲染模板
-return view($response, 'template/path', [
+return sendTpl($response, 'template/path', [
     'title' => '页面标题',
     'data' => $data
 ]);
 
 // 带HTTP状态码的模板响应
-return view($response, 'errors/404', ['title' => '页面未找到'], 404);
+return sendTpl($response, 'errors/404', ['title' => '页面未找到'], 'web', 404);
 ```
 
 ### 重定向响应
 
 ```php
 // 简单重定向
-return redirect($response, '/home');
-
-// 带状态码的重定向
-return redirect($response, '/login', 302);
+return $response->withHeader('Location', '/home')->withStatus(302);
 
 // 永久重定向
-return redirect($response, '/new-url', 301);
+return $response->withHeader('Location', '/new-url')->withStatus(301);
 ```
 
 ### JSON响应（AJAX接口）
 
 ```php
-#[Route('POST', '/api/comments', name: 'api.comments')]
+#[Route(methods: 'POST', route: '/api/comments', name: 'api.comments')]
 public function addComment(
     ServerRequestInterface $request,
     ResponseInterface $response,

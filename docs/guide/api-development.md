@@ -79,7 +79,7 @@ $apiRoute->post('/users', UserController::class . ':create', 'users.create');
 
 ```php
 // 注册需要认证的路由
-$authRoute = new Route('/api/auth', 'auth-api', new AuthMiddleware());
+$authRoute = new Route('/api/auth', 'auth-api', new AuthMiddleware('api'));
 \Core\App::route()->set('auth-api', $authRoute);
 
 // 添加需要认证的接口

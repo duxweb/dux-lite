@@ -97,4 +97,59 @@ class Render
         $safe = htmlspecialchars($json ?: 'null', ENT_QUOTES, 'UTF-8');
         return '<pre class="xtag-debug" style="background:#f6f8fa;padding:8px;border-radius:6px;white-space:pre-wrap;word-break:break-word;">' . $safe . '</pre>';
     }
+
+    /**
+     * 生成分页 HTML。
+     * 支持参数：base, page, total, pageSize, pageParam, window
+     */
+    public static function pagination(array $opts = []): string
+    {
+        $page = max(1, (int)($opts['page'] ?? 1));
+        $total = max(0, (int)($opts['total'] ?? 0));
+        $pageSize = max(1, (int)($opts['pageSize'] ?? 10));
+        $pages = (int)ceil($total / $pageSize);
+        if ($pages <= 1) {
+            return '';
+        }
+
+        $base = (string)($opts['base'] ?? '');
+        $pageParam = (string)($opts['pageParam'] ?? 'page');
+        $window = max(1, (int)($opts['window'] ?? 2));
+        $start = max(1, $page - $window);
+        $end = min($pages, $page + $window);
+        $sep = str_contains($base, '?') ? '&' : '?';
+
+        $link = function (int $p) use ($base, $pageParam, $sep): string {
+            $url = $base . $sep . $pageParam . '=' . $p;
+            return htmlspecialchars($url, ENT_QUOTES, 'UTF-8');
+        };
+
+        $html = '<nav class="pagination">';
+        $html .= '<a class="page-btn' . ($page <= 1 ? ' is-disabled' : '') . '" href="' . $link(1) . '">«</a>';
+        $html .= '<a class="page-btn' . ($page <= 1 ? ' is-disabled' : '') . '" href="' . $link($page - 1) . '">‹</a>';
+
+        if ($start > 1) {
+            $html .= '<a class="page-btn" href="' . $link(1) . '">1</a>';
+            if ($start > 2) {
+                $html .= '<span class="page-ellipsis">…</span>';
+            }
+        }
+
+        for ($i = $start; $i <= $end; $i++) {
+            $html .= '<a class="page-btn' . ($i === $page ? ' is-active' : '') . '" href="' . $link($i) . '">' . $i . '</a>';
+        }
+
+        if ($end < $pages) {
+            if ($end < $pages - 1) {
+                $html .= '<span class="page-ellipsis">…</span>';
+            }
+            $html .= '<a class="page-btn" href="' . $link($pages) . '">' . $pages . '</a>';
+        }
+
+        $html .= '<a class="page-btn' . ($page >= $pages ? ' is-disabled' : '') . '" href="' . $link($page + 1) . '">›</a>';
+        $html .= '<a class="page-btn' . ($page >= $pages ? ' is-disabled' : '') . '" href="' . $link($pages) . '">»</a>';
+        $html .= '</nav>';
+
+        return $html;
+    }
 }

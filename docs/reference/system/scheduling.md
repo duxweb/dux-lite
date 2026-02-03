@@ -63,13 +63,13 @@ App::scheduler()->add(
 
 ```bash
 # 启动调度器服务
-php dux scheduler
+php dux scheduler:run
 
-# 禁用监控（默认开启监控 jobs 文件，变动后自动重启）
-php dux scheduler --no-watch
+# 设置监听间隔（秒）
+php dux scheduler:run --watch-interval=5
 ```
 
-如果使用外部守护进程（systemd/supervisor 等），当 `data/scheduler/jobs.php` 发生变动时，命令会以退出码 `100` 退出，由守护进程负责拉起新进程。
+如果系统支持 `pcntl`，当 `data/scheduler/jobs.php` 发生变动时，命令会以退出码 `100` 退出，由外部守护进程负责拉起新进程。
 
 说明：调度器自身不会“自我拉起新进程”，Windows/Linux/macOS 都建议用外部守护进程保证常驻与自动拉起。
 
@@ -99,7 +99,7 @@ App::scheduler()->add(string $callback, array $params = [], string $cron = '* * 
 App::scheduler()->gen(): array
 
 // 运行调度器（从 data 文件读取任务并注册）
-App::scheduler()->run(bool $watch = false, int $watchInterval = 3): int
+App::scheduler()->run(): int
 
 // 注册注解定义的任务
 App::scheduler()->registerAttribute(): void

@@ -61,7 +61,7 @@ featuresConfig:
       - PSR 标准
       - Eloquent ORM
       - 模块化
-      - PHP 8.2+
+      - PHP 8.4+
       - 中文文档
       - 企业级安全
 

@@ -73,11 +73,11 @@ class User extends Model
 
 ```bash
 # 同步所有应用的模型
-php console db:sync
+php dux db:sync
 
 # 同步指定应用的模型
-php console db:sync admin
-php console db:sync api
+php dux db:sync admin
+php dux db:sync api
 ```
 
 ### 同步流程

@@ -35,26 +35,15 @@ $list = User::paginate();
 return send($response, 'ok', $data, $meta);
 ```
 
-### 审核状态规范
-
-统一的审核状态字段：
-- `0` - 拒绝
-- `1` - 审核中（默认）  
-- `2` - 已通过
-
-审核字段命名：
-- `audit_remark` - 审核备注
-- `audit_at` - 审核时间
-
 ## 路由注解规范
 
-### Resource 控制器
+### 资源控制器
 
 ```php
 #[Resource(app: 'web', route: '/users')]
 class UserController extends Resources
 {
-    #[Action]
+    #[Action(methods: 'GET', route: '')]
     public function index(): ResponseInterface
     {
         // 实现逻辑
@@ -94,7 +83,7 @@ secret = "production-secret-key"
 ```toml
 [app]
 secret = "%env(APP_SECRET)%"
-log_file = "%storage_path(logs)%/app_%date(Y-m-d)%.log"
+log_file = "%data_path(logs)%/app_%date(Y-m-d)%.log"
 ```
 
 这些是 DuxLite 框架特有的编码约定，遵循这些规范可以确保代码的一致性和可维护性。
