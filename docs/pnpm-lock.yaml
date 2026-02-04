@@ -9,8 +9,8 @@ importers:
   .:
     devDependencies:
       '@duxweb/vitepress-theme':
-        specifier: ^1.1.4
-        version: 1.1.4(mermaid@11.12.2)(tailwindcss@4.1.18)(vitepress@1.6.4(@algolia/client-search@5.47.0)(postcss@8.5.6)(search-insights@2.17.3))
+        specifier: ^1.1.6
+        version: 1.1.6(mermaid@11.12.2)(tailwindcss@4.1.18)(vitepress@1.6.4(@algolia/client-search@5.47.0)(postcss@8.5.6)(search-insights@2.17.3))
       vitepress:
         specifier: ^1.6.4
         version: 1.6.4(@algolia/client-search@5.47.0)(postcss@8.5.6)(search-insights@2.17.3)
@@ -157,8 +157,8 @@ packages:
       search-insights:
         optional: true
 
-  '@duxweb/vitepress-theme@1.1.4':
-    resolution: {integrity: sha512-COQG9o9cmd4Z1UdJYll1jtUIKBKHDtDPjU8xMWZfYGpI7c4pNRTpA9K2I+9wjceaNr8+9euJNxM5K7n3+WU3Rg==}
+  '@duxweb/vitepress-theme@1.1.6':
+    resolution: {integrity: sha512-j4aRrKxTCdSjLVg4p3jS6wns1EpRWE8ZnTiYGTp6uqtYOSZPHNvS3qs5FkXZ8X74zsrrwUqa43n9GVmCo6azmA==}
     peerDependencies:
       vitepress: ^1.6.4
 
@@ -1532,7 +1532,7 @@ snapshots:
     transitivePeerDependencies:
       - '@algolia/client-search'
 
-  '@duxweb/vitepress-theme@1.1.4(mermaid@11.12.2)(tailwindcss@4.1.18)(vitepress@1.6.4(@algolia/client-search@5.47.0)(postcss@8.5.6)(search-insights@2.17.3))':
+  '@duxweb/vitepress-theme@1.1.6(mermaid@11.12.2)(tailwindcss@4.1.18)(vitepress@1.6.4(@algolia/client-search@5.47.0)(postcss@8.5.6)(search-insights@2.17.3))':
     dependencies:
       '@iconify/tailwind4': 1.2.1(tailwindcss@4.1.18)
       '@vueuse/core': 11.3.0(vue@3.5.27)

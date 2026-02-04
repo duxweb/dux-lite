@@ -1,8 +1,5 @@
 import { withDuxTheme } from '@duxweb/vitepress-theme/config'
-import { createRequire } from 'node:module'
 
-const require = createRequire(import.meta.url)
-const dayjsEsmPath = require.resolve('dayjs/esm/index.js')
 
 // 自动检测 base 路径
 const getBase = () => {
@@ -19,13 +16,6 @@ export default withDuxTheme({
   lang: 'zh-CN',
   base: getBase(),
   lastUpdated: true,
-  vite: {
-    resolve: {
-      alias: {
-        dayjs: dayjsEsmPath
-      }
-    }
-  },
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
     nav: [
