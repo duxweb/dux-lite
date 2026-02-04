@@ -14,7 +14,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@duxweb/vitepress-theme": "^1.1.2",
+    "@duxweb/vitepress-theme": "^1.1.4",
     "vitepress": "^1.6.4"
   }
 }
