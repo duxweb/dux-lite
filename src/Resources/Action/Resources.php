@@ -207,7 +207,7 @@ abstract class Resources
     {
         $datas = [];
         foreach ($rule as $key => $item) {
-            $datas[$key] = is_callable($item) ? $item($data[$key], $data) : $item;
+            $datas[$key] = is_callable($item) && !is_string($item) ? $item($data[$key], $data) : $item;
         }
         return $datas;
     }
