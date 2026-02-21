@@ -38,7 +38,20 @@ class RouteCommand extends Command
                 if ($k) {
                     $data[] = new TableSeparator();
                 }
-                $data[] = [$route["pattern"], $route["name"], is_array($route["methods"]) ? implode("|", $route["methods"]) : $route["methods"], $route["middleware"] ? implode("\n", $route["middleware"]) : "NULL"];
+                $middleware = "NULL";
+                if (!empty($route["middleware"])) {
+                    $middleware = implode("\n", array_map(static function ($item): string {
+                        if (is_object($item)) {
+                            return $item::class;
+                        }
+                        if (is_string($item)) {
+                            return $item;
+                        }
+                        return (string)json_encode($item, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                    }, (array)$route["middleware"]));
+                }
+                $methods = is_array($route["methods"]) ? implode("|", $route["methods"]) : $route["methods"];
+                $data[] = [$route["pattern"], $route["name"], $methods, $middleware];
             }
             $table = new Table($output);
             $table
