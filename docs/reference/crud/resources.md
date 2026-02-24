@@ -80,7 +80,7 @@ class UserController extends Resources
      */
     public function queryMany(Builder $query, ServerRequestInterface $request, array $args): void
     {
-        $params = $request->getQueryParams();
+        $params = \Core\Utils\RequestParam::query($request);
 
         // 搜索功能
         if (!empty($params['keyword'])) {
@@ -514,7 +514,7 @@ class UserController extends Resources
         ResponseInterface $response,
         array $args
     ): ResponseInterface {
-        $data = $request->getParsedBody();
+        $data = \Core\Utils\RequestParam::body($request);
         $userIds = $data['user_ids'] ?? [];
 
         if (empty($userIds)) {
@@ -538,7 +538,7 @@ class UserController extends Resources
         array $args
     ): ResponseInterface {
         $userId = (int) $args['id'];
-        $data = $request->getParsedBody();
+        $data = \Core\Utils\RequestParam::body($request);
 
         $user = User::find($userId);
         if (!$user) {
@@ -662,7 +662,7 @@ class ProductController extends Resources
      */
     public function queryMany(Builder $query, ServerRequestInterface $request, array $args): void
     {
-        $params = $request->getQueryParams();
+        $params = \Core\Utils\RequestParam::query($request);
 
         // 分类筛选
         if (!empty($params['category_id'])) {
@@ -696,7 +696,7 @@ class ProductController extends Resources
         ResponseInterface $response,
         array $args
     ): ResponseInterface {
-        $data = $request->getParsedBody();
+        $data = \Core\Utils\RequestParam::body($request);
         $ids = $data['ids'] ?? [];
 
         if (empty($ids)) {

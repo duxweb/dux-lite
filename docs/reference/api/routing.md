@@ -78,7 +78,7 @@ class ApiController
     #[Route(methods: 'POST', route: '/api/users')]
     public function createUser($request, $response, $args)
     {
-        $data = $request->getParsedBody();
+        $data = \Core\Utils\RequestParam::body($request);
         return send($response, '用户创建成功', $data);
     }
 
@@ -329,7 +329,7 @@ class ApiController
     public function search($request, $response, $args)
     {
         // 查询参数
-        $params = $request->getQueryParams();
+        $params = \Core\Utils\RequestParam::query($request);
         $keyword = $params['q'] ?? '';
         
         return send($response, '搜索结果', ['keyword' => $keyword]);
@@ -339,7 +339,7 @@ class ApiController
     public function createUser($request, $response, $args)
     {
         // POST 数据
-        $data = $request->getParsedBody();
+        $data = \Core\Utils\RequestParam::body($request);
         
         return send($response, '用户创建成功', $data);
     }
@@ -348,8 +348,7 @@ class ApiController
     public function upload($request, $response, $args)
     {
         // 上传文件
-        $files = $request->getUploadedFiles();
-        $file = $files['file'] ?? null;
+        $file = \Core\Utils\RequestParam::file($request, 'file');
         
         if (!$file) {
             throw new ExceptionBusiness('请选择文件');

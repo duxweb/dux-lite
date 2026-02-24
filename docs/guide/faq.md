@@ -232,8 +232,7 @@ class UserController extends Resources
 ```php
 public function upload(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
 {
-    $uploadedFiles = $request->getUploadedFiles();
-    $file = $uploadedFiles['file'];
+    $file = \Core\Utils\RequestParam::file($request, 'file');
     
     if ($file->getError() !== UPLOAD_ERR_OK) {
         throw new ExceptionBusiness('文件上传失败');

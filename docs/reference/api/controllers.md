@@ -42,7 +42,7 @@ public function getUsers(
     array $args
 ): ResponseInterface {
     // 获取查询参数
-    $params = $request->getQueryParams();
+    $params = \Core\Utils\RequestParam::query($request);
     $page = (int) ($params['page'] ?? 1);
     $limit = (int) ($params['limit'] ?? 20);
     $search = $params['search'] ?? '';
@@ -95,7 +95,7 @@ public function createUser(
     array $args
 ): ResponseInterface {
     // 获取请求体数据
-    $data = $request->getParsedBody();
+    $data = \Core\Utils\RequestParam::body($request);
     
     // 数据验证
     $validated = \Core\Validator\Validator::parser($data, [
@@ -133,8 +133,7 @@ public function uploadAvatar(
     array $args
 ): ResponseInterface {
     // 获取上传文件
-    $uploadedFiles = $request->getUploadedFiles();
-    $avatar = $uploadedFiles['avatar'] ?? null;
+    $avatar = \Core\Utils\RequestParam::file($request, 'avatar');
     
     if (!$avatar || $avatar->getError() !== UPLOAD_ERR_OK) {
         throw new \Core\Handlers\ExceptionBusiness('请选择头像文件');
@@ -169,7 +168,7 @@ public function updateUser(
     array $args
 ): ResponseInterface {
     $userId = (int) $args['id'];
-    $data = $request->getParsedBody();
+    $data = \Core\Utils\RequestParam::body($request);
     
     // 验证规则
     $validated = \Core\Validator\Validator::parser($data, [
@@ -216,7 +215,7 @@ public function getPosts(
     ResponseInterface $response,
     array $args
 ): ResponseInterface {
-    $params = $request->getQueryParams();
+    $params = \Core\Utils\RequestParam::query($request);
     $limit = (int) ($params['limit'] ?? 20);
     
     // 构建查询
@@ -308,7 +307,7 @@ class PostController
     // POST /posts - 创建
     #[Route(methods: 'POST', route: '')]
     public function store(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface {
-        $data = $request->getParsedBody();
+        $data = \Core\Utils\RequestParam::body($request);
         $post = Post::create($data);
         return send($response, '创建成功', $post->transform(), [], 201);
     }
@@ -317,7 +316,7 @@ class PostController
     #[Route(methods: 'PUT', route: '/{id}')]
     public function update(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface {
         $post = Post::findOrFail($args['id']);
-        $post->update($request->getParsedBody());
+        $post->update(\Core\Utils\RequestParam::body($request));
         return send($response, '更新成功', $post->transform());
     }
     

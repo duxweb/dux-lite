@@ -161,8 +161,9 @@ class PostController extends Resources
             throw new ExceptionBusiness('只能编辑自己的文章', 403);
         }
         
-        $rules = $this->validator((array)$request->getParsedBody(), $request, $args);
-        $data = \Core\Validator\Validator::parser($request->getParsedBody(), $rules);
+        $body = \Core\Utils\RequestParam::body($request);
+        $rules = $this->validator($body, $request, $args);
+        $data = \Core\Validator\Validator::parser($body, $rules);
         $post->update($data->toArray());
         
         return send($response, '更新成功', $post->transform());

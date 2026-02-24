@@ -106,7 +106,7 @@ class UserController extends Resources
     #[Action(methods: 'POST', route: '/batch')]
     public function batch(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
-        $data = $request->getParsedBody();
+        $data = \Core\Utils\RequestParam::body($request);
         $action = $data['action'];
         $ids = $data['ids'];
         

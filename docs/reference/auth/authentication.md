@@ -105,7 +105,7 @@ class AuthController
 {
     public function login(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
-        $data = $request->getParsedBody();
+        $data = \Core\Utils\RequestParam::body($request);
         
         // 验证用户凭证
         $user = User::query()->where('username', $data['username'])->first();

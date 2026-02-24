@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Core\Handlers;
 
 use Core\App;
+use Core\Utils\RequestParam;
 use LogicException;
 use Slim\Exception\HttpException;
 use Slim\Exception\HttpSpecializedException;
@@ -37,7 +38,7 @@ class ErrorHandler extends slimErrorHandler
 
         App::log()->error($this->exception->getMessage(), [
             'uri' => $this->request->getUri(),
-            'query' => $this->request->getQueryParams(),
+            'query' => RequestParam::query($this->request),
             'file' => [
                 'file' => $this->exception->getFile(),
                 'line' => $this->exception->getLine()

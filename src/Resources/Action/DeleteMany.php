@@ -5,6 +5,7 @@ namespace Core\Resources\Action;
 use Closure;
 use Core\App;
 use Core\Handlers\ExceptionBusiness;
+use Core\Utils\RequestParam;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
@@ -13,7 +14,7 @@ trait DeleteMany
     public function deleteMany(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
         $this->method = 'deleteMany';
-        $params =  $request->getQueryParams();
+        $params = RequestParam::query($request, ['ids' => []]);
         $this->init($request, $response, $args);
         $this->event->run('init', $request, $response, $args);
         $ids = is_array($params['ids']) ? $params['ids'] : explode(',', $params['ids']);

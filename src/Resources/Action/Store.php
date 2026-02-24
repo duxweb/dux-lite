@@ -4,6 +4,7 @@ namespace Core\Resources\Action;
 
 use Core\App;
 use Core\Handlers\ExceptionBusiness;
+use Core\Utils\RequestParam;
 use Core\Validator\Data;
 use Core\Validator\Validator;
 use Psr\Http\Message\ResponseInterface;
@@ -18,7 +19,7 @@ trait Store
         $this->event->run('init', $request, $response, $args);
         $id = $args["id"];
 
-        $requestData = $request->getParsedBody() ?: [];
+        $requestData = RequestParam::body($request);
         $keys = array_keys($requestData);
 
         $validator = $this->validator($requestData, $request, $args);

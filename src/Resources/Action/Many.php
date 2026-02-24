@@ -2,6 +2,7 @@
 
 namespace Core\Resources\Action;
 
+use Core\Utils\RequestParam;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Illuminate\Database\Eloquent\Builder;
@@ -14,7 +15,11 @@ trait Many
 
         $this->init($request, $response, $args);
         $this->event->run('init', $request, $response, $args);
-        $queryParams = $request->getQueryParams();
+        $queryParams = RequestParam::query($request, [
+            'pageSize' => null,
+            'id' => null,
+            'ids' => null,
+        ]);
 
         if (!isset($queryParams["pageSize"])) {
             $this->pagination['status'] = false;

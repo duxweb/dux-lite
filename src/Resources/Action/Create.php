@@ -3,6 +3,7 @@
 namespace Core\Resources\Action;
 
 use Core\App;
+use Core\Utils\RequestParam;
 use Core\Validator\Data;
 use Core\Validator\Validator;
 use Psr\Http\Message\ResponseInterface;
@@ -17,7 +18,7 @@ trait Create
         $this->init($request, $response, $args);
         $this->event->run('init', $request, $response, $args);
 
-        $requestData = $request->getParsedBody() ?: [];
+        $requestData = RequestParam::body($request);
 
         $validator = $this->validator($requestData, $request, $args);
         $validatorEvent = $this->event->get('validator', $requestData, $request, $args);

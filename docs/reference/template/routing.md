@@ -102,7 +102,7 @@ class ArticleController
         ResponseInterface $response,
         array $args
     ): ResponseInterface {
-        $params = $request->getQueryParams();
+        $params = \Core\Utils\RequestParam::query($request);
         $page = (int) ($params['page'] ?? 1);
         
         $articles = Article::where('status', 1)
@@ -173,7 +173,7 @@ class ContactController
         ResponseInterface $response,
         array $args
     ): ResponseInterface {
-        $data = $request->getParsedBody();
+        $data = \Core\Utils\RequestParam::body($request);
 
         // 数据验证
         $rules = [
@@ -237,11 +237,11 @@ class UserController
         array $args
     ): ResponseInterface {
         // 获取查询参数
-        $queryParams = $request->getQueryParams();
+        $queryParams = \Core\Utils\RequestParam::query($request);
         $tab = $queryParams['tab'] ?? 'basic';
 
         // 获取POST数据
-        $postData = $request->getParsedBody();
+        $postData = \Core\Utils\RequestParam::body($request);
         
         // 获取请求头
         $headers = $request->getHeaders();
@@ -317,7 +317,7 @@ public function addComment(
     ResponseInterface $response,
     array $args
 ): ResponseInterface {
-    $data = $request->getParsedBody();
+    $data = \Core\Utils\RequestParam::body($request);
 
     // 验证和处理数据
     $comment = Comment::create($data);

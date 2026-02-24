@@ -2,6 +2,7 @@
 
 namespace Core\Middleware;
 
+use Core\Utils\RequestParam;
 use Illuminate\Pagination\Paginator;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -14,9 +15,9 @@ final class CorsMiddleware implements MiddlewareInterface
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        $params = $request->getQueryParams();
+        $params = RequestParam::query($request);
         Paginator::currentPageResolver(static function ($pageName = 'page') use ($params) {
-            $page = $params[$pageName];
+            $page = $params[$pageName] ?? null;
             if ((int)$page >= 1) {
                 return $page;
             }

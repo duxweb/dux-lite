@@ -155,7 +155,7 @@ class UserController
 {
     public function create(ServerRequestInterface $request): ResponseInterface 
     {
-        $data = $request->getParsedBody();
+        $data = \Core\Utils\RequestParam::body($request);
 
         // 验证数据
         $validated = Validator::parser($data, [

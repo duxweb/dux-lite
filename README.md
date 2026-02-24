@@ -181,7 +181,7 @@ class UserController
 
     public function store(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
-        $data = $request->getParsedBody();
+        $data = \Core\Utils\RequestParam::body($request);
         $user = User::create($data);
         return response()->json($user, 201);
     }

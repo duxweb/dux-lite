@@ -174,7 +174,7 @@ class UserController
 
     public function create(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
-        $data = $request->getParsedBody();
+        $data = \Core\Utils\RequestParam::body($request);
         
         $this->validator->validate($data, UserCreateRules::class);
         $user = $this->userService->create($data);

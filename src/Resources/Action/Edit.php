@@ -4,6 +4,7 @@ namespace Core\Resources\Action;
 
 use Core\App;
 use Core\Handlers\ExceptionBusiness;
+use Core\Utils\RequestParam;
 use Core\Validator\Data;
 use Core\Validator\Validator;
 use Psr\Http\Message\ResponseInterface;
@@ -18,7 +19,7 @@ trait  Edit
         $this->event->run('init', $request, $response, $args);
         $id = (int)$args["id"];
 
-        $requestData = $request->getParsedBody() ?: [];
+        $requestData = RequestParam::body($request);
         $validator = $this->validator($requestData, $request, $args);
         $validatorEvent = $this->event->get('validator', $requestData, $request, $args);
 

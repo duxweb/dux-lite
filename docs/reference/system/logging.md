@@ -48,7 +48,7 @@ class UserController
 {
     public function login(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
-        $data = $request->getParsedBody();
+        $data = \Core\Utils\RequestParam::body($request);
         
         // 记录登录尝试
         App::log('access')->info('用户尝试登录', [

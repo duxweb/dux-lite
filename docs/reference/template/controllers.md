@@ -110,7 +110,7 @@ class ContactController
         ResponseInterface $response,
         array $args
     ): ResponseInterface {
-        $data = $request->getParsedBody();
+        $data = \Core\Utils\RequestParam::body($request);
 
         try {
             // 数据验证
@@ -210,7 +210,7 @@ class UserController
         }
 
         // 获取查询参数
-        $params = $request->getQueryParams();
+        $params = \Core\Utils\RequestParam::query($request);
         $tab = $params['tab'] ?? 'basic';
 
         return sendTpl($response, 'user/profile', [
@@ -230,7 +230,7 @@ class UserController
         ResponseInterface $response,
         $user
     ): ResponseInterface {
-        $data = $request->getParsedBody();
+        $data = \Core\Utils\RequestParam::body($request);
 
         try {
             // 根据不同的tab处理不同的数据
@@ -303,8 +303,7 @@ class UploadController
         array $args
     ): ResponseInterface {
         try {
-            $uploadedFiles = $request->getUploadedFiles();
-            $file = $uploadedFiles['file'] ?? null;
+            $file = \Core\Utils\RequestParam::file($request, 'file');
 
             if (!$file || $file->getError() !== UPLOAD_ERR_OK) {
                 throw new \Core\Handlers\ExceptionBusiness('文件上传失败');

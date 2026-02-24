@@ -52,7 +52,7 @@ class UserController
     
     public function create(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
-        $data = $request->getParsedBody();
+        $data = \Core\Utils\RequestParam::body($request);
         
         // 数据验证
         $validator = \Core\Validator\Validator::parser($data, [
