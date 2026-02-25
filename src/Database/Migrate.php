@@ -7,6 +7,9 @@ namespace Core\Database;
 use Core\App;
 use Core\Database\Attribute\AutoMigrate;
 use Doctrine\DBAL\DriverManager;
+use Doctrine\DBAL\Schema\Column as DbalColumn;
+use Doctrine\DBAL\Schema\Table;
+use Doctrine\DBAL\Types\DecimalType;
 use Illuminate\Database\Connection;
 use Illuminate\Database\Schema\Blueprint;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -81,6 +84,8 @@ class Migrate
         $connectionSettings = $connect->getConfig();
         $driver = (string)($connectionSettings['driver'] ?? '');
         $isSqlite = $driver === 'sqlite';
+        // SQLite index names are global; use a unique temp table name to avoid
+        // conflicts when target table indexes were previously created with temp names.
         $tempTable = 'table_' . $modelTable;
         if ($isSqlite && $tableExists) {
             $tempTable .= '_' . substr(md5($modelTable . microtime(true) . random_int(1000, 9999)), 0, 8);
@@ -88,19 +93,26 @@ class Migrate
         $createdTemp = false;
         try {
             $connect->getSchemaBuilder()->dropIfExists($tempTable);
-            $connect->getSchemaBuilder()->create($tableExists ? $tempTable : $modelTable, function (Blueprint $table) use ($model, $connectionSettings) {
-                if (!empty($connectionSettings['charset'])) {
-                    $table->charset($connectionSettings['charset']);
+            try {
+                $connect->getSchemaBuilder()->create($tableExists ? $tempTable : $modelTable, function (Blueprint $table) use ($model, $connectionSettings) {
+                    if (!empty($connectionSettings['charset'])) {
+                        $table->charset($connectionSettings['charset']);
+                    }
+                    if (!empty($connectionSettings['collation'])) {
+                        $table->collation($connectionSettings['collation']);
+                    }
+                    if ($model->getTableComment()) {
+                        $table->comment($model->getTableComment());
+                    }
+                    $model->migration($table);
+                    $model->migrationGlobal($table);
+                });
+            } catch (\Throwable $e) {
+                if ($isSqlite && $tableExists && $this->isSqliteIndexCreateConflict($e)) {
+                    return;
                 }
-                if (!empty($connectionSettings['collation'])) {
-                    $table->collation($connectionSettings['collation']);
-                }
-                if ($model->getTableComment()) {
-                    $table->comment($model->getTableComment());
-                }
-                $model->migration($table);
-                $model->migrationGlobal($table);
-            });
+                throw $e;
+            }
             $createdTemp = $tableExists;
 
             if (!$tableExists) {
@@ -111,9 +123,14 @@ class Migrate
             // 更新表字段
             $connection = $this->getDoctrineConnection($connect);
             $schemaManager = $connection->createSchemaManager();
+            $currentTable = $schemaManager->introspectTableByUnquotedName($pre . $modelTable);
+            $targetTable = $schemaManager->introspectTableByUnquotedName($pre . $tempTable);
+            if ($isSqlite) {
+                $this->normalizeSqliteDecimalColumns($currentTable, $targetTable);
+            }
             $tableDiff = $schemaManager->createComparator()->compareTables(
-                $schemaManager->introspectTableByUnquotedName($pre . $modelTable),
-                $schemaManager->introspectTableByUnquotedName($pre . $tempTable)
+                $currentTable,
+                $targetTable
             );
             if (!$tableDiff->isEmpty()) {
                 // SQLite indexes are database-global. When comparing with a temp table, keep
@@ -229,6 +246,46 @@ class Migrate
             }
         }
         return false;
+    }
+
+    private function normalizeSqliteDecimalColumns(Table $currentTable, Table $targetTable): void
+    {
+        $columns = [];
+        foreach ($currentTable->getColumns() as $column) {
+            $columns[] = $column->getObjectName()->toString();
+        }
+        foreach ($targetTable->getColumns() as $column) {
+            $columns[] = $column->getObjectName()->toString();
+        }
+        $columns = array_unique($columns);
+        foreach ($columns as $columnName) {
+            $currentColumn = $currentTable->hasColumn($columnName) ? $currentTable->getColumn($columnName) : null;
+            $targetColumn = $targetTable->hasColumn($columnName) ? $targetTable->getColumn($columnName) : null;
+            if (!$this->isDecimalColumn($currentColumn) && !$this->isDecimalColumn($targetColumn)) {
+                continue;
+            }
+            $precision = $currentColumn?->getPrecision() ?? $targetColumn?->getPrecision() ?? 10;
+            $scale = $currentColumn?->getScale() ?? $targetColumn?->getScale() ?? 0;
+            if ($this->isDecimalColumn($currentColumn) && $currentColumn->getPrecision() === null) {
+                $currentColumn->setPrecision($precision);
+                $currentColumn->setScale($scale);
+            }
+            if ($this->isDecimalColumn($targetColumn) && $targetColumn->getPrecision() === null) {
+                $targetColumn->setPrecision($precision);
+                $targetColumn->setScale($scale);
+            }
+        }
+    }
+
+    private function isDecimalColumn(?DbalColumn $column): bool
+    {
+        return $column && $column->getType() instanceof DecimalType;
+    }
+
+    private function isSqliteIndexCreateConflict(\Throwable $e): bool
+    {
+        $message = strtolower($e->getMessage());
+        return str_contains($message, 'index') && str_contains($message, 'already exists');
     }
 
     // 注册迁移模型
