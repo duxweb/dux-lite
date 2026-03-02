@@ -39,9 +39,24 @@ class QueueJobMessageHandler
             QueueMetrics::incr($work, QueueMetrics::KEY_FAILED, 1);
             App::event()->dispatch(new QueueEvent($work, $priority, $message, 0, $e), QueueEvent::FAILED);
             throw $e;
+        } finally {
+            self::releaseMemory();
         }
 
         QueueMetrics::incr($work, QueueMetrics::KEY_EXECUTED, 1);
         App::event()->dispatch(new QueueEvent($work, $priority, $message), QueueEvent::DONE);
+    }
+
+    /**
+     * 每次任务结束后主动触发 GC，尽量回收循环引用与内部缓存。
+     */
+    private static function releaseMemory(): void
+    {
+        if (function_exists('gc_collect_cycles')) {
+            gc_collect_cycles();
+        }
+        if (function_exists('gc_mem_caches')) {
+            @gc_mem_caches();
+        }
     }
 }

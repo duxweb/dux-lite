@@ -5,14 +5,16 @@ declare(strict_types=1);
 namespace Core\Queue;
 
 use Core\App;
+use Spatie\Async\Pool;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
-use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\ConsoleSectionOutput;
-use Symfony\Component\Process\Process;
+use Symfony\Component\Console\Output\OutputInterface;
+use Throwable;
 
 class QueueCommand extends Command
 {
@@ -21,9 +23,17 @@ class QueueCommand extends Command
      */
     private bool $stop = false;
     private ?ConsoleSectionOutput $statusSection = null;
+    private ?Pool $pool = null;
 
     /**
-     * 启动管理进程：按 workers 配置拉起多个 queue:consume 子进程，并周期输出队列状态。
+     * @var array<int, array{work:string,priority:string,started_at:int}>
+     */
+    private array $slots = [];
+
+    private string $runId = '';
+
+    /**
+     * 启动管理进程：按 workers 配置拉起消费子进程，并周期输出队列状态。
      */
     protected function configure(): void
     {
@@ -46,14 +56,9 @@ class QueueCommand extends Command
         if (function_exists('set_time_limit')) {
             @set_time_limit(0);
         }
-        $processes = [];
-        register_shutdown_function(function () use (&$processes) {
-            // 跨平台兜底：manager 退出时尽量停止全部子进程，避免 orphan。
-            $this->stopWorkers($processes);
-        });
 
-        $runId = date('YmdHis') . '-' . getmypid();
-        putenv('DUX_QUEUE_RUN_ID=' . $runId);
+        $this->runId = date('YmdHis') . '-' . getmypid();
+        putenv('DUX_QUEUE_RUN_ID=' . $this->runId);
 
         $worksFilter = array_values(array_filter(array_map('strval', (array)$input->getArgument('works'))));
         $workers = App::queue()->getWorkersConfig();
@@ -67,123 +72,162 @@ class QueueCommand extends Command
 
         $statusInterval = max(1, (int)$input->getOption('status-interval'));
         $showStatus = !$input->getOption('no-status');
+        $lastStatusAt = 0;
 
         $this->registerSignalHandlers();
 
-        $entry = $this->resolveConsoleEntry();
-        if ($entry === null) {
-            $output->writeln('Unable to resolve console entry script path.');
-            $output->writeln('Try running this command via a script file (e.g. `php dux queue:start`).');
+        if (!Pool::isSupported()) {
+            $output->writeln('spatie/async is not supported in current environment.');
+            $output->writeln('Required: pcntl_async_signals, posix_kill, proc_open.');
             return Command::FAILURE;
         }
 
         $output->writeln('Start time: ' . date('Y-m-d H:i:s'));
-        $output->writeln('Worker command: ' . PHP_BINARY . ' ' . $entry . ' queue:consume <work> [priority]');
-        if (method_exists($output, 'section')) {
+        $output->writeln('Worker mode: spatie/async managed queue workers');
+        if ($output instanceof ConsoleOutputInterface) {
             $this->statusSection = $output->section();
         }
 
-        $processes = $this->startWorkers($workers, $entry);
+        $totalConcurrency = 0;
+        foreach ($workers as $cfg) {
+            $totalConcurrency += max(0, (int)($cfg['num'] ?? 0));
+        }
+        $this->pool = Pool::create()
+            ->concurrency(max(1, $totalConcurrency))
+            ->timeout(315360000)
+            ->sleepTime(100000);
+
+        register_shutdown_function(function (): void {
+            $this->stopWorkers();
+        });
+
+        $this->startWorkers($workers);
 
         while (true) {
             if ($this->shouldStop()) {
-                $this->stopWorkers($processes);
+                $this->stopWorkers();
                 return Command::SUCCESS;
             }
 
-            $this->restartDeadWorkers($processes, $entry);
-
-            if ($showStatus) {
-                $this->renderStatus($output, $workers, $processes);
+            if ($showStatus && (time() - $lastStatusAt) >= $statusInterval) {
+                $this->renderStatus($output, $workers);
+                $lastStatusAt = time();
             }
 
-            sleep($statusInterval);
+            usleep(200000);
         }
     }
 
     /**
      * @param array<string, array{type:string,driver:string,num:int,weights:array{high:int,medium:int,low:int}}> $workers
-     * @return array<string, array<string, array<int, Process>>>
      */
-    private function startWorkers(array $workers, string $entry): array
+    private function startWorkers(array $workers): void
     {
-        $processes = [];
         foreach ($workers as $work => $cfg) {
-            $processes[$work] = ['all' => []];
             $concurrency = (int)($cfg['num'] ?? 0);
             for ($i = 0; $i < $concurrency; $i++) {
-                $processes[$work]['all'][] = $this->startWorkerProcess($entry, (string)$work, '');
-            }
-        }
-        return $processes;
-    }
-
-    /**
-     * 启动一个消费子进程。
-     */
-    private function startWorkerProcess(string $entry, string $work, string $priority = ''): Process
-    {
-        $cmd = [PHP_BINARY, $entry, 'queue:consume', $work];
-        if ($priority !== '') {
-            $cmd[] = $priority;
-        }
-        $process = new Process($cmd);
-        $process->setEnv([
-            ...($_ENV ?? []),
-            'DUX_QUEUE_RUN_ID' => (string)(getenv('DUX_QUEUE_RUN_ID') ?: ''),
-            'DUX_QUEUE_WORK' => $work,
-            'DUX_QUEUE_PRIORITY' => $priority,
-        ]);
-        $process->setTimeout(null);
-        $process->disableOutput();
-        $process->start();
-        return $process;
-    }
-
-    /**
-     * @param array<string, array<string, array<int, Process>>> $processes
-     */
-    private function stopWorkers(array $processes): void
-    {
-        foreach ($processes as $work) {
-            foreach ($work as $list) {
-                foreach ($list as $process) {
-                    if ($process->isRunning()) {
-                        $this->terminateProcess($process);
-                    }
-                }
+                $this->spawnWorker((string)$work, '');
             }
         }
     }
 
     /**
-     * @param array<string, array<string, array<int, Process>>> $processes
+     * 启动一个消费子进程（由 spatie/async 托管）。
      */
-    private function restartDeadWorkers(array &$processes, string $entry): void
+    private function spawnWorker(string $work, string $priority): void
     {
-        foreach ($processes as $work => &$queues) {
-            foreach ($queues as $priority => &$list) {
-                foreach ($list as $idx => $process) {
-                    if ($process->isRunning()) {
-                        continue;
-                    }
-                    $priorityName = (string)$priority;
-                    if ($priorityName === 'all') {
-                        $priorityName = '';
-                    }
-                    $list[$idx] = $this->startWorkerProcess($entry, (string)$work, $priorityName);
-                }
-            }
-            unset($list);
+        if (!$this->pool) {
+            return;
         }
-        unset($queues);
+
+        $runId = $this->runId;
+        $runnable = $this->pool->add(static function () use ($work, $priority, $runId): array {
+            putenv('DUX_QUEUE_RUN_ID=' . $runId);
+            putenv('DUX_QUEUE_WORK=' . $work);
+            putenv('DUX_QUEUE_PRIORITY=' . $priority);
+            App::queue()->process($priority, $work);
+            return [
+                'exit_code' => 0,
+            ];
+        });
+
+        $taskId = $runnable->getId();
+        $this->slots[$taskId] = [
+            'work' => $work,
+            'priority' => $priority,
+            'started_at' => time(),
+        ];
+
+        $runnable
+            ->then(function (array $result = []) use ($taskId): void {
+                $this->handleWorkerExit($taskId, null, (int)($result['exit_code'] ?? 0));
+            })
+            ->catch(function (Throwable $exception) use ($taskId): void {
+                $this->handleWorkerExit($taskId, $exception, -1);
+            })
+            ->timeout(function () use ($taskId): void {
+                $this->handleWorkerExit($taskId, new \RuntimeException('worker timeout'), -2);
+            });
+    }
+
+    private function handleWorkerExit(int $taskId, ?Throwable $exception, int $exitCode): void
+    {
+        $slot = $this->slots[$taskId] ?? null;
+        unset($this->slots[$taskId]);
+        if (!$slot) {
+            return;
+        }
+
+        $runtime = time() - (int)$slot['started_at'];
+        if ($exception) {
+            App::log('queue')->error('worker.exit.error', [
+                'work' => (string)$slot['work'],
+                'priority' => (string)$slot['priority'],
+                'runtime_sec' => $runtime,
+                'exit_code' => $exitCode,
+                'reason' => $exception->getMessage(),
+                'type' => $exception::class,
+            ]);
+        } elseif ($exitCode !== 0) {
+            App::log('queue')->warning('worker.exit.non_zero', [
+                'work' => (string)$slot['work'],
+                'priority' => (string)$slot['priority'],
+                'runtime_sec' => $runtime,
+                'exit_code' => $exitCode,
+            ]);
+        }
+
+        if ($this->shouldStop()) {
+            return;
+        }
+
+        if ($runtime < 3) {
+            usleep(500000);
+        }
+        $this->spawnWorker((string)$slot['work'], (string)$slot['priority']);
+    }
+
+    /**
+     * 停止全部 worker。
+     */
+    private function stopWorkers(): void
+    {
+        if (!$this->pool) {
+            return;
+        }
+        $this->pool->stop();
+        foreach ($this->pool->getInProgress() as $process) {
+            try {
+                $process->stop(1);
+            } catch (Throwable) {
+            }
+        }
     }
 
     /**
      * @param array<string, array{type:string,driver:string,num:int,weights:array{high:int,medium:int,low:int}}> $workers
-     * @param array<string, array<string, array<int, Process>>> $processes
      */
-    private function renderStatus(OutputInterface $output, array $workers, array $processes): void
+    private function renderStatus(OutputInterface $output, array $workers): void
     {
         $rows = [];
         $stats = App::queue()->stats();
@@ -192,24 +236,31 @@ class QueueCommand extends Command
             $byWork[$row['name']] = $row;
         }
 
+        $runningByWork = [];
         foreach ($workers as $work => $cfg) {
-            $running = 0;
-            foreach (($processes[$work] ?? []) as $priority => $list) {
-                foreach ($list as $p) {
-                    if ($p->isRunning()) {
-                        $running++;
-                    }
+            $runningByWork[(string)$work] = 0;
+        }
+        if ($this->pool) {
+            foreach ($this->pool->getInProgress() as $process) {
+                $taskId = (int)$process->getId();
+                $slot = $this->slots[$taskId] ?? null;
+                if (!$slot) {
+                    continue;
                 }
+                $work = (string)$slot['work'];
+                $runningByWork[$work] = (int)($runningByWork[$work] ?? 0) + 1;
             }
+        }
 
+        foreach ($workers as $work => $cfg) {
             $row = $byWork[$work] ?? null;
             $rows[] = [
                 (string)$work,
                 (string)($cfg['num'] ?? 0),
                 (string)($cfg['weights']['high'] ?? 0) . '/' . (string)($cfg['weights']['medium'] ?? 0) . '/' . (string)($cfg['weights']['low'] ?? 0),
-                (string)$running,
-                $row ? (string)$row['pending'] : '-',
-                $row ? (string)$row['running'] : '-',
+                (string)($runningByWork[(string)$work] ?? 0),
+                ($row && $row['pending'] !== null) ? (string)$row['pending'] : '-',
+                ($row && $row['running'] !== null) ? (string)$row['running'] : '-',
                 $row ? (string)$row['executed'] : '-',
                 $row ? (string)$row['failed'] : '-',
                 date('Y-m-d H:i:s'),
@@ -228,37 +279,18 @@ class QueueCommand extends Command
     }
 
     /**
-     * 解析当前命令入口脚本路径（用于拉起子进程）。
-     */
-    private function resolveConsoleEntry(): ?string
-    {
-        $argv0 = $_SERVER['argv'][0] ?? null;
-        if (is_string($argv0) && $argv0 !== '' && is_file($argv0)) {
-            return $argv0;
-        }
-
-        $phpSelf = $_SERVER['PHP_SELF'] ?? null;
-        if (is_string($phpSelf) && $phpSelf !== '' && is_file($phpSelf)) {
-            return $phpSelf;
-        }
-
-        return null;
-    }
-
-    /**
      * 注册退出信号（Linux/macOS 可用；Windows 下自动降级为无信号模式）。
      */
     private function registerSignalHandlers(): void
     {
-        // manager 模式下，收到信号后退出 while 循环并 stop 子进程
         if ($this->isWindows() || !function_exists('pcntl_async_signals')) {
             return;
         }
         pcntl_async_signals(true);
-        pcntl_signal(SIGINT, function () {
+        pcntl_signal(SIGINT, function (): void {
             $this->stop = true;
         });
-        pcntl_signal(SIGTERM, function () {
+        pcntl_signal(SIGTERM, function (): void {
             $this->stop = true;
         });
     }
@@ -272,36 +304,10 @@ class QueueCommand extends Command
     }
 
     /**
-     * 终止子进程（跨平台）。
-     * - Linux/macOS：尽量发送 SIGTERM
-     * - Windows：使用 Process::stop() 终止
-     */
-    private function terminateProcess(Process $process): void
-    {
-        if (!$process->isRunning()) {
-            return;
-        }
-
-        if ($this->isWindows()) {
-            // stop() 在 Windows 下会走 proc_terminate，避免 signal() 行为不一致。
-            $process->stop(3);
-            return;
-        }
-
-        // POSIX 下优先用信号，失败再 stop()
-        try {
-            $process->signal(SIGTERM);
-        } catch (\Throwable) {
-            $process->stop(3);
-        }
-    }
-
-    /**
      * 判断是否为 Windows。
      */
     private function isWindows(): bool
     {
         return \DIRECTORY_SEPARATOR === '\\';
     }
-
 }

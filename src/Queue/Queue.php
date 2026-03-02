@@ -133,8 +133,8 @@ class Queue
      * - name: worker 名
      * - num: 总并发（最大数量）
      * - weight_high/weight_medium/weight_low: 权重
-     * - pending: 待执行数量（各优先级 pending + delayed 汇总）
-     * - running: 执行中数量（各优先级 reserved 汇总）
+     * - pending: 待执行数量（各优先级 pending + delayed 汇总，后端不支持统计时为 null）
+     * - running: 执行中数量（各优先级 reserved 汇总，后端不支持统计时为 null）
      * - executed: 已执行数量（启动后）
      * - failed: 执行失败数量（启动后）
      */
@@ -153,13 +153,26 @@ class Queue
 
             $pending = 0;
             $running = 0;
-
+            $pendingKnown = true;
+            $runningKnown = true;
+            $queueNames = [];
             foreach (['high', 'medium', 'low'] as $priority) {
-                $stats = $adapter->stats([$this->physicalQueueName($name, $priority)]);
-                $row = $stats[0] ?? null;
-                if (is_array($row)) {
-                    $pending += (int)($row['pending'] ?? 0) + (int)($row['delayed'] ?? 0);
-                    $running += (int)($row['reserved'] ?? 0);
+                $queueNames[] = $this->physicalQueueName($name, $priority);
+            }
+            $stats = $adapter->stats($queueNames);
+            foreach ($stats as $row) {
+                if (!is_array($row)) {
+                    continue;
+                }
+                if ($row['pending'] === null || $row['delayed'] === null) {
+                    $pendingKnown = false;
+                } else {
+                    $pending += (int)$row['pending'] + (int)$row['delayed'];
+                }
+                if ($row['reserved'] === null) {
+                    $runningKnown = false;
+                } else {
+                    $running += (int)$row['reserved'];
                 }
             }
 
@@ -171,8 +184,8 @@ class Queue
                 'weight_high' => (int)($weights['high'] ?? 0),
                 'weight_medium' => (int)($weights['medium'] ?? 0),
                 'weight_low' => (int)($weights['low'] ?? 0),
-                'pending' => $pending,
-                'running' => $running,
+                'pending' => $pendingKnown ? $pending : null,
+                'running' => $runningKnown ? $running : null,
                 'executed' => (int)($metrics[QueueMetrics::KEY_EXECUTED] ?? 0),
                 'failed' => (int)($metrics[QueueMetrics::KEY_FAILED] ?? 0),
             ];

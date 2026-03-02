@@ -63,7 +63,8 @@
     "composer/composer": "^2.8",
     "ezyang/htmlpurifier": "^4.18",
     "masterminds/html5": "^2.10",
-    "symfony/messenger": "^7.4"
+    "symfony/messenger": "^7.4",
+    "spatie/async": "^1.8"
   },
   "suggest": {
     "symfony/redis-messenger": "使用 Redis 队列后端需要（同时需要 ext-redis）",
