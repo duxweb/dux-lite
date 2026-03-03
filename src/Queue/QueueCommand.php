@@ -140,16 +140,7 @@ class QueueCommand extends Command
             return;
         }
 
-        $runId = $this->runId;
-        $runnable = $this->pool->add(static function () use ($work, $priority, $runId): array {
-            putenv('DUX_QUEUE_RUN_ID=' . $runId);
-            putenv('DUX_QUEUE_WORK=' . $work);
-            putenv('DUX_QUEUE_PRIORITY=' . $priority);
-            App::queue()->process($priority, $work);
-            return [
-                'exit_code' => 0,
-            ];
-        });
+        $runnable = $this->pool->add(new QueueConsumeTask($work, $priority, $this->runId));
 
         $taskId = $runnable->getId();
         $this->slots[$taskId] = [
