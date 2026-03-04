@@ -140,7 +140,14 @@ class QueueCommand extends Command
             return;
         }
 
-        $runnable = $this->pool->add(new QueueConsumeTask($work, $priority, $this->runId));
+        $runnable = $this->pool->add(new QueueConsumeTask(
+            $work,
+            $priority,
+            $this->runId,
+            App::$basePath,
+            App::$debug,
+            App::$timezone
+        ));
 
         $taskId = $runnable->getId();
         $this->slots[$taskId] = [
