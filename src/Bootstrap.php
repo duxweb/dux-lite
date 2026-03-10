@@ -21,6 +21,7 @@ use Core\Middleware\CorsMiddleware;
 use Core\Middleware\LangMiddleware;
 use Core\Permission\PermissionCommand;
 use Core\Plugin\Plugin;
+use Core\Plugin\PluginRefreshCommand;
 use Core\Queue\QueueCommand;
 use Core\Queue\QueueConsumeCommand;
 use Core\Route\RouteCommand;
@@ -226,6 +227,7 @@ class Bootstrap
         $commands = App::config("command")->get("registers", []);
 
         $commands[] = AppCommand::class;
+        $commands[] = PluginRefreshCommand::class;
         $commands[] = BackupCommand::class;
         $commands[] = RestoreCommand::class;
         $commands[] = PermissionCommand::class;

@@ -39,7 +39,7 @@ class QueueCommand extends Command
     {
         $this
             ->setName('queue:start')
-            ->setDescription('队列管理进程（按配置启动并发 worker）')
+            ->setDescription('Queue manager process (starts concurrent workers by config)')
             ->addArgument('works', InputArgument::IS_ARRAY, '指定要启动的 worker 名（默认启动全部）')
             ->addOption('status-interval', null, InputOption::VALUE_REQUIRED, '状态刷新间隔（秒）', '5')
             ->addOption('no-status', null, InputOption::VALUE_NONE, '关闭状态输出');

@@ -60,6 +60,14 @@ class PluginRegistry
 
     private static function findVendorDir(): ?string
     {
+        if (class_exists(\Core\App::class) && !empty(\Core\App::$basePath)) {
+            $vendorDir = rtrim(\Core\App::$basePath, '/\\') . '/vendor';
+            if (is_dir($vendorDir)) {
+                self::$vendorDir = $vendorDir;
+                return $vendorDir;
+            }
+        }
+
         if (self::$vendorDir) {
             return self::$vendorDir;
         }
@@ -119,5 +127,52 @@ class PluginRegistry
     public static function reset(): void
     {
         self::$registry = [];
+    }
+
+    public static function rebuild(): array
+    {
+        self::reset();
+
+        $vendorDir = self::findVendorDir();
+        if (!$vendorDir) {
+            return [];
+        }
+
+        $installedFile = $vendorDir . '/composer/installed.php';
+        if (!is_file($installedFile)) {
+            self::writeRegistry();
+            return [];
+        }
+
+        $installed = require $installedFile;
+        $versions = is_array($installed['versions'] ?? null) ? $installed['versions'] : [];
+
+        foreach ($versions as $packageName => $info) {
+            $installPath = $info['install_path'] ?? '';
+            if (!$installPath) {
+                continue;
+            }
+
+            $composerFile = rtrim((string)$installPath, '/\\') . '/composer.json';
+            if (!is_file($composerFile)) {
+                continue;
+            }
+
+            $composer = json_decode(file_get_contents($composerFile), true);
+            $config = $composer['extra']['duxlite'] ?? null;
+            if (!$config) {
+                continue;
+            }
+
+            self::$registry[$packageName] = [
+                'name' => $packageName,
+                'config' => $config,
+                'registered_at' => date('c'),
+            ];
+        }
+
+        self::writeRegistry();
+
+        return self::$registry;
     }
 }

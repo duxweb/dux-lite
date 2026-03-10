@@ -9,6 +9,7 @@ use Core\Queue\Adapter\AmqpAdapter;
 use Core\Queue\Adapter\QueueAdapterInterface;
 use Core\Queue\Adapter\RedisAdapter;
 use RuntimeException;
+use Symfony\Component\Messenger\Envelope as MessageEnvelope;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Handler\HandlerDescriptor;
 use Symfony\Component\Messenger\Handler\HandlersLocator;
@@ -21,6 +22,10 @@ use Symfony\Component\Messenger\Worker;
 class Queue
 {
     private array $workersConfigCache = [];
+    private array $runtimePullTransports = [];
+    private array $runtimeInflightJobs = [];
+    private array $runtimePullOffsets = [];
+    private string $runtimeConsumerName = '';
 
     /**
      * @var array<string, TransportInterface>
@@ -194,6 +199,76 @@ class Queue
         return $rows;
     }
 
+    public function runtimeConfig(): array
+    {
+        $items = [];
+        foreach ($this->getWorkersConfigCached() as $name => $cfg) {
+            $weights = is_array($cfg['weights'] ?? null) ? $cfg['weights'] : [];
+            $items[] = [
+                'name' => $name,
+                'type' => $cfg['type'] ?? '',
+                'driver' => $cfg['driver'] ?? '',
+                'num' => (int)($cfg['num'] ?? 0),
+                'weights' => [
+                    'high' => (int)($weights['high'] ?? 0),
+                    'medium' => (int)($weights['medium'] ?? 0),
+                    'low' => (int)($weights['low'] ?? 0),
+                ],
+            ];
+        }
+        return $items;
+    }
+
+    public function pull(string $work = '', int $limit = 1): array
+    {
+        $work = $this->resolveWorkerName($work);
+        $limit = max(1, $limit);
+        $weights = $this->extractPriorityWeights($this->getWorkersConfigCached()[$work] ?? []);
+        $items = [];
+
+        while (count($items) < $limit) {
+            $message = $this->pullNextMessage($work, $weights);
+            if (!$message) {
+                break;
+            }
+            $items[] = $message;
+        }
+
+        return $items;
+    }
+
+    public function ack(string $jobId, array $result = []): bool
+    {
+        unset($result);
+        $job = $this->runtimeInflightJobs[$jobId] ?? null;
+        if (!$job) {
+            return false;
+        }
+
+        $job['transport']->ack($job['envelope']);
+        unset($this->runtimeInflightJobs[$jobId]);
+        return true;
+    }
+
+    public function fail(string $jobId, string $error = '', bool $retryable = true): bool
+    {
+        unset($error);
+        $job = $this->runtimeInflightJobs[$jobId] ?? null;
+        if (!$job) {
+            return false;
+        }
+
+        if ($retryable) {
+            $this->dispatch($job['worker'], $job['priority'], $job['message']);
+            $job['transport']->ack($job['envelope']);
+        } else {
+            $job['transport']->reject($job['envelope']);
+        }
+
+        unset($this->runtimeInflightJobs[$jobId]);
+        return true;
+    }
+
     /**
      * 读取并规范化 workers 配置（num 为总并发，high/medium/low 为权重）。
      * @return array<string, array{type:string,driver:string,num:int,weights:array{high:int,medium:int,low:int}}>
@@ -242,6 +317,18 @@ class Queue
         return $this->sendTransports[$key];
     }
 
+    private function getRuntimePullTransport(string $worker, string $priority): TransportInterface
+    {
+        $adapter = $this->createAdapterForWork($worker);
+        $physical = $this->physicalQueueName($worker, $priority);
+        $key = $worker . '|' . $adapter->queueKey($physical);
+
+        if (!isset($this->runtimePullTransports[$key])) {
+            $this->runtimePullTransports[$key] = $adapter->createConsumeTransport($physical, $this->resolveRuntimeConsumerName());
+        }
+        return $this->runtimePullTransports[$key];
+    }
+
     /**
      * 生成 consumer 名（用于 Redis streams group 消费者区分）。
      */
@@ -249,6 +336,14 @@ class Queue
     {
         $host = gethostname() ?: 'host';
         return $host . '-' . getmypid();
+    }
+
+    private function resolveRuntimeConsumerName(): string
+    {
+        if (!$this->runtimeConsumerName) {
+            $this->runtimeConsumerName = $this->resolveConsumerName() . '-runtime';
+        }
+        return $this->runtimeConsumerName;
     }
 
     /**
@@ -395,6 +490,84 @@ class Queue
         $microHex = str_pad(dechex($micro), 5, '0', STR_PAD_LEFT);
         $rand = bin2hex(random_bytes(4));
         return $time . $microHex . $rand;
+    }
+
+    private function pullNextMessage(string $worker, array $weights): ?array
+    {
+        $priorities = $this->runtimePrioritySequence($worker, $weights);
+        foreach ($priorities as $priority) {
+            $transport = $this->getRuntimePullTransport($worker, $priority);
+            foreach ($transport->get() as $envelope) {
+                return $this->storeRuntimeEnvelope($worker, $priority, $transport, $envelope);
+            }
+        }
+        return null;
+    }
+
+    private function runtimePrioritySequence(string $worker, array $weights): array
+    {
+        $sequence = [];
+        foreach (['high', 'medium', 'low'] as $priority) {
+            $weight = max(0, (int)($weights[$priority] ?? 0));
+            for ($i = 0; $i < $weight; $i++) {
+                $sequence[] = $priority;
+            }
+        }
+        if (!$sequence) {
+            $sequence = ['high', 'medium', 'low'];
+        }
+
+        $offset = $this->runtimePullOffsets[$worker] ?? 0;
+        $size = count($sequence);
+        $items = [];
+        for ($i = 0; $i < $size; $i++) {
+            $items[] = $sequence[($offset + $i) % $size];
+        }
+        $this->runtimePullOffsets[$worker] = ($offset + 1) % $size;
+
+        return array_values(array_unique($items));
+    }
+
+    private function storeRuntimeEnvelope(string $worker, string $priority, TransportInterface $transport, MessageEnvelope $envelope): array
+    {
+        $message = $envelope->getMessage();
+        if (!$message instanceof QueueJobMessage) {
+            throw new RuntimeException('Queue runtime only supports QueueJobMessage');
+        }
+
+        if (!$message->id) {
+            $message->id = $this->generateMessageId();
+        }
+
+        $item = [
+            'id' => $message->id,
+            'type' => 'queue',
+            'name' => $message->method ? $message->class . ':' . $message->method : $message->class,
+            'queue' => $worker,
+            'payload' => [
+                'class' => $message->class,
+                'method' => $message->method,
+                'params' => $message->params,
+                'worker' => $worker,
+                'priority' => $priority,
+            ],
+            'attempt' => 1,
+            'timeout' => (int)(getenv('DUX_RUNTIME_TASK_TIMEOUT') ?: 30),
+            'meta' => [
+                'worker' => $worker,
+                'priority' => $priority,
+            ],
+        ];
+
+        $this->runtimeInflightJobs[$message->id] = [
+            'worker' => $worker,
+            'priority' => $priority,
+            'transport' => $transport,
+            'envelope' => $envelope,
+            'message' => $message,
+        ];
+
+        return $item;
     }
 
 }

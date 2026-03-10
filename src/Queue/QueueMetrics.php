@@ -16,6 +16,9 @@ class QueueMetrics
      */
     public static function incr(string $work, string $key, int $delta = 1): void
     {
+        if (!self::enabled()) {
+            return;
+        }
         $path = self::metricsPath($work);
         $dir = \dirname($path);
         if (!is_dir($dir)) {
@@ -61,6 +64,12 @@ class QueueMetrics
      */
     public static function get(string $work): array
     {
+        if (!self::enabled()) {
+            return [
+                self::KEY_EXECUTED => 0,
+                self::KEY_FAILED => 0,
+            ];
+        }
         $path = self::metricsPath($work);
         if (!is_file($path)) {
             return [
@@ -102,5 +111,13 @@ class QueueMetrics
             return data_path($file);
         }
         return rtrim(\Core\App::$dataPath, '/') . '/' . $file;
+    }
+
+    private static function enabled(): bool
+    {
+        if (class_exists(\Core\App::class)) {
+            return (bool)\Core\App::config('use')->get('runtime.queue_metrics', true);
+        }
+        return true;
     }
 }

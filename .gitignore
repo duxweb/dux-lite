@@ -2,6 +2,7 @@
 vendor
 .cunzhi-memory
 .claude
+/data
 
 # duxweb
 client/autoInit.js

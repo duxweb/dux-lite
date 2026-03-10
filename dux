@@ -1,0 +1,20 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+set_time_limit(0);
+ini_set('max_execution_time', '0');
+
+$file = __DIR__ . '/vendor/autoload.php';
+
+if (!is_file($file)) {
+    exit('Please run "composer install" to install the dependencies.');
+}
+
+require $file;
+
+use Core\App;
+
+App::create(basePath: __DIR__, debug: true, timezone: 'UTC');
+App::run();
