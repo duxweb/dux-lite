@@ -116,8 +116,8 @@ class QueueMetrics
     private static function enabled(): bool
     {
         if (class_exists(\Core\App::class)) {
-            return (bool)\Core\App::config('use')->get('runtime.queue_metrics', true);
+            return (bool)\Core\App::config('use')->get('runtime.queue_metrics', false);
         }
-        return true;
+        return false;
     }
 }
