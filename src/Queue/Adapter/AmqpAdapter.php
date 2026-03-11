@@ -41,7 +41,7 @@ class AmqpAdapter implements QueueAdapterInterface
             throw new RuntimeException('AMQP queue transport requires ext-amqp.');
         }
         if (!class_exists(AmqpTransportFactory::class)) {
-            throw new RuntimeException('AMQP queue transport requires symfony/amqp-messenger.');
+            throw new RuntimeException('AMQP queue transport requires symfony/amqp-messenger. Run: composer require symfony/amqp-messenger');
         }
 
         $serializer = new PhpSerializer();
@@ -58,7 +58,7 @@ class AmqpAdapter implements QueueAdapterInterface
             throw new RuntimeException('AMQP queue transport requires ext-amqp.');
         }
         if (!class_exists(AmqpTransportFactory::class)) {
-            throw new RuntimeException('AMQP queue transport requires symfony/amqp-messenger.');
+            throw new RuntimeException('AMQP queue transport requires symfony/amqp-messenger. Run: composer require symfony/amqp-messenger');
         }
 
         $serializer = new PhpSerializer();

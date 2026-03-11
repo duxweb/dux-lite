@@ -44,7 +44,7 @@ class RedisAdapter implements QueueAdapterInterface
         }
         $factory = 'Symfony\\Component\\Messenger\\Bridge\\Redis\\Transport\\RedisTransportFactory';
         if (!class_exists($factory)) {
-            throw new RuntimeException('Redis queue transport requires symfony/redis-messenger.');
+            throw new RuntimeException('Redis queue transport requires symfony/redis-messenger. Run: composer require symfony/redis-messenger');
         }
 
         $serializer = new PhpSerializer();
@@ -65,7 +65,7 @@ class RedisAdapter implements QueueAdapterInterface
         }
         $factory = 'Symfony\\Component\\Messenger\\Bridge\\Redis\\Transport\\RedisTransportFactory';
         if (!class_exists($factory)) {
-            throw new RuntimeException('Redis queue transport requires symfony/redis-messenger.');
+            throw new RuntimeException('Redis queue transport requires symfony/redis-messenger. Run: composer require symfony/redis-messenger');
         }
 
         $serializer = new PhpSerializer();
