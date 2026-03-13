@@ -24,6 +24,7 @@ class Queue
     private array $workersConfigCache = [];
     private array $runtimePullTransports = [];
     private array $runtimeInflightJobs = [];
+    private array $runtimePullTransportsBySlot = [];
     private array $runtimePullOffsets = [];
     private string $runtimeConsumerName = '';
 
@@ -219,25 +220,30 @@ class Queue
         return $items;
     }
 
-    public function pull(string $work = '', int $limit = 1): array
-    {
-        $work = $this->resolveWorkerName($work);
-        $limit = max(1, $limit);
-        $weights = $this->extractPriorityWeights($this->getWorkersConfigCached()[$work] ?? []);
-        $items = [];
+public function pull(string $work = '', int $limit = 1): array
+{
+    $work = $this->resolveWorkerName($work);
+    $limit = max(1, $limit);
+    $weights = $this->extractPriorityWeights($this->getWorkersConfigCached()[$work] ?? []);
+    $items = [];
+    $seen = [];
 
-        while (count($items) < $limit) {
-            $message = $this->pullNextMessage($work, $weights);
-            if (!$message) {
-                break;
-            }
-            $items[] = $message;
+    while (count($items) < $limit) {
+        $message = $this->pullNextMessage($work, $weights);
+        if (!$message) {
+            break;
         }
-
-        return $items;
+        if (isset($seen[$message['id']])) {
+            break;
+        }
+        $seen[$message['id']] = true;
+        $items[] = $message;
     }
 
-    public function ack(string $jobId, array $result = []): bool
+    return $items;
+}
+
+public function ack(string $jobId, array $result = []): bool
     {
         unset($result);
         $job = $this->runtimeInflightJobs[$jobId] ?? null;
