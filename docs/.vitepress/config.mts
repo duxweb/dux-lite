@@ -21,7 +21,8 @@ export default withDuxTheme({
     nav: [
       { text: '首页', link: '/' },
       { text: '指南', link: '/guide/overview' },
-      { text: '参考', link: '/reference/api/routing' }
+      { text: '参考', link: '/reference/api/routing' },
+      { text: '扩展包', link: '/extensions/runtime' }
     ],
 
     sidebar: {
@@ -60,6 +61,16 @@ export default withDuxTheme({
             { text: 'CRUD 开发', link: '/guide/crud-development' },
             { text: '调试技巧', link: '/guide/debugging' },
             { text: '常见问题', link: '/guide/faq' }
+          ]
+        }
+      ],
+
+      '/extensions/': [
+        {
+          text: '扩展包',
+          items: [
+            { text: '运行时扩展', link: '/extensions/runtime' },
+            { text: '云扩展包管理', link: '/extensions/cloud' }
           ]
         }
       ],
