@@ -65,7 +65,7 @@ class Worker
      */
     private static function reset(): void
     {
-        App::di()->set('lang', App::$lang);
+        App::context()->clear();
     }
 
 }

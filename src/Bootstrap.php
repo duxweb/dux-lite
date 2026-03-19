@@ -19,6 +19,7 @@ use Core\Handlers\ErrorPlainRenderer;
 use Core\Handlers\ErrorXmlRenderer;
 use Core\Middleware\CorsMiddleware;
 use Core\Middleware\LangMiddleware;
+use Core\Middleware\RequestContextMiddleware;
 use Core\Permission\PermissionCommand;
 use Core\Plugin\Plugin;
 use Core\Plugin\PluginRefreshCommand;
@@ -70,7 +71,6 @@ class Bootstrap
 
         date_default_timezone_set($timezone);
         Carbon::setLocale($lang);
-        App::di()->set('lang', $lang);
     }
 
     /**
@@ -113,6 +113,7 @@ class Bootstrap
         // 注册路由中间件
         $this->web->addRoutingMiddleware();
         // 注册请求中间件
+        $this->web->addMiddleware(new RequestContextMiddleware);
         $this->web->addMiddleware(new LangMiddleware);
         // 注册授权异常
         $errorMiddleware = $this->web->addErrorMiddleware(App::$debug, true, true);

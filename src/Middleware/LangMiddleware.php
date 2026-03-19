@@ -15,7 +15,7 @@ final class LangMiddleware implements MiddlewareInterface
         $acceptLanguage = $request->getHeaderLine('Accept-Language');
         $lang = $this->parseAcceptLanguage($acceptLanguage);
         $request = $request->withAttribute('lang', $lang);
-        App::di()->set('lang', $lang);
+        App::setLang($lang);
         return $handler->handle($request);
     }
 

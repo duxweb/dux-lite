@@ -7,6 +7,7 @@ namespace Core;
 use Core\App\Attribute;
 use Core\Cache\Cache;
 use Core\Config\TomlLoader;
+use Core\Context\RequestContext;
 use Core\Database\Migrate;
 use Core\Event\Event;
 use Core\Lock\Lock;
@@ -27,6 +28,7 @@ use Latte\Engine;
 use Monolog\Level;
 use Monolog\Logger;
 use Noodlehaus\Config;
+use Psr\Http\Message\ServerRequestInterface;
 use Symfony\Component\Cache\Psr16Cache;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Translation\Translator;
@@ -49,6 +51,7 @@ class App
     public static array $registerApp = [];
     public static array $registerPlugin = [];
     public static bool $debug = true;
+    public static bool $booted = false;
     public static string $logo = '';
     public static string $lang = '';
     public static string $timezone = 'UTC';
@@ -74,6 +77,7 @@ class App
     {
         self::$registerApp = [];
         self::$registerPlugin = [];
+        self::$booted = false;
 
         $dotenv = Dotenv::createImmutable(self::$basePath);
         $dotenv->safeLoad();
@@ -95,6 +99,7 @@ class App
         self::$bootstrap->loadRoute();
         self::$bootstrap->loadCommand();
         Plugin::boot(self::$bootstrap);
+        self::$booted = true;
         self::$bootstrap->run();
     }
 
@@ -104,6 +109,7 @@ class App
         self::$bootstrap->loadApp();
         self::$bootstrap->loadRoute();
         Plugin::boot(self::$bootstrap);
+        self::$booted = true;
         self::$bootstrap->runWeb();
     }
 
@@ -120,6 +126,7 @@ class App
         self::$bootstrap->loadApp();
         self::$bootstrap->loadRoute();
         Plugin::boot(self::$bootstrap);
+        self::$booted = true;
 
         Worker::run($maxRequests);
     }
@@ -207,7 +214,8 @@ class App
                 Render::init($name)
             );
         }
-        return self::$di->get("view." . $name);
+        $view = self::$di->get("view." . $name);
+        return self::$booted ? clone $view : $view;
     }
 
     public static function event(): Event
@@ -251,6 +259,24 @@ class App
         return $permission;
     }
 
+    public static function context(): RequestContext
+    {
+        if (!self::$di->has("context.request")) {
+            self::$di->set("context.request", new RequestContext());
+        }
+        return self::$di->get("context.request");
+    }
+
+    public static function setRequest(?ServerRequestInterface $request): void
+    {
+        self::context()->setRequest($request);
+    }
+
+    public static function request(): ?ServerRequestInterface
+    {
+        return self::context()->request();
+    }
+
     public static function resource(): Resources\Register
     {
         if (self::$di->has("resource")) {
@@ -285,6 +311,16 @@ class App
             );
         }
         return self::$di->get("trans");
+    }
+
+    public static function setLang(?string $lang): void
+    {
+        self::context()->setLang($lang);
+    }
+
+    public static function lang(): string
+    {
+        return self::context()->lang() ?: self::$lang;
     }
 
     public static function loadTrans(string $dirPath, Translator $trans): void
