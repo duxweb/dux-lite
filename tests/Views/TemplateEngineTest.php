@@ -58,6 +58,15 @@ it('supports filter chain on dotted placeholders', function () {
     expect($out)->toContain('|cut:\'10\'');
 });
 
+it('rewrites alpine event shorthand attributes before parsing', function () {
+    $tpl = '<button @click="open = !open" @keydown.escape.window="open = false">Toggle</button>';
+    $pp = new CustomTagPreprocessor();
+    $out = $pp->preprocess($tpl);
+
+    expect($out)->toContain('x-on:click="open = !open"');
+    expect($out)->toContain('x-on:keydown.escape.window="open = false"');
+});
+
 it('transforms pagination tag into pagination macro', function () {
     $tpl = '<pagination base="/articles" :page="$meta[\'page\']" pageParam="p" />';
     $pp = new CustomTagPreprocessor();
@@ -80,7 +89,7 @@ it('renders pagination html with expected links', function () {
     ]);
 
     expect($html)->toContain('class="pagination"');
-    expect($html)->toContain('page=1');
+    expect($html)->toContain('/articles');
     expect($html)->toContain('page=2');
     expect($html)->toContain('page=3');
     expect($html)->toContain('is-active');

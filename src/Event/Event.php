@@ -30,7 +30,11 @@ class Event extends EventDispatcher
                 }
                 $params = $annotation["params"];
                 [$class, $method] = explode(':', $annotation["class"]);
-                $this->addListener($params["name"], [new $class, $method], (int)$params["priority"] ?: 0);
+                $name = $params["name"] ?? '';
+                if ($name === '') {
+                    continue;
+                }
+                $this->addListener($name, [new $class, $method], (int)($params["priority"] ?? 0));
             }
         }
     }

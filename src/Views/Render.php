@@ -100,7 +100,18 @@ class Render
 
     /**
      * 生成分页 HTML。
-     * 支持参数：base, page, total, pageSize, pageParam, window
+     * 支持参数：
+     * - base: 基础路径，例如 market 或 market.html
+     * - page, total, pageSize, pageParam, window
+     * - style/mode: query | path | segment
+     * - query: 额外 query 参数数组
+     * - separator: path 模式页码分隔符，默认 '-'
+     * - omitFirstPage: 首页是否省略页码，默认 true
+     * - class/navClass: 分页容器 class
+     * - itemClass: 基础按钮 class
+     * - activeClass: 当前页额外 class
+     * - disabledClass: 禁用按钮额外 class
+     * - ellipsisClass: 省略号 class
      */
     public static function pagination(array $opts = []): string
     {
@@ -115,39 +126,92 @@ class Render
         $base = (string)($opts['base'] ?? '');
         $pageParam = (string)($opts['pageParam'] ?? 'page');
         $window = max(1, (int)($opts['window'] ?? 2));
+        $mode = (string)($opts['style'] ?? $opts['mode'] ?? 'query');
+        $separator = (string)($opts['separator'] ?? ($mode === 'segment' ? '/page/' : '-'));
+        $omitFirstPage = array_key_exists('omitFirstPage', $opts) ? (bool)$opts['omitFirstPage'] : true;
+        $navClass = trim((string)($opts['navClass'] ?? $opts['class'] ?? 'pagination'));
+        $itemClass = trim((string)($opts['itemClass'] ?? 'page-btn'));
+        $activeClass = trim((string)($opts['activeClass'] ?? 'is-active'));
+        $disabledClass = trim((string)($opts['disabledClass'] ?? 'is-disabled'));
+        $ellipsisClass = trim((string)($opts['ellipsisClass'] ?? 'page-ellipsis'));
         $start = max(1, $page - $window);
         $end = min($pages, $page + $window);
-        $sep = str_contains($base, '?') ? '&' : '?';
 
-        $link = function (int $p) use ($base, $pageParam, $sep): string {
-            $url = $base . $sep . $pageParam . '=' . $p;
+        $query = $opts['query'] ?? [];
+        if ($query instanceof \ArrayObject) {
+            $query = $query->getArrayCopy();
+        } elseif (is_object($query)) {
+            $query = (array) $query;
+        } elseif (!is_array($query)) {
+            $query = [];
+        }
+
+        [$basePath, $baseQueryString] = array_pad(explode('?', $base, 2), 2, '');
+        $base = $basePath;
+        $baseQuery = [];
+        if ($baseQueryString !== '') {
+            parse_str($baseQueryString, $baseQuery);
+        }
+
+        $query = array_merge($baseQuery, $query);
+        unset($query[$pageParam]);
+        $query = array_filter($query, function ($value) {
+            return $value !== '' && $value !== null && $value !== false;
+        });
+
+        $link = function (int $p) use ($base, $pageParam, $pages, $mode, $separator, $omitFirstPage, $query): string {
+            $p = max(1, min($pages, $p));
+
+            if ($mode === 'path' || $mode === 'segment') {
+                $url = $base;
+                if (!($omitFirstPage && $p === 1)) {
+                    $url .= $separator . $p;
+                }
+                if (!empty($query)) {
+                    $url .= '?' . http_build_query($query);
+                }
+                return htmlspecialchars($url, ENT_QUOTES, 'UTF-8');
+            }
+
+            $url = $base;
+            $params = $query;
+            if (!($omitFirstPage && $p === 1)) {
+                $params[$pageParam] = $p;
+            }
+            if (!empty($params)) {
+                $url .= '?' . http_build_query($params);
+            }
             return htmlspecialchars($url, ENT_QUOTES, 'UTF-8');
         };
 
-        $html = '<nav class="pagination">';
-        $html .= '<a class="page-btn' . ($page <= 1 ? ' is-disabled' : '') . '" href="' . $link(1) . '">«</a>';
-        $html .= '<a class="page-btn' . ($page <= 1 ? ' is-disabled' : '') . '" href="' . $link($page - 1) . '">‹</a>';
+        $btnClass = fn (bool $active = false, bool $disabled = false): string => trim($itemClass
+            . ($active && $activeClass !== '' ? ' ' . $activeClass : '')
+            . ($disabled && $disabledClass !== '' ? ' ' . $disabledClass : ''));
+
+        $html = '<nav class="' . htmlspecialchars($navClass, ENT_QUOTES, 'UTF-8') . '">';
+        $html .= '<a class="' . htmlspecialchars($btnClass(false, $page <= 1), ENT_QUOTES, 'UTF-8') . '" href="' . $link(1) . '">«</a>';
+        $html .= '<a class="' . htmlspecialchars($btnClass(false, $page <= 1), ENT_QUOTES, 'UTF-8') . '" href="' . $link($page <= 1 ? 1 : $page - 1) . '">‹</a>';
 
         if ($start > 1) {
-            $html .= '<a class="page-btn" href="' . $link(1) . '">1</a>';
+            $html .= '<a class="' . htmlspecialchars($btnClass(), ENT_QUOTES, 'UTF-8') . '" href="' . $link(1) . '">1</a>';
             if ($start > 2) {
-                $html .= '<span class="page-ellipsis">…</span>';
+                $html .= '<span class="' . htmlspecialchars($ellipsisClass, ENT_QUOTES, 'UTF-8') . '">…</span>';
             }
         }
 
         for ($i = $start; $i <= $end; $i++) {
-            $html .= '<a class="page-btn' . ($i === $page ? ' is-active' : '') . '" href="' . $link($i) . '">' . $i . '</a>';
+            $html .= '<a class="' . htmlspecialchars($btnClass($i === $page), ENT_QUOTES, 'UTF-8') . '" href="' . $link($i) . '">' . $i . '</a>';
         }
 
         if ($end < $pages) {
             if ($end < $pages - 1) {
-                $html .= '<span class="page-ellipsis">…</span>';
+                $html .= '<span class="' . htmlspecialchars($ellipsisClass, ENT_QUOTES, 'UTF-8') . '">…</span>';
             }
-            $html .= '<a class="page-btn" href="' . $link($pages) . '">' . $pages . '</a>';
+            $html .= '<a class="' . htmlspecialchars($btnClass(), ENT_QUOTES, 'UTF-8') . '" href="' . $link($pages) . '">' . $pages . '</a>';
         }
 
-        $html .= '<a class="page-btn' . ($page >= $pages ? ' is-disabled' : '') . '" href="' . $link($page + 1) . '">›</a>';
-        $html .= '<a class="page-btn' . ($page >= $pages ? ' is-disabled' : '') . '" href="' . $link($pages) . '">»</a>';
+        $html .= '<a class="' . htmlspecialchars($btnClass(false, $page >= $pages), ENT_QUOTES, 'UTF-8') . '" href="' . $link($page >= $pages ? $pages : $page + 1) . '">›</a>';
+        $html .= '<a class="' . htmlspecialchars($btnClass(false, $page >= $pages), ENT_QUOTES, 'UTF-8') . '" href="' . $link($pages) . '">»</a>';
         $html .= '</nav>';
 
         return $html;

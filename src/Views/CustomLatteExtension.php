@@ -116,8 +116,33 @@ class CustomLatteExtension extends Extension
             return $slice . $suffix;
         };
 
+        $agoFilter = function ($value, ?string $tz = null): string {
+            $zone = $tz ?: date_default_timezone_get();
+            try {
+                if ($value === null || $value === '') {
+                    return '';
+                }
+                if (is_string($value) && strtolower(trim($value)) === 'now') {
+                    return now($zone)->locale('zh')->diffForHumans();
+                }
+                if ($value instanceof \DateTimeInterface) {
+                    $dt = $value instanceof Carbon ? $value : Carbon::instance($value);
+                    if ($tz) { $dt = $dt->setTimezone($zone); }
+                    return $dt->locale('zh')->diffForHumans();
+                }
+                if (is_int($value) || (is_string($value) && ctype_digit($value))) {
+                    return Carbon::createFromTimestamp((int) $value, $zone)->locale('zh')->diffForHumans();
+                }
+                return Carbon::parse((string) $value, $zone)->locale('zh')->diffForHumans();
+            } catch (\Throwable $e) {
+                return (string) $value;
+            }
+        };
+
         return [
             'date' => $dateFilter,
+            'ago' => $agoFilter,
+            'human' => $agoFilter,
             // 字符串截取：{$text|cut:50,'…',true,true} 或 {$text|substr:80}
             'cut' => $cutFilter,
             'substr' => $cutFilter,

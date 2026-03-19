@@ -21,6 +21,7 @@ class TemplateParser
     public function parseFragment(string $template): \DOMDocumentFragment
     {
         $template = $this->rewriteDottedPlaceholders($template);
+        $template = $this->rewriteAlpineEventShorthand($template);
         return $this->html5->loadHTMLFragment($template);
     }
 
@@ -42,5 +43,20 @@ class TemplateParser
             $rest = implode('.', $parts);
             return '<x-val data-var="' . htmlspecialchars($first, ENT_QUOTES) . '" data-path="' . htmlspecialchars($rest, ENT_QUOTES) . '"' . ($attrs ? ' ' . trim($attrs) : '') . '/>';
         }, $tpl);
+    }
+
+    /**
+     * 将 Alpine 事件简写属性改写为 x-on:*，避免在 HTML5 解析阶段被丢弃。
+     * 例如：
+     * - @click="foo" -> x-on:click="foo"
+     * - @submit.prevent="save" -> x-on:submit.prevent="save"
+     */
+    private function rewriteAlpineEventShorthand(string $tpl): string
+    {
+        return (string) preg_replace(
+            '/(\s)@([A-Za-z0-9_:\.\-]+)=/u',
+            '$1x-on:$2=',
+            $tpl
+        );
     }
 }

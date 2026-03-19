@@ -71,8 +71,8 @@ class Register
                 continue;
             }
 
-            $appName = $resInfo["params"]["app"];
-            $resName = $resInfo["params"]["name"];
+            $appName = $resInfo["params"]["app"] ?? '';
+            $resName = $resInfo["params"]["name"] ?? '';
 
             if (!$appName) {
                 continue;
@@ -93,7 +93,7 @@ class Register
                 }
                 $params = $annotation["params"];
                 $class = $annotation["class"];
-                $name = $params["name"];
+                $name = $params["name"] ?? '';
                 if (!$name) {
                     $name = $this->getMethod($class);
                 }

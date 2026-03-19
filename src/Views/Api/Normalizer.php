@@ -81,8 +81,11 @@ class Normalizer
         if ($val === null) {
             return null;
         }
-        if (is_array($val) || is_object($val)) {
+        if (is_array($val)) {
             return new ArrayObject($val, ArrayObject::ARRAY_AS_PROPS);
+        }
+        if (is_object($val)) {
+            return new ArrayObject((array) $val, ArrayObject::ARRAY_AS_PROPS);
         }
         return $val;
     }

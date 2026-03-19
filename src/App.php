@@ -72,6 +72,9 @@ class App
 
     public static function init()
     {
+        self::$registerApp = [];
+        self::$registerPlugin = [];
+
         $dotenv = Dotenv::createImmutable(self::$basePath);
         $dotenv->safeLoad();
 

@@ -65,8 +65,8 @@ class Register
             if ($groupInfo) {
                 $groupClass = $item["class"];
                 $groupParams = $groupInfo["params"];
-                $appName = $groupParams["app"];
-                $groupName = $groupParams["name"];
+                $appName = $groupParams["app"] ?? '';
+                $groupName = $groupParams["name"] ?? '';
 
                 if (!$appName) {
                     continue;
@@ -89,8 +89,8 @@ class Register
 
                 $params = $annotation["params"];
                 $class = $annotation["class"];
-                $name = $params["name"];
-                $appName = $params["app"];
+                $name = $params["name"] ?? '';
+                $appName = $params["app"] ?? '';
 
                 // Always parse class to get method for default route naming
                 [$className, $parsedMethodName, $autoName] = $this->parseClass($class);
@@ -138,7 +138,7 @@ class Register
 
     private function parseClass(string $class): array
     {
-        [$className, $methodName] = explode(":", $class, 2);
+        [$className, $methodName] = array_pad(explode(":", $class, 2), 2, '');
         $classArr = explode("\\", $className);
         $layout = array_slice($classArr, -3, 1)[0] ?? '';
         $last = end($classArr) ?: '';
