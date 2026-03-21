@@ -77,6 +77,24 @@ class AtFileLoader extends FileLoader
     }
 
     /**
+     * 返回缓存唯一 ID：
+     * - 绝对路径/带协议路径直接返回，避免 Windows 下把 baseDir 再拼到绝对路径前面
+     * - 其他情况回退父类逻辑
+     */
+    public function getUniqueId(string $file): string
+    {
+        if ($file === '') {
+            return parent::getUniqueId($file);
+        }
+
+        if ($this->isAbsolute($file) || $this->hasScheme($file)) {
+            return $file;
+        }
+
+        return parent::getUniqueId($file);
+    }
+
+    /**
      * 返回路径所在目录（仅字符串拼接，不访问文件系统）。
      */
     private function dirOf(string $path): string

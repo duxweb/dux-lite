@@ -50,6 +50,13 @@ it('resolves include path via sidecar when referring file is cached', function (
     expect($resolved)->toBe($partial);
 });
 
+it('keeps windows absolute cache path as unique id', function () {
+    $loader = new AtFileLoader('E:/Test/dux-php-admin/theme/blog');
+    $path = 'E:/Test/dux-php-admin/data/tpl/web/custom_x.latte';
+
+    expect($loader->getUniqueId($path))->toBe($path);
+});
+
 it('emits preprocess trace callback payload', function () {
     $root = sys_get_temp_dir() . '/dux-lite-test-' . uniqid();
     $tplDir = $root . '/templates';
