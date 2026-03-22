@@ -53,8 +53,27 @@ it('resolves include path via sidecar when referring file is cached', function (
 it('keeps windows absolute cache path as unique id', function () {
     $loader = new AtFileLoader('E:/Test/dux-php-admin/theme/blog');
     $path = 'E:/Test/dux-php-admin/data/tpl/web/custom_x.latte';
+    $backslashPath = 'E:\\Test\\dux-php-admin\\data\\tpl\\web\\custom_x.latte';
 
     expect($loader->getUniqueId($path))->toBe($path);
+    expect($loader->getUniqueId($backslashPath))->toBe($backslashPath);
+});
+
+it('keeps template root available when rendering an absolute template file', function () {
+    $root = sys_get_temp_dir() . '/dux-lite-test-' . uniqid();
+    $tplDir = $root . '/templates';
+    $partialsDir = $tplDir . '/partials';
+    @mkdir($partialsDir, 0777, true);
+
+    file_put_contents($partialsDir . '/card.latte', 'card');
+    $page = $tplDir . '/page.latte';
+    file_put_contents($page, '{include "@partials/card.latte"}');
+
+    $engine = new CustomTagEngine();
+    $engine->setTempDirectory($root . '/cache');
+    $engine->setTemplateRoot($tplDir);
+
+    expect($engine->renderToString($page))->toContain('card');
 });
 
 it('emits preprocess trace callback payload', function () {

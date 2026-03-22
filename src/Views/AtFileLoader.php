@@ -111,7 +111,10 @@ class AtFileLoader extends FileLoader
     private function isAbsolute(string $path): bool
     {
         if ($path !== '' && ($path[0] === '/' || $path[0] === '\\')) return true;
-        return preg_match('~^[A-Za-z]:[\\/]~', $path) === 1;
+        if (!isset($path[2]) || $path[1] !== ':') {
+            return false;
+        }
+        return ctype_alpha($path[0]) && ($path[2] === '\\' || $path[2] === '/');
     }
 
     /**

@@ -101,7 +101,7 @@ class RedisAdapter implements QueueAdapterInterface
 
         $redis = $this->createRedisClient();
         foreach ($rows as &$row) {
-            $stream = $this->queueKey($row['name']);
+            $stream = $this->streamKey($row['name']);
             $row['reserved'] = $this->redisXpendingCount($redis, $stream, $this->group);
             $total = $this->redisXlen($redis, $stream);
             $row['pending'] = max(0, $total - (int)$row['reserved']);
@@ -120,9 +120,9 @@ class RedisAdapter implements QueueAdapterInterface
         $host = (string)($this->config['host'] ?? '127.0.0.1');
         $port = (int)($this->config['port'] ?? 6379);
         $dbindex = (int)($this->config['database'] ?? 0);
-        $auth = (string)($this->config['auth'] ?? '');
+        $auth = (string)($this->config['auth'] ?? ($this->config['password'] ?? ''));
 
-        $path = '/' . rawurlencode($this->queueKey($queueName)) . '/' . rawurlencode($group) . '/' . rawurlencode($consumer);
+        $path = '/' . $this->streamKey($queueName) . '/' . rawurlencode($group) . '/' . rawurlencode($consumer);
         $query = $dbindex ? ('?dbindex=' . $dbindex) : '';
 
         if ($auth !== '') {
@@ -139,7 +139,7 @@ class RedisAdapter implements QueueAdapterInterface
     {
         $host = (string)($this->config['host'] ?? '127.0.0.1');
         $port = (int)($this->config['port'] ?? 6379);
-        $auth = (string)($this->config['auth'] ?? '');
+        $auth = (string)($this->config['auth'] ?? ($this->config['password'] ?? ''));
         $database = (int)($this->config['database'] ?? 0);
         $timeout = (float)($this->config['timeout'] ?? 1.0);
 
@@ -153,6 +153,11 @@ class RedisAdapter implements QueueAdapterInterface
         }
 
         return $redis;
+    }
+
+    private function streamKey(string $queueName): string
+    {
+        return rawurlencode($this->queueKey($queueName));
     }
 
     /**
