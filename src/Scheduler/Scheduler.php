@@ -88,6 +88,7 @@ class Scheduler
      */
     public function gen(): array
     {
+        $this->disableExecutionTimeout();
         $event = new SchedulerGenEvent($this->data);
         App::event()->dispatch($event, 'scheduler.gen');
 
@@ -109,6 +110,7 @@ class Scheduler
      */
     public function loadJobs(): array
     {
+        $this->disableExecutionTimeout();
         $data = [];
         if (!App::$debug) {
             $data = $this->readJobsFile($this->jobsFilePath());
@@ -122,12 +124,7 @@ class Scheduler
 
     public function run(): int
     {
-        if (function_exists('ini_set')) {
-            @ini_set('max_execution_time', '0');
-        }
-        if (function_exists('set_time_limit')) {
-            @set_time_limit(0);
-        }
+        $this->disableExecutionTimeout();
         $loop = Loop::get();
         $loop->addPeriodicTimer(1, function () {
             $this->runDueJobs(new \DateTimeImmutable());
@@ -135,6 +132,16 @@ class Scheduler
         $loop->run();
 
         return self::EXIT_OK;
+    }
+
+    private function disableExecutionTimeout(): void
+    {
+        if (function_exists('ini_set')) {
+            @ini_set('max_execution_time', '0');
+        }
+        if (function_exists('set_time_limit')) {
+            @set_time_limit(0);
+        }
     }
 
     public function pullRuntimeTasks(string|\DateTimeInterface|null $time = null, int $limit = 1): array
