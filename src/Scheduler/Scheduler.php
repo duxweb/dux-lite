@@ -183,7 +183,7 @@ class Scheduler
                     'desc' => $job['desc'] ?? '',
                 ],
                 'attempt' => 1,
-                'timeout' => (int)(getenv('DUX_RUNTIME_TASK_TIMEOUT') ?: 30),
+                'timeout' => $this->runtimeTaskTimeout(),
                 'meta' => [
                     'cron' => $cron,
                     'name' => $job['name'] ?? '',
@@ -200,6 +200,12 @@ class Scheduler
         }
 
         return $items;
+    }
+
+    private function runtimeTaskTimeout(): int
+    {
+        $timeout = (int)App::config('use')->get('runtime.task_timeout', 30);
+        return $timeout > 0 ? $timeout : 30;
     }
 
     public function reportRuntimeTask(string $taskId, array $result = [], string $error = ''): void

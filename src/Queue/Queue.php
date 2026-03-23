@@ -558,7 +558,7 @@ public function ack(string $jobId, array $result = []): bool
                 'priority' => $priority,
             ],
             'attempt' => 1,
-            'timeout' => (int)(getenv('DUX_RUNTIME_TASK_TIMEOUT') ?: 30),
+            'timeout' => $this->runtimeTaskTimeout(),
             'meta' => [
                 'worker' => $worker,
                 'priority' => $priority,
@@ -574,6 +574,12 @@ public function ack(string $jobId, array $result = []): bool
         ];
 
         return $item;
+    }
+
+    private function runtimeTaskTimeout(): int
+    {
+        $timeout = (int)App::config('use')->get('runtime.task_timeout', 30);
+        return $timeout > 0 ? $timeout : 30;
     }
 
 }
