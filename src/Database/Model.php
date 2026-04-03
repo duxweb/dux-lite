@@ -10,6 +10,12 @@ use Illuminate\Database\Schema\Blueprint;
 
 class Model extends \Illuminate\Database\Eloquent\Model
 {
+    /**
+     * Delayed callbacks for packages expecting Laravel's whenBooted helper.
+     *
+     * @var array<class-string, array<int, callable>>
+     */
+    protected static array $bootedCallbacks = [];
 
     public function __construct(array $attributes = [])
     {
@@ -86,5 +92,20 @@ class Model extends \Illuminate\Database\Eloquent\Model
         static::deleted(function ($model) use ($event) {
             $event->run('deleted', $model);
         });
+
+        foreach (static::$bootedCallbacks[static::class] ?? [] as $callback) {
+            $callback();
+        }
+        static::$bootedCallbacks[static::class] = [];
+    }
+
+    public static function whenBooted(callable $callback): void
+    {
+        if (isset(static::$booted[static::class])) {
+            $callback();
+            return;
+        }
+
+        static::$bootedCallbacks[static::class][] = $callback;
     }
 }
