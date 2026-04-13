@@ -38,38 +38,55 @@
 
 ```mermaid
 flowchart TD
-    subgraph 应用层["🏢 应用层(模块化)"]
-        Web模块["🌐 Web 模块"]
-        API模块["📡 API 模块"]
-        命令行模块["⌨️ 命令行模块"]
-        其他模块["🔧 其他模块"]
+    %% =========================
+    %% 应用层
+    %% =========================
+    subgraph 应用层["🏢 应用层 (模块化扩展)"]
+        Web模块["🌐 Web 模块<br/>（页面渲染）"]
+        API模块["📡 API 模块<br/>（REST/GraphQL）"]
+        命令行模块["⌨️ CLI 工具<br/>（定时任务/脚本）"]
+        其他模块["🔧 其他扩展<br/>（插件/定制）"]
     end
 
+    %% =========================
+    %% 框架核心
+    %% =========================
     subgraph 框架核心["⚡ DuxLite 框架核心"]
-        路由系统["🧭 路由系统"]
-        数据库层["💾 数据库层"]
-        缓存系统["🗄️ 缓存系统"]
-        队列系统["📋 队列系统"]
-        事件系统["📡 事件系统"]
-        认证授权["🔐 认证授权"]
-        存储系统["💿 存储系统"]
-        日志系统["📊 日志系统"]
+        路由系统["🧭 路由系统<br/>(URL → 控制器)"]
+        数据库层["💾 数据库层<br/>(Eloquent ORM)"]
+        缓存系统["🗄️ 缓存系统<br/>(Redis/Memcached)"]
+        队列系统["📋 队列系统<br/>(任务调度)"]
+        事件系统["📡 事件系统<br/>(发布/订阅)"]
+        认证授权["🔐 认证授权<br/>(JWT/Session)"]
+        存储系统["💿 存储系统<br/>(本地/云存储)"]
+        日志系统["📊 日志系统<br/>(监控/审计)"]
     end
 
-    subgraph 基础设施["🔧 基础设施层"]
-        SlimPHP["SlimPHP"]
-        Eloquent["Eloquent ORM"]
-        Monolog["Monolog"]
-        PHPRedis["PHP-Redis"]
-        其他依赖["其他依赖"]
+    %% =========================
+    %% 基础设施
+    %% =========================
+    subgraph 基础设施["🛠️ 基础设施层"]
+        SlimPHP["⚙️ SlimPHP<br/>(Micro Framework)"]
+        Eloquent["🗃️ Eloquent ORM<br/>(Laravel 数据层)"]
+        Monolog["📑 Monolog<br/>(日志记录)"]
+        PHPRedis["🚀 PHP-Redis<br/>(高性能缓存)"]
+        其他依赖["📦 其他依赖<br/>(Utils/工具库)"]
     end
 
+    %% =========================
+    %% 连接关系
+    %% =========================
     应用层 --> 框架核心
     框架核心 --> 基础设施
 
-    style 应用层 fill:#e1f5fe
-    style 框架核心 fill:#f3e5f5
-    style 基础设施 fill:#e8f5e8
+    %% =========================
+    %% 样式美化
+    %% =========================
+    style 应用层 fill:#e3f2fd,stroke:#42a5f5,stroke-width:2px,color:#0d47a1
+    style 框架核心 fill:#f3e5f5,stroke:#ab47bc,stroke-width:2px,color:#4a148c
+    style 基础设施 fill:#e8f5e9,stroke:#66bb6a,stroke-width:2px,color:#1b5e20
+
+    linkStyle default stroke:#90a4ae,stroke-width:2px
 ```
 
 ## 📦 核心组件
